@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 // ⚠️ 确保这里的值和 App.jsx 里的 CONFIG 一致
 const CONFIG = {
   SUPABASE_URL: "https://etiggwqxacnlrgokfsjt.supabase.co/",
-  SUPABASE_ANON_KEY: "etiggwqxacnlrgokfsjt",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0aWdnd3F4YWNubHJnb2tmc2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNjk0ODgsImV4cCI6MjA4Nzk0NTQ4OH0.Wqjn6rZJfwCAfTr7L0XdPh1U1hNzJYjjYSt1YASH5uw",
 };
 
 const THERAPISTS = ["林雅芳", "陳柏翰", "王詩涵", "張家豪"];
