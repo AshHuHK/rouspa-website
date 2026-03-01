@@ -25,7 +25,7 @@ const i18n = {
     brand: "柔禾養生",
     brandEn: "ROUHE",
     brandSub: "東方頭療 · 經絡養生",
-    nav: { home: "首頁", services: "服務項目", team: "技師團隊", booking: "立即預約" },
+    nav: { home: "首頁", services: "服務項目", team: "技師團隊", booking: "立即預約", location: "位置" },
     hero: {
       title: "以柔養生",
       subtitle: "源自千年中醫智慧的頭部經絡調理",
@@ -55,7 +55,7 @@ const i18n = {
     booking: {
       title: "預約調理",
       subtitle: "開啟您的養生之旅",
-      steps: ["選擇服務", "選擇技師", "選擇時段", "確認預約"],
+      steps: ["選擇服務", "選擇技師", "選擇時段", "選擇茶飲", "確認預約"],
       selectService: "請選擇服務項目",
       selectTherapist: "請選擇技師",
       anyTherapist: "不指定技師",
@@ -74,8 +74,20 @@ const i18n = {
       morning: "上午",
       afternoon: "下午",
       evening: "晚間",
-      submitting: "預約中..."
+      submitting: "預約中...",
+      selectTea: "療程搭配養生茶飲",
+      teaIncluded: "基礎茶飲（免費）",
+      teaUpgrade: "升級精選茶飲",
+      teaNote: "每位貴賓皆享一杯養生茶飲，可免費選擇基礎款或加價升級"
     },
+    tea: {
+      items: [
+        { name: "養生暖身茶", price: "免費", priceNum: 0, desc: "紅棗枸杞桂圓茶，溫補氣血，療程基本搭配。", icon: "🍵", tag: "基礎" },
+        { name: "漢方安神茶", price: "+NT$120", priceNum: 120, desc: "酸棗仁、茯苓、百合，寧心安神，適合失眠困擾者。", icon: "🌙", tag: "升級" },
+        { name: "活血通絡茶", price: "+NT$150", priceNum: 150, desc: "丹參、川芎、玫瑰花，活血化瘀，促進循環。", icon: "🌺", tag: "升級" },
+        { name: "清肝明目茶", price: "+NT$120", priceNum: 120, desc: "菊花、決明子、枸杞，清肝火、護眼明目。", icon: "🌼", tag: "升級" },
+        { name: "養顏美肌茶", price: "+NT$180", priceNum: 180, desc: "雪耳、桃膠、紅棗、玫瑰，膠質滿滿，養顏潤膚。", icon: "🌸", tag: "人氣" }
+      ]
     footer: {
       address: CONFIG.ADDRESS_ZH,
       hours: "營業時間：10:00 - 22:00（週一公休）",
@@ -89,7 +101,7 @@ const i18n = {
     brand: "ROUHE",
     brandEn: "ROUHE",
     brandSub: "Oriental Head Therapy · Meridian Wellness",
-    nav: { home: "Home", services: "Services", team: "Therapists", booking: "Book Now" },
+    nav: { home: "Home", services: "Services", team: "Therapists", booking: "Book Now", location: "Location" },
     hero: {
       title: "Gentle\nWellness",
       subtitle: "Ancient Chinese Medicine Wisdom for Modern Healing",
@@ -119,7 +131,7 @@ const i18n = {
     booking: {
       title: "Book Appointment",
       subtitle: "Begin Your Wellness Journey",
-      steps: ["Select Service", "Select Therapist", "Select Time", "Confirm"],
+      steps: ["Select Service", "Select Therapist", "Select Time", "Select Tea", "Confirm"],
       selectService: "Choose a service",
       selectTherapist: "Choose a therapist",
       anyTherapist: "No Preference",
@@ -138,8 +150,20 @@ const i18n = {
       morning: "Morning",
       afternoon: "Afternoon",
       evening: "Evening",
-      submitting: "Submitting..."
+      submitting: "Submitting...",
+      selectTea: "Pair Your Therapy with Herbal Tea",
+      teaIncluded: "Complimentary Tea",
+      teaUpgrade: "Premium Tea Upgrade",
+      teaNote: "Every guest enjoys one herbal tea — choose complimentary or upgrade"
     },
+    tea: {
+      items: [
+        { name: "Warming Qi Tea", price: "Free", priceNum: 0, desc: "Red date, goji & longan blend. Warms and nourishes Qi.", icon: "🍵", tag: "Basic" },
+        { name: "Calming Sleep Tea", price: "+NT$120", priceNum: 120, desc: "Jujube seed, poria & lily. Soothes the mind for better sleep.", icon: "🌙", tag: "Upgrade" },
+        { name: "Circulation Boost Tea", price: "+NT$150", priceNum: 150, desc: "Salvia, ligusticum & rose. Promotes blood flow and vitality.", icon: "🌺", tag: "Upgrade" },
+        { name: "Liver Cleanse Tea", price: "+NT$120", priceNum: 120, desc: "Chrysanthemum, cassia seed & goji. Clears liver heat, protects eyes.", icon: "🌼", tag: "Upgrade" },
+        { name: "Beauty Glow Tea", price: "+NT$180", priceNum: 180, desc: "Snow fungus, peach gum, rose & red date. Collagen-rich skin nourishment.", icon: "🌸", tag: "Popular" }
+      ]
     footer: {
       address: CONFIG.ADDRESS_EN,
       hours: "Hours: 10:00 AM - 10:00 PM (Closed on Mondays)",
@@ -243,6 +267,7 @@ export default function RouheWellness() {
   const [selectedTherapist, setSelectedTherapist] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
+  const [selectedTea, setSelectedTea] = useState(null);
   const [formName, setFormName] = useState("");
   const [formPhone, setFormPhone] = useState("");
   const [formNote, setFormNote] = useState("");
@@ -255,7 +280,7 @@ export default function RouheWellness() {
   const [showLineTooltip, setShowLineTooltip] = useState(false);
 
   const t = i18n[lang];
-  const sectionRefs = { home: useRef(), services: useRef(), team: useRef(), booking: useRef() };
+  const sectionRefs = { home: useRef(), services: useRef(), team: useRef(), booking: useRef(), location: useRef() };
 
   useEffect(() => {
     const h = () => setScrollY(window.scrollY || 0);
@@ -312,6 +337,7 @@ export default function RouheWellness() {
       therapist: selectedTherapist === -1 ? "不指定" : (teamNames[selectedTherapist]?.name || ""),
       date: selectedDate,
       time: selectedTime,
+      tea: i18n.zh.tea.items[selectedTea]?.name || "",
       customer_name: formName,
       phone: formPhone,
       note: formNote || null,
@@ -329,7 +355,7 @@ export default function RouheWellness() {
 
   const resetBooking = () => {
     setBookingStep(0); setSelectedService(null); setSelectedTherapist(null);
-    setSelectedDate(""); setSelectedTime(""); setFormName(""); setFormPhone("");
+    setSelectedDate(""); setSelectedTime(""); setSelectedTea(null); setFormName(""); setFormPhone("");
     setFormNote(""); setBookingComplete(false); setSubmitting(false);
   };
 
@@ -643,7 +669,7 @@ export default function RouheWellness() {
                     <div className={`step-dot ${i < bookingStep ? "completed" : ""} ${i === bookingStep ? "active" : ""}`} />
                     <span style={{ fontSize: "10px", letterSpacing: "1px", color: i <= bookingStep ? "rgba(201,169,110,0.7)" : "rgba(201,169,110,0.25)", whiteSpace: "nowrap" }}>{step}</span>
                   </div>
-                  {i < 3 && <div style={{ width: "30px", height: "1px", background: i < bookingStep ? "rgba(201,169,110,0.3)" : "rgba(201,169,110,0.08)", marginBottom: "20px" }} />}
+                  {i < 4 && <div style={{ width: "30px", height: "1px", background: i < bookingStep ? "rgba(201,169,110,0.3)" : "rgba(201,169,110,0.08)", marginBottom: "20px" }} />}
                 </div>
               ))}
             </div>
@@ -780,8 +806,45 @@ export default function RouheWellness() {
                 </div>
               )}
 
-              {/* Step 3: Confirm */}
+              {/* Step 3: Tea Selection */}
               {bookingStep === 3 && (
+                <div>
+                  <p style={{ fontSize: "14px", color: "rgba(201,169,110,0.6)", textAlign: "center", marginBottom: "8px", letterSpacing: "1px" }}>{t.booking.selectTea}</p>
+                  <p style={{ fontSize: "12px", color: "rgba(201,169,110,0.3)", textAlign: "center", marginBottom: "30px", letterSpacing: "1px" }}>{t.booking.teaNote}</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    {t.tea.items.map((tea, i) => (
+                      <div key={i} className={`service-card ${selectedTea === i ? "selected" : ""}`}
+                        onClick={() => setSelectedTea(i)}
+                        style={{ padding: "20px 24px", borderRadius: "4px", display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                        <div style={{ fontSize: "28px", flexShrink: 0 }}>{tea.icon}</div>
+                        <div style={{ flex: 1, minWidth: "180px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                            <span style={{ fontSize: "15px", fontWeight: 500, letterSpacing: "1px" }}>{tea.name}</span>
+                            <span style={{
+                              fontSize: "10px", letterSpacing: "1px", padding: "2px 8px", borderRadius: "2px",
+                              background: tea.priceNum === 0 ? "rgba(107,142,35,0.15)" : tea.tag === "人氣" || tea.tag === "Popular" ? "rgba(201,169,110,0.15)" : "rgba(201,169,110,0.08)",
+                              color: tea.priceNum === 0 ? "#8fac50" : "#c9a96e",
+                              border: `1px solid ${tea.priceNum === 0 ? "rgba(107,142,35,0.25)" : "rgba(201,169,110,0.15)"}`
+                            }}>{tea.tag}</span>
+                          </div>
+                          <p style={{ fontSize: "12px", color: "rgba(232,224,208,0.35)", lineHeight: 1.6 }}>{tea.desc}</p>
+                        </div>
+                        <div style={{ fontSize: "14px", color: tea.priceNum === 0 ? "#8fac50" : "#c9a96e", fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, letterSpacing: "1px", flexShrink: 0 }}>
+                          {tea.price}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "40px" }}>
+                    <button className="outline-btn" onClick={() => setBookingStep(2)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
+                    <button className="gold-btn" disabled={selectedTea === null} onClick={() => selectedTea !== null && setBookingStep(4)}
+                      style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.next}</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Confirm */}
+              {bookingStep === 4 && (
                 <div>
                   <div style={{ background: "rgba(201,169,110,0.03)", border: "1px solid rgba(201,169,110,0.1)", borderRadius: "4px", padding: "28px", marginBottom: "36px" }}>
                     <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "16px" }}>{lang === "zh" ? "預約摘要" : "Booking Summary"}</div>
@@ -791,6 +854,7 @@ export default function RouheWellness() {
                         [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : t.team.members[selectedTherapist]?.name],
                         [lang === "zh" ? "日期" : "Date", selectedDate],
                         [lang === "zh" ? "時間" : "Time", selectedTime],
+                        [lang === "zh" ? "茶飲" : "Tea", t.tea.items[selectedTea]?.name + (t.tea.items[selectedTea]?.priceNum > 0 ? ` (${t.tea.items[selectedTea]?.price})` : ` (${lang === "zh" ? "免費" : "Free"})`)],
                         [lang === "zh" ? "費用" : "Price", t.services.items[selectedService]?.price],
                       ].map(([label, val], i) => (
                         <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
@@ -815,7 +879,7 @@ export default function RouheWellness() {
                     </div>
                   </div>
                   <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
-                    <button className="outline-btn" onClick={() => setBookingStep(2)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
+                    <button className="outline-btn" onClick={() => setBookingStep(3)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
                     <button className="gold-btn" disabled={!formName || !formPhone || submitting} onClick={handleSubmitBooking}
                       style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>
                       {submitting ? t.booking.submitting : t.booking.confirm}
@@ -825,6 +889,63 @@ export default function RouheWellness() {
               )}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ========== LOCATION & MAP ========== */}
+      <section ref={sectionRefs.location} style={{
+        padding: "100px 30px 0", position: "relative",
+        background: "linear-gradient(180deg, rgba(10,10,8,1) 0%, rgba(12,11,9,1) 100%)"
+      }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "50px" }}>
+            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(201,169,110,0.4)", marginBottom: "16px" }}>LOCATION</div>
+            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: lang === "zh" ? "6px" : "3px", fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined }}>
+              {lang === "zh" ? "交通位置" : "Find Us"}
+            </h2>
+            <GoldDivider />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px", alignItems: "center" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ marginBottom: "28px" }}>
+                <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "10px" }}>{lang === "zh" ? "地址" : "Address"}</div>
+                <p style={{ fontSize: "15px", color: "rgba(232,224,208,0.7)", lineHeight: 1.8, letterSpacing: "1px" }}>{t.footer.address}</p>
+              </div>
+              <div style={{ marginBottom: "28px" }}>
+                <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "10px" }}>{lang === "zh" ? "營業時間" : "Hours"}</div>
+                <p style={{ fontSize: "15px", color: "rgba(232,224,208,0.7)", lineHeight: 1.8 }}>{lang === "zh" ? "週二 — 週日　10:00 - 22:00" : "Tue — Sun　10:00 AM - 10:00 PM"}</p>
+                <p style={{ fontSize: "13px", color: "rgba(201,169,110,0.4)", marginTop: "4px" }}>{lang === "zh" ? "每週一公休" : "Closed on Mondays"}</p>
+              </div>
+              <div style={{ marginBottom: "28px" }}>
+                <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "10px" }}>{lang === "zh" ? "聯繫方式" : "Contact"}</div>
+                <p style={{ fontSize: "15px", color: "#c9a96e", letterSpacing: "1px" }}>{CONFIG.PHONE}</p>
+              </div>
+              <div>
+                <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "10px" }}>{lang === "zh" ? "交通方式" : "Getting Here"}</div>
+                <p style={{ fontSize: "13px", color: "rgba(232,224,208,0.4)", lineHeight: 2 }}>
+                  {lang === "zh" ? "捷運忠孝敦化站 3 號出口步行約 3 分鐘" : "3 min walk from MRT Zhongxiao Dunhua Station, Exit 3"}
+                </p>
+              </div>
+            </div>
+            <div style={{
+              borderRadius: "6px", overflow: "hidden", border: "1px solid rgba(201,169,110,0.1)",
+              aspectRatio: "4/3", minHeight: "300px"
+            }}>
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3614.7!2d121.5485!3d25.0418!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3442a9c15e0a1e15%3A0x0!2zMjXCsDAyJzMwLjUiTiAxMjHCsDMyJzU0LjYiRQ!5e0!3m2!1szh-TW!2stw!4v1709000000000"
+                width="100%" height="100%" style={{ border: 0, filter: "invert(90%) hue-rotate(180deg) brightness(0.8) contrast(1.2)" }}
+                allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+                title="柔禾養生 Google Maps"
+              />
+            </div>
+          </div>
+          <style>{`
+            @media (max-width: 768px) {
+              section > div > div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+              }
+            }
+          `}</style>
         </div>
       </section>
 
