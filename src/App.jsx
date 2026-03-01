@@ -88,7 +88,7 @@ const i18n = {
         { name: "清肝明目茶", price: "+NT$120", priceNum: 120, desc: "菊花、決明子、枸杞，清肝火、護眼明目。", icon: "🌼", tag: "升級" },
         { name: "養顏美肌茶", price: "+NT$180", priceNum: 180, desc: "雪耳、桃膠、紅棗、玫瑰，膠質滿滿，養顏潤膚。", icon: "🌸", tag: "人氣" }
       ]
-    }
+    },
     footer: {
       address: CONFIG.ADDRESS_ZH,
       hours: "營業時間：10:00 - 22:00（週一公休）",
@@ -165,7 +165,7 @@ const i18n = {
         { name: "Liver Cleanse Tea", price: "+NT$120", priceNum: 120, desc: "Chrysanthemum, cassia seed & goji. Clears liver heat, protects eyes.", icon: "🌼", tag: "Upgrade" },
         { name: "Beauty Glow Tea", price: "+NT$180", priceNum: 180, desc: "Snow fungus, peach gum, rose & red date. Collagen-rich skin nourishment.", icon: "🌸", tag: "Popular" }
       ]
-    }
+    },
     footer: {
       address: CONFIG.ADDRESS_EN,
       hours: "Hours: 10:00 AM - 10:00 PM (Closed on Mondays)",
