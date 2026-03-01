@@ -192,11 +192,48 @@ async function submitBooking(data) {
       },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const errBody = await res.text();
+      // Check for unique constraint violation (double booking)
+      if (errBody.includes("duplicate") || errBody.includes("unique")) {
+        return { success: false, error: "slot_taken" };
+      }
+      throw new Error(`HTTP ${res.status}`);
+    }
     return { success: true };
   } catch (err) {
     console.error("Booking submission failed:", err);
     return { success: false, error: err.message };
+  }
+}
+
+// 查询某天所有已预约的时段
+async function fetchBookedSlots(date) {
+  try {
+    const res = await fetch(
+      `${CONFIG.SUPABASE_URL}/rest/v1/rpc/get_all_booked_slots`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: CONFIG.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ p_date: date }),
+      }
+    );
+    if (!res.ok) return {};
+    const rows = await res.json();
+    // 返回格式: { therapistIndex: Set([time1, time2, ...]) }
+    const map = {};
+    rows.forEach((r) => {
+      if (!map[r.therapist_index]) map[r.therapist_index] = new Set();
+      map[r.therapist_index].add(r.booking_time);
+    });
+    return map;
+  } catch (err) {
+    console.error("Failed to fetch booked slots:", err);
+    return {};
   }
 }
 
@@ -275,6 +312,9 @@ export default function RouheWellness() {
   const [formNote, setFormNote] = useState("");
   const [bookingComplete, setBookingComplete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [bookedSlots, setBookedSlots] = useState({});  // { therapistIndex: Set([times]) }
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotError, setSlotError] = useState("");
   const [scrollY, setScrollY] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [animatedSections, setAnimatedSections] = useState(new Set());
@@ -314,6 +354,32 @@ export default function RouheWellness() {
     setMenuOpen(false);
   };
 
+  // 当选了日期后，加载该日所有已预约时段
+  useEffect(() => {
+    if (!selectedDate) return;
+    setLoadingSlots(true);
+    fetchBookedSlots(selectedDate).then((map) => {
+      setBookedSlots(map);
+      setLoadingSlots(false);
+    });
+  }, [selectedDate]);
+
+  // 检查某时段是否已被预约
+  const isSlotBooked = (time) => {
+    if (selectedTherapist === -1) {
+      // "不指定技师"：如果所有技师该时段都被预约了，则不可选
+      const totalTherapists = i18n.zh.team.members.length;
+      let bookedCount = 0;
+      for (let i = 0; i < totalTherapists; i++) {
+        if (bookedSlots[i] && bookedSlots[i].has(time)) bookedCount++;
+      }
+      return bookedCount >= totalTherapists;
+    } else {
+      // 指定技师：检查该技师该时段是否被预约
+      return bookedSlots[selectedTherapist]?.has(time) || false;
+    }
+  };
+
   const getNext7Days = () => {
     const days = [];
     const today = new Date();
@@ -332,25 +398,49 @@ export default function RouheWellness() {
 
   const handleSubmitBooking = async () => {
     setSubmitting(true);
+    setSlotError("");
     const serviceNames = i18n.zh.services.items;
     const teamNames = i18n.zh.team.members;
+    
+    // 如果选了"不指定"，系统自动分配一个有空的技师
+    let finalTherapistIndex = selectedTherapist;
+    let finalTherapistName = "不指定";
+    if (selectedTherapist === -1) {
+      // 找一个该时段有空的技师
+      for (let i = 0; i < teamNames.length; i++) {
+        if (!bookedSlots[i] || !bookedSlots[i].has(selectedTime)) {
+          finalTherapistIndex = i;
+          finalTherapistName = teamNames[i].name;
+          break;
+        }
+      }
+    } else {
+      finalTherapistName = teamNames[selectedTherapist]?.name || "";
+    }
+
     const data = {
       service: serviceNames[selectedService]?.name || "",
-      therapist: selectedTherapist === -1 ? "不指定" : (teamNames[selectedTherapist]?.name || ""),
-      date: selectedDate,
-      time: selectedTime,
+      therapist: finalTherapistName,
+      therapist_index: finalTherapistIndex,
+      booking_date: selectedDate,
+      booking_time: selectedTime,
       tea: i18n.zh.tea.items[selectedTea]?.name || "",
       customer_name: formName,
       phone: formPhone,
       note: formNote || null,
+      status: "confirmed",
       created_at: new Date().toISOString(),
     };
     const result = await submitBooking(data);
     setSubmitting(false);
     if (result.success) {
       setBookingComplete(true);
+    } else if (result.error === "slot_taken") {
+      setSlotError(lang === "zh" ? "該時段剛被其他客人預約了，請選擇其他時間。" : "This slot was just booked. Please choose another time.");
+      // 重新加载可用时段
+      fetchBookedSlots(selectedDate).then(setBookedSlots);
     } else {
-      // Even if Supabase isn't configured, show success for demo
+      // Supabase 未配置时，demo 模式仍显示成功
       setBookingComplete(true);
     }
   };
@@ -358,7 +448,7 @@ export default function RouheWellness() {
   const resetBooking = () => {
     setBookingStep(0); setSelectedService(null); setSelectedTherapist(null);
     setSelectedDate(""); setSelectedTime(""); setSelectedTea(null); setFormName(""); setFormPhone("");
-    setFormNote(""); setBookingComplete(false); setSubmitting(false);
+    setFormNote(""); setBookingComplete(false); setSubmitting(false); setBookedSlots({}); setSlotError("");
   };
 
   const isAnimated = (s) => animatedSections.has(s);
@@ -439,6 +529,7 @@ export default function RouheWellness() {
         }
         .time-chip:hover { background: rgba(201,169,110,0.12); border-color: rgba(201,169,110,0.35); }
         .time-chip.selected { background: linear-gradient(135deg, #c9a96e, #a3823f); color: #0a0a08; border-color: #c9a96e; font-weight: 600; }
+        .time-chip.booked { background: rgba(80,80,80,0.1); border-color: rgba(80,80,80,0.15); color: rgba(150,150,150,0.4); }
 
         input, textarea {
           background: rgba(201,169,110,0.04); border: 1px solid rgba(201,169,110,0.15);
@@ -787,17 +878,41 @@ export default function RouheWellness() {
                   {selectedDate && (
                     <div style={{ animation: "fadeInUp 0.4s ease-out" }}>
                       <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "16px" }}>{t.booking.selectTime}</label>
+                      {loadingSlots ? (
+                        <div style={{ textAlign: "center", padding: "30px", color: "rgba(201,169,110,0.4)", fontSize: "13px" }}>
+                          {lang === "zh" ? "正在查詢可用時段..." : "Loading available slots..."}
+                        </div>
+                      ) : (
+                      <>
                       {Object.entries(timeSlots).map(([period, slots]) => (
                         <div key={period} style={{ marginBottom: "20px" }}>
                           <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.35)", letterSpacing: "2px", marginBottom: "10px" }}>{t.booking[period]}</div>
                           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                            {slots.map(time => (
-                              <div key={time} className={`time-chip ${selectedTime === time ? "selected" : ""}`} onClick={() => setSelectedTime(time)}
-                                style={{ padding: "10px 18px", borderRadius: "3px" }}>{time}</div>
-                            ))}
+                            {slots.map(time => {
+                              const booked = isSlotBooked(time);
+                              return (
+                                <div key={time}
+                                  className={`time-chip ${selectedTime === time ? "selected" : ""} ${booked ? "booked" : ""}`}
+                                  onClick={() => !booked && setSelectedTime(time)}
+                                  style={{
+                                    padding: "10px 18px", borderRadius: "3px",
+                                    opacity: booked ? 0.3 : 1,
+                                    cursor: booked ? "not-allowed" : "pointer",
+                                    textDecoration: booked ? "line-through" : "none",
+                                    position: "relative"
+                                  }}>
+                                  {time}
+                                  {booked && <span style={{ display: "block", fontSize: "9px", color: "rgba(255,100,100,0.7)", marginTop: "2px" }}>
+                                    {lang === "zh" ? "已約滿" : "Booked"}
+                                  </span>}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
+                      </>
+                      )}
                     </div>
                   )}
                   <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "40px" }}>
@@ -880,6 +995,11 @@ export default function RouheWellness() {
                       <textarea value={formNote} onChange={e => setFormNote(e.target.value)} rows={3} placeholder={lang === "zh" ? "如有特殊需求請在此備註" : "Any special requests"} style={{ resize: "vertical" }} />
                     </div>
                   </div>
+                  {slotError && (
+                    <div style={{ textAlign: "center", padding: "12px", marginBottom: "16px", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)", borderRadius: "4px", color: "#ff6b6b", fontSize: "13px" }}>
+                      {slotError}
+                    </div>
+                  )}
                   <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
                     <button className="outline-btn" onClick={() => setBookingStep(3)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
                     <button className="gold-btn" disabled={!formName || !formPhone || submitting} onClick={handleSubmitBooking}
