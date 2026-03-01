@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 const CONFIG = {
   // Supabase 设置（第二步会教你怎么拿到这些值）
   SUPABASE_URL: "https://etiggwqxacnlrgokfsjt.supabase.co/",
-  SUPABASE_ANON_KEY: "etiggwqxacnlrgokfsjt",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0aWdnd3F4YWNubHJnb2tmc2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNjk0ODgsImV4cCI6MjA4Nzk0NTQ4OH0.Wqjn6rZJfwCAfTr7L0XdPh1U1hNzJYjjYSt1YASH5uw",
   // LINE 官方帐号（申请后填入）
   LINE_URL: "https://line.me/R/ti/p/@YOUR_LINE_ID",  // ← 申请后替换
   // 域名
