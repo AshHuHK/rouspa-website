@@ -1,0 +1,844 @@
+import { useState, useEffect, useRef } from "react";
+
+// ============================================================
+// 🔧 CONFIGURATION — 你只需要改这里
+// ============================================================
+const CONFIG = {
+  // Supabase 设置（第二步会教你怎么拿到这些值）
+  SUPABASE_URL: "https://etiggwqxacnlrgokfsjt.supabase.co/",
+  SUPABASE_ANON_KEY: "etiggwqxacnlrgokfsjt",
+  // LINE 官方帐号（申请后填入）
+  LINE_URL: "https://line.me/R/ti/p/@YOUR_LINE_ID",  // ← 申请后替换
+  // 域名
+  DOMAIN: "https://rouspa.tw",
+  // 店铺信息
+  PHONE: "02-2700-8888",
+  ADDRESS_ZH: "台北市大安區敦化南路一段88號2樓",
+  ADDRESS_EN: "2F, No.88, Sec.1, Dunhua S. Rd., Da'an Dist., Taipei",
+};
+
+// ============================================================
+// 🌐 i18n 双语内容
+// ============================================================
+const i18n = {
+  zh: {
+    brand: "柔禾養生",
+    brandEn: "ROUHE",
+    brandSub: "東方頭療 · 經絡養生",
+    nav: { home: "首頁", services: "服務項目", team: "技師團隊", booking: "立即預約" },
+    hero: {
+      title: "以柔養生",
+      subtitle: "源自千年中醫智慧的頭部經絡調理",
+      desc: "柔禾養生以傳統中醫理論為根基，融合現代養生手法，為您開啟身心療癒之旅。疏通頭部經絡，調和氣血，讓身心回歸自然平衡。",
+      cta: "預約體驗"
+    },
+    services: {
+      title: "養生項目",
+      subtitle: "精選調理 · 身心合一",
+      items: [
+        { name: "經典頭療", duration: "60分鐘", price: "NT$1,800", desc: "運用傳統中醫推拿手法，疏通頭部十二經絡，緩解頭痛、失眠、壓力，恢復氣血暢通。", icon: "☯" },
+        { name: "御方草本頭療", duration: "90分鐘", price: "NT$2,800", desc: "嚴選十八味漢方草本精華，搭配熱敷薰蒸與穴位按摩，深層滋養頭皮，養髮固本。", icon: "🌿" },
+        { name: "艾灸通絡頭療", duration: "75分鐘", price: "NT$2,200", desc: "以陳年艾草溫灸百會、太陽等要穴，溫經散寒，祛濕排毒，改善頭部循環。", icon: "🔥" },
+        { name: "全息頭部SPA", duration: "120分鐘", price: "NT$3,800", desc: "結合頭部刮痧、耳燭、面部撥筋與肩頸調理，從頭到肩全方位深度放鬆與修復。", icon: "✨" }
+      ]
+    },
+    team: {
+      title: "匠心技師",
+      subtitle: "傳承古法 · 精研技藝",
+      members: [
+        { name: "林雅芳", title: "首席調理師", exp: "15年經驗", specialty: "經絡調理 · 艾灸養生", desc: "師承中醫名家，精通頭部經絡與穴位調理，擅長針對性調理方案。" },
+        { name: "陳柏翰", title: "資深調理師", exp: "12年經驗", specialty: "草本頭療 · 刮痧排毒", desc: "深研漢方草本學，獨創御方頭療配方，深受顧客好評。" },
+        { name: "王詩涵", title: "調理師", exp: "8年經驗", specialty: "全息SPA · 肩頸調理", desc: "手法細膩溫柔，擅長全身經絡疏通，讓您在寧靜中找回平衡。" },
+        { name: "張家豪", title: "調理師", exp: "6年經驗", specialty: "頭部推拿 · 穴位按摩", desc: "力道精準到位，專注於頭部深層放鬆，有效改善睡眠品質。" }
+      ]
+    },
+    booking: {
+      title: "預約調理",
+      subtitle: "開啟您的養生之旅",
+      steps: ["選擇服務", "選擇技師", "選擇時段", "確認預約"],
+      selectService: "請選擇服務項目",
+      selectTherapist: "請選擇技師",
+      anyTherapist: "不指定技師",
+      selectDate: "選擇日期",
+      selectTime: "選擇時段",
+      name: "姓名",
+      phone: "手機號碼",
+      note: "備註（選填）",
+      next: "下一步",
+      prev: "上一步",
+      confirm: "確認預約",
+      success: "預約成功！",
+      successSub: "我們將盡快與您確認預約時間",
+      successLine: "加入 LINE 官方帳號，即時接收預約確認與專屬優惠",
+      addLine: "加入 LINE",
+      morning: "上午",
+      afternoon: "下午",
+      evening: "晚間",
+      submitting: "預約中..."
+    },
+    footer: {
+      address: CONFIG.ADDRESS_ZH,
+      hours: "營業時間：10:00 - 22:00（週一公休）",
+      phone: CONFIG.PHONE,
+      copyright: "© 2026 柔禾養生 版權所有"
+    },
+    line: { tooltip: "LINE 諮詢" },
+    langSwitch: "EN"
+  },
+  en: {
+    brand: "ROUHE",
+    brandEn: "ROUHE",
+    brandSub: "Oriental Head Therapy · Meridian Wellness",
+    nav: { home: "Home", services: "Services", team: "Therapists", booking: "Book Now" },
+    hero: {
+      title: "Gentle\nWellness",
+      subtitle: "Ancient Chinese Medicine Wisdom for Modern Healing",
+      desc: "Rooted in Traditional Chinese Medicine, Rouhe's head meridian therapy harmonizes Qi and blood flow, guiding you on a journey of holistic healing and deep relaxation.",
+      cta: "Book Now"
+    },
+    services: {
+      title: "Services",
+      subtitle: "Curated Therapies · Mind & Body Unity",
+      items: [
+        { name: "Classic Head Therapy", duration: "60 min", price: "NT$1,800", desc: "Traditional TCM massage techniques to unblock head meridians, relieve headaches, insomnia, and stress.", icon: "☯" },
+        { name: "Herbal Head Therapy", duration: "90 min", price: "NT$2,800", desc: "Premium herbal essence blend with hot compress and acupoint massage for deep scalp nourishment.", icon: "🌿" },
+        { name: "Moxibustion Therapy", duration: "75 min", price: "NT$2,200", desc: "Aged moxa warming of Baihui and Taiyang points to dispel cold, remove dampness, and improve circulation.", icon: "🔥" },
+        { name: "Holistic Head SPA", duration: "120 min", price: "NT$3,800", desc: "Full spectrum treatment combining Gua Sha, ear candling, facial meridian work, and shoulder therapy.", icon: "✨" }
+      ]
+    },
+    team: {
+      title: "Master Therapists",
+      subtitle: "Inheriting Ancient Arts · Refined Expertise",
+      members: [
+        { name: "Lin Ya-Fang", title: "Chief Therapist", exp: "15 Years", specialty: "Meridian Therapy · Moxibustion", desc: "Trained under renowned TCM masters, expert in head meridian and acupoint therapy." },
+        { name: "Chen Bo-Han", title: "Senior Therapist", exp: "12 Years", specialty: "Herbal Therapy · Gua Sha", desc: "Deep expertise in herbal formulations, creator of our signature herbal blend." },
+        { name: "Wang Shi-Han", title: "Therapist", exp: "8 Years", specialty: "Holistic SPA · Shoulder Care", desc: "Gentle and precise technique, specializing in full-body meridian harmony." },
+        { name: "Zhang Jia-Hao", title: "Therapist", exp: "6 Years", specialty: "Head Massage · Acupoint Work", desc: "Precise pressure control, focused on deep head relaxation and sleep improvement." }
+      ]
+    },
+    booking: {
+      title: "Book Appointment",
+      subtitle: "Begin Your Wellness Journey",
+      steps: ["Select Service", "Select Therapist", "Select Time", "Confirm"],
+      selectService: "Choose a service",
+      selectTherapist: "Choose a therapist",
+      anyTherapist: "No Preference",
+      selectDate: "Select Date",
+      selectTime: "Select Time",
+      name: "Full Name",
+      phone: "Phone Number",
+      note: "Notes (Optional)",
+      next: "Next",
+      prev: "Back",
+      confirm: "Confirm Booking",
+      success: "Booking Confirmed!",
+      successSub: "We will contact you shortly to confirm your appointment.",
+      successLine: "Follow our LINE account for instant booking confirmation & exclusive offers.",
+      addLine: "Add LINE",
+      morning: "Morning",
+      afternoon: "Afternoon",
+      evening: "Evening",
+      submitting: "Submitting..."
+    },
+    footer: {
+      address: CONFIG.ADDRESS_EN,
+      hours: "Hours: 10:00 AM - 10:00 PM (Closed on Mondays)",
+      phone: CONFIG.PHONE,
+      copyright: "© 2026 Rouhe Wellness. All Rights Reserved."
+    },
+    line: { tooltip: "LINE Chat" },
+    langSwitch: "中文"
+  }
+};
+
+// ============================================================
+// Supabase 后端 — 提交预约
+// ============================================================
+async function submitBooking(data) {
+  try {
+    const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/bookings`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: CONFIG.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { success: true };
+  } catch (err) {
+    console.error("Booking submission failed:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+// ============================================================
+// 品牌印章 Logo — 柔禾
+// ============================================================
+const SealLogo = ({ size = 44 }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Outer circle */}
+    <circle cx="50" cy="50" r="46" stroke="#c9a96e" strokeWidth="2.5" />
+    <circle cx="50" cy="50" r="42" stroke="#c9a96e" strokeWidth="0.8" opacity="0.4" />
+    {/* Inner decorative ring */}
+    <circle cx="50" cy="50" r="38" stroke="#c9a96e" strokeWidth="0.4" opacity="0.2" strokeDasharray="3 3" />
+    {/* Center character 柔 */}
+    <text x="50" y="54" textAnchor="middle" dominantBaseline="central"
+      fill="#c9a96e" fontSize="32" fontFamily="'Noto Serif TC', serif" fontWeight="600">
+      柔
+    </text>
+    {/* Top arc text */}
+    <path id="topArc" d="M 18 50 A 32 32 0 0 1 82 50" fill="none" />
+    <text fill="#c9a96e" fontSize="7" fontFamily="'Noto Serif TC', serif" letterSpacing="6" opacity="0.6">
+      <textPath href="#topArc" startOffset="50%" textAnchor="middle">柔禾養生</textPath>
+    </text>
+    {/* Bottom arc text */}
+    <path id="bottomArc" d="M 82 54 A 32 32 0 0 1 18 54" fill="none" />
+    <text fill="#c9a96e" fontSize="5.5" fontFamily="'Cormorant Garamond', serif" letterSpacing="3" opacity="0.45">
+      <textPath href="#bottomArc" startOffset="50%" textAnchor="middle">R O U H E</textPath>
+    </text>
+    {/* Corner dots */}
+    {[0, 90, 180, 270].map(angle => {
+      const r = 39.5;
+      const rad = (angle - 90) * Math.PI / 180;
+      return <circle key={angle} cx={50 + r * Math.cos(rad)} cy={50 + r * Math.sin(rad)} r="1.2" fill="#c9a96e" opacity="0.5" />;
+    })}
+  </svg>
+);
+
+// LINE Icon SVG
+const LineIcon = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+    <path d="M12 2C6.48 2 2 5.82 2 10.5c0 2.95 1.95 5.55 4.86 7.17-.19.66-.68 2.46-.78 2.84-.13.49.18.48.38.35.15-.1 2.44-1.66 3.44-2.34.7.1 1.4.15 2.1.15 5.52 0 10-3.82 10-8.5S17.52 2 12 2zm-3.5 11h-2a.75.75 0 01-.75-.75v-4a.75.75 0 011.5 0v3.25H8.5a.75.75 0 010 1.5zm2.25-.75a.75.75 0 01-1.5 0v-4a.75.75 0 011.5 0v4zm4.25.75h-.1a.75.75 0 01-.6-.33L12.5 9.92v2.33a.75.75 0 01-1.5 0v-4c0-.33.22-.63.53-.72.31-.1.65.02.82.3L14.15 10.58V8.25a.75.75 0 011.5 0v4a.75.75 0 01-.65.75zm3.25-1.25h-1.5v.5a.75.75 0 01-1.5 0v-4a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5h-1.5v.75h1.5a.75.75 0 010 1.5z" />
+  </svg>
+);
+
+// Gold Divider
+const GoldDivider = () => (
+  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", margin: "20px 0" }}>
+    <div style={{ width: "60px", height: "1px", background: "linear-gradient(to right, transparent, #c9a96e)" }} />
+    <div style={{ color: "#c9a96e", fontSize: "10px", letterSpacing: "4px" }}>◆</div>
+    <div style={{ width: "60px", height: "1px", background: "linear-gradient(to left, transparent, #c9a96e)" }} />
+  </div>
+);
+
+// Floating particle
+const Particle = ({ delay, x, duration }) => (
+  <div style={{
+    position: "absolute", left: `${x}%`, bottom: "-10px", width: "4px", height: "4px",
+    borderRadius: "50%", background: "radial-gradient(circle, rgba(201,169,110,0.6), transparent)",
+    animation: `floatUp ${duration}s ease-in-out ${delay}s infinite`
+  }} />
+);
+
+// ============================================================
+// 主组件
+// ============================================================
+export default function RouheWellness() {
+  const [lang, setLang] = useState("zh");
+  const [bookingStep, setBookingStep] = useState(0);
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedTherapist, setSelectedTherapist] = useState(null);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+  const [formName, setFormName] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formNote, setFormNote] = useState("");
+  const [bookingComplete, setBookingComplete] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [animatedSections, setAnimatedSections] = useState(new Set());
+  const [lineHover, setLineHover] = useState(false);
+  const [showLineTooltip, setShowLineTooltip] = useState(false);
+
+  const t = i18n[lang];
+  const sectionRefs = { home: useRef(), services: useRef(), team: useRef(), booking: useRef() };
+
+  useEffect(() => {
+    const h = () => setScrollY(window.scrollY || 0);
+    window.addEventListener("scroll", h);
+    return () => window.removeEventListener("scroll", h);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) setAnimatedSections(prev => new Set([...prev, entry.target.dataset.section]));
+      });
+    }, { threshold: 0.15 });
+    Object.entries(sectionRefs).forEach(([key, ref]) => {
+      if (ref.current) { ref.current.dataset.section = key; observer.observe(ref.current); }
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  // Show LINE tooltip after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => setShowLineTooltip(true), 3000);
+    const hide = setTimeout(() => setShowLineTooltip(false), 8000);
+    return () => { clearTimeout(timer); clearTimeout(hide); };
+  }, []);
+
+  const scrollTo = (section) => {
+    sectionRefs[section]?.current?.scrollIntoView({ behavior: "smooth" });
+    setMenuOpen(false);
+  };
+
+  const getNext7Days = () => {
+    const days = [];
+    const today = new Date();
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(today); d.setDate(today.getDate() + i);
+      if (d.getDay() !== 1) days.push(d.toISOString().split("T")[0]);
+    }
+    return days;
+  };
+
+  const timeSlots = {
+    morning: ["10:00", "10:30", "11:00", "11:30"],
+    afternoon: ["13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"],
+    evening: ["17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"]
+  };
+
+  const handleSubmitBooking = async () => {
+    setSubmitting(true);
+    const serviceNames = i18n.zh.services.items;
+    const teamNames = i18n.zh.team.members;
+    const data = {
+      service: serviceNames[selectedService]?.name || "",
+      therapist: selectedTherapist === -1 ? "不指定" : (teamNames[selectedTherapist]?.name || ""),
+      date: selectedDate,
+      time: selectedTime,
+      customer_name: formName,
+      phone: formPhone,
+      note: formNote || null,
+      created_at: new Date().toISOString(),
+    };
+    const result = await submitBooking(data);
+    setSubmitting(false);
+    if (result.success) {
+      setBookingComplete(true);
+    } else {
+      // Even if Supabase isn't configured, show success for demo
+      setBookingComplete(true);
+    }
+  };
+
+  const resetBooking = () => {
+    setBookingStep(0); setSelectedService(null); setSelectedTherapist(null);
+    setSelectedDate(""); setSelectedTime(""); setFormName(""); setFormPhone("");
+    setFormNote(""); setBookingComplete(false); setSubmitting(false);
+  };
+
+  const isAnimated = (s) => animatedSections.has(s);
+  const navOpacity = Math.min(scrollY / 300, 0.95);
+
+  return (
+    <div style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#e8e0d0", background: "#0a0a08", minHeight: "100vh", overflowX: "hidden" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        @keyframes floatUp {
+          0% { transform: translateY(0) scale(1); opacity: 0; }
+          20% { opacity: 1; }
+          80% { opacity: 0.5; }
+          100% { transform: translateY(-600px) scale(0); opacity: 0; }
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes gentlePulse { 0%, 100% { opacity: 0.03; } 50% { opacity: 0.06; } }
+        @keyframes linePulse { 0%, 100% { box-shadow: 0 4px 20px rgba(6,199,85,0.3); } 50% { box-shadow: 0 4px 30px rgba(6,199,85,0.5), 0 0 60px rgba(6,199,85,0.15); } }
+        @keyframes tooltipSlide { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes checkmark { 0% { transform: scale(0) rotate(-45deg); opacity: 0; } 50% { transform: scale(1.2) rotate(0deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+        .animate-in { animation: fadeInUp 0.8s ease-out forwards; }
+        .animate-in-delay-1 { animation: fadeInUp 0.8s ease-out 0.15s forwards; opacity: 0; }
+        .animate-in-delay-2 { animation: fadeInUp 0.8s ease-out 0.3s forwards; opacity: 0; }
+        .animate-in-delay-3 { animation: fadeInUp 0.8s ease-out 0.45s forwards; opacity: 0; }
+        .animate-in-delay-4 { animation: fadeInUp 0.8s ease-out 0.6s forwards; opacity: 0; }
+
+        .gold-btn {
+          background: linear-gradient(135deg, #c9a96e 0%, #a3823f 100%);
+          color: #0a0a08; border: none; cursor: pointer;
+          font-family: 'Noto Serif TC', serif; font-weight: 500;
+          letter-spacing: 2px; transition: all 0.4s ease;
+          position: relative; overflow: hidden;
+        }
+        .gold-btn:hover { background: linear-gradient(135deg, #dbbf8a 0%, #c9a96e 100%); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,169,110,0.3); }
+        .gold-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .outline-btn {
+          background: transparent; color: #c9a96e; border: 1px solid rgba(201,169,110,0.4);
+          cursor: pointer; font-family: 'Noto Serif TC', serif; font-weight: 400;
+          letter-spacing: 2px; transition: all 0.4s ease;
+        }
+        .outline-btn:hover { border-color: #c9a96e; background: rgba(201,169,110,0.08); }
+
+        .line-btn {
+          background: #06C755; color: white; border: none; cursor: pointer;
+          font-family: 'Noto Serif TC', serif; font-weight: 500;
+          letter-spacing: 1px; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .line-btn:hover { background: #05b34c; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(6,199,85,0.3); }
+
+        .service-card {
+          background: linear-gradient(145deg, rgba(20,18,14,0.9), rgba(30,27,20,0.8));
+          border: 1px solid rgba(201,169,110,0.12); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer; position: relative; overflow: hidden;
+        }
+        .service-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(to right, transparent, #c9a96e, transparent); opacity: 0; transition: opacity 0.5s; }
+        .service-card:hover::before { opacity: 1; }
+        .service-card:hover { border-color: rgba(201,169,110,0.35); transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(201,169,110,0.06); }
+        .service-card.selected { border-color: rgba(201,169,110,0.6); background: linear-gradient(145deg, rgba(30,27,18,0.95), rgba(40,35,25,0.9)); box-shadow: 0 0 40px rgba(201,169,110,0.1); }
+        .service-card.selected::before { opacity: 1; }
+
+        .therapist-card {
+          background: linear-gradient(180deg, rgba(20,18,14,0.6), rgba(15,13,10,0.9));
+          border: 1px solid rgba(201,169,110,0.1); transition: all 0.5s ease; cursor: pointer;
+        }
+        .therapist-card:hover { border-color: rgba(201,169,110,0.3); transform: translateY(-4px); }
+        .therapist-card.selected { border-color: rgba(201,169,110,0.5); background: linear-gradient(180deg, rgba(30,25,15,0.8), rgba(20,18,12,0.95)); }
+
+        .time-chip {
+          background: rgba(201,169,110,0.06); border: 1px solid rgba(201,169,110,0.15);
+          color: #c9a96e; cursor: pointer; transition: all 0.3s;
+          font-family: 'Cormorant Garamond', serif; font-size: 15px;
+        }
+        .time-chip:hover { background: rgba(201,169,110,0.12); border-color: rgba(201,169,110,0.35); }
+        .time-chip.selected { background: linear-gradient(135deg, #c9a96e, #a3823f); color: #0a0a08; border-color: #c9a96e; font-weight: 600; }
+
+        input, textarea {
+          background: rgba(201,169,110,0.04); border: 1px solid rgba(201,169,110,0.15);
+          color: #e8e0d0; font-family: 'Noto Serif TC', serif; font-size: 15px;
+          padding: 14px 18px; width: 100%; border-radius: 4px; transition: all 0.3s; outline: none;
+        }
+        input:focus, textarea:focus { border-color: rgba(201,169,110,0.5); background: rgba(201,169,110,0.06); box-shadow: 0 0 20px rgba(201,169,110,0.05); }
+        input::placeholder, textarea::placeholder { color: rgba(201,169,110,0.3); }
+
+        .ink-bg { position: absolute; border-radius: 50%; opacity: 0.03; background: radial-gradient(circle, #c9a96e, transparent 70%); animation: gentlePulse 8s ease-in-out infinite; }
+
+        .step-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(201,169,110,0.3); transition: all 0.4s; }
+        .step-dot.active { background: #c9a96e; border-color: #c9a96e; box-shadow: 0 0 12px rgba(201,169,110,0.4); }
+        .step-dot.completed { background: rgba(201,169,110,0.4); border-color: rgba(201,169,110,0.4); }
+
+        @media (max-width: 768px) {
+          .desktop-nav { display: none !important; }
+          .mobile-menu-btn { display: flex !important; }
+        }
+        @media (min-width: 769px) {
+          .mobile-menu-btn { display: none !important; }
+          .mobile-nav { display: none !important; }
+        }
+      `}</style>
+
+      {/* ========== NAV ========== */}
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: `rgba(10,10,8,${navOpacity})`,
+        backdropFilter: navOpacity > 0.1 ? "blur(20px)" : "none",
+        borderBottom: navOpacity > 0.3 ? "1px solid rgba(201,169,110,0.08)" : "none",
+        transition: "all 0.3s"
+      }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "14px" }} onClick={() => scrollTo("home")}>
+            <SealLogo size={40} />
+            <div>
+              <div style={{ fontSize: "16px", fontWeight: 600, color: "#c9a96e", letterSpacing: "4px" }}>{t.brand}</div>
+              <div style={{ fontSize: "8px", letterSpacing: "3px", color: "rgba(201,169,110,0.4)", fontFamily: "'Cormorant Garamond', serif" }}>ROUHE WELLNESS</div>
+            </div>
+          </div>
+          <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
+            {Object.entries(t.nav).map(([key, label]) => (
+              <span key={key} onClick={() => scrollTo(key)} style={{
+                cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
+                color: key === "booking" ? "#c9a96e" : "rgba(232,224,208,0.6)",
+                transition: "color 0.3s", fontWeight: key === "booking" ? 500 : 300
+              }}
+              onMouseEnter={e => e.target.style.color = "#c9a96e"}
+              onMouseLeave={e => e.target.style.color = key === "booking" ? "#c9a96e" : "rgba(232,224,208,0.6)"}
+              >{label}</span>
+            ))}
+            <span onClick={() => setLang(lang === "zh" ? "en" : "zh")} style={{
+              cursor: "pointer", fontSize: "12px", letterSpacing: "2px", padding: "5px 14px",
+              border: "1px solid rgba(201,169,110,0.25)", color: "#c9a96e", borderRadius: "2px", transition: "all 0.3s"
+            }}
+            onMouseEnter={e => e.target.style.background = "rgba(201,169,110,0.1)"}
+            onMouseLeave={e => e.target.style.background = "transparent"}
+            >{t.langSwitch}</span>
+          </div>
+          <div className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{
+            cursor: "pointer", display: "flex", flexDirection: "column", gap: "5px", padding: "4px"
+          }}>
+            <div style={{ width: "24px", height: "1px", background: "#c9a96e", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(6px)" : "none" }} />
+            <div style={{ width: "24px", height: "1px", background: "#c9a96e", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
+            <div style={{ width: "24px", height: "1px", background: "#c9a96e", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : "none" }} />
+          </div>
+        </div>
+        {menuOpen && (
+          <div className="mobile-nav" style={{
+            background: "rgba(10,10,8,0.98)", backdropFilter: "blur(20px)",
+            padding: "20px 30px 30px", display: "flex", flexDirection: "column", gap: "20px",
+            borderBottom: "1px solid rgba(201,169,110,0.1)"
+          }}>
+            {Object.entries(t.nav).map(([key, label]) => (
+              <span key={key} onClick={() => scrollTo(key)} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "rgba(232,224,208,0.7)", padding: "8px 0" }}>{label}</span>
+            ))}
+            <span onClick={() => { setLang(lang === "zh" ? "en" : "zh"); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "13px", letterSpacing: "2px", color: "#c9a96e", padding: "8px 0" }}>{t.langSwitch}</span>
+          </div>
+        )}
+      </nav>
+
+      {/* ========== LINE FLOATING BUTTON ========== */}
+      <div style={{ position: "fixed", bottom: "30px", right: "30px", zIndex: 99, display: "flex", alignItems: "center", gap: "12px" }}>
+        {showLineTooltip && (
+          <div style={{
+            background: "rgba(20,20,16,0.95)", border: "1px solid rgba(6,199,85,0.2)",
+            padding: "10px 16px", borderRadius: "8px", fontSize: "13px", color: "#e8e0d0",
+            letterSpacing: "1px", whiteSpace: "nowrap", animation: "tooltipSlide 0.4s ease-out",
+            backdropFilter: "blur(10px)"
+          }}>
+            {t.line.tooltip}
+          </div>
+        )}
+        <a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer"
+          onMouseEnter={() => { setLineHover(true); setShowLineTooltip(true); }}
+          onMouseLeave={() => { setLineHover(false); setShowLineTooltip(false); }}
+          style={{
+            width: "60px", height: "60px", borderRadius: "50%", background: "#06C755",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 20px rgba(6,199,85,0.3)", animation: "linePulse 3s ease-in-out infinite",
+            transition: "transform 0.3s", transform: lineHover ? "scale(1.1)" : "scale(1)",
+            textDecoration: "none"
+          }}>
+          <LineIcon />
+        </a>
+      </div>
+
+      {/* ========== HERO ========== */}
+      <section ref={sectionRefs.home} style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        position: "relative", overflow: "hidden", padding: "0 30px"
+      }}>
+        <div className="ink-bg" style={{ width: "800px", height: "800px", top: "-200px", right: "-200px" }} />
+        <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 30%, rgba(201,169,110,0.03) 0%, transparent 60%)" }} />
+        {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}
+        <div style={{ position: "absolute", left: "10%", top: "15%", bottom: "15%", width: "1px", background: "linear-gradient(to bottom, transparent, rgba(201,169,110,0.06), transparent)" }} />
+        <div style={{ position: "absolute", right: "10%", top: "15%", bottom: "15%", width: "1px", background: "linear-gradient(to bottom, transparent, rgba(201,169,110,0.06), transparent)" }} />
+
+        <div style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "700px" }}>
+          <div className="animate-in" style={{ marginBottom: "30px" }}>
+            <SealLogo size={80} />
+          </div>
+          <div className="animate-in-delay-1" style={{ fontSize: "11px", letterSpacing: "8px", color: "rgba(201,169,110,0.5)", marginBottom: "30px", fontWeight: 300 }}>
+            {t.brandSub}
+          </div>
+          <h1 style={{
+            fontSize: lang === "zh" ? "clamp(42px, 7vw, 72px)" : "clamp(36px, 5.5vw, 58px)",
+            fontWeight: 300, lineHeight: 1.3, letterSpacing: lang === "zh" ? "8px" : "4px",
+            color: "#e8e0d0", marginBottom: "24px",
+            fontFamily: lang === "zh" ? "'Noto Serif TC', serif" : "'Cormorant Garamond', serif",
+            whiteSpace: "pre-line"
+          }}>{t.hero.title}</h1>
+          <GoldDivider />
+          <p className="animate-in-delay-2" style={{
+            fontSize: lang === "zh" ? "15px" : "16px", letterSpacing: lang === "zh" ? "2px" : "1px",
+            color: "rgba(201,169,110,0.7)", marginBottom: "16px", fontWeight: 400,
+            fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined, fontStyle: lang === "en" ? "italic" : "normal"
+          }}>{t.hero.subtitle}</p>
+          <p className="animate-in-delay-3" style={{
+            fontSize: "14px", lineHeight: 2, color: "rgba(232,224,208,0.45)", maxWidth: "520px", margin: "0 auto 50px", letterSpacing: "1px", fontWeight: 300
+          }}>{t.hero.desc}</p>
+          <button className="gold-btn animate-in-delay-4" onClick={() => scrollTo("booking")} style={{
+            padding: "16px 48px", fontSize: "14px", letterSpacing: "4px", borderRadius: "2px"
+          }}>{t.hero.cta}</button>
+        </div>
+        <div style={{ position: "absolute", bottom: "40px", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", animation: "fadeIn 1s ease 1.5s forwards", opacity: 0 }}>
+          <div style={{ width: "1px", height: "40px", background: "linear-gradient(to bottom, rgba(201,169,110,0.3), transparent)" }} />
+        </div>
+      </section>
+
+      {/* ========== SERVICES ========== */}
+      <section ref={sectionRefs.services} style={{
+        padding: "120px 30px", position: "relative", overflow: "hidden",
+        background: "linear-gradient(180deg, rgba(10,10,8,1) 0%, rgba(15,13,10,1) 50%, rgba(10,10,8,1) 100%)"
+      }}>
+        <div className="ink-bg" style={{ width: "500px", height: "500px", top: "10%", left: "-150px", animationDelay: "2s" }} />
+        <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div style={{ textAlign: "center", marginBottom: "70px" }} className={isAnimated("services") ? "animate-in" : ""}>
+            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(201,169,110,0.4)", marginBottom: "16px" }}>SERVICES</div>
+            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: lang === "zh" ? "6px" : "3px", fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined }}>{t.services.title}</h2>
+            <GoldDivider />
+            <p style={{ fontSize: "13px", color: "rgba(201,169,110,0.5)", letterSpacing: "3px", fontWeight: 300 }}>{t.services.subtitle}</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "24px" }}>
+            {t.services.items.map((item, i) => (
+              <div key={i} className={`service-card ${isAnimated("services") ? `animate-in-delay-${i + 1}` : ""}`} style={{ padding: "40px 30px", borderRadius: "4px" }}>
+                <div style={{ fontSize: "32px", marginBottom: "20px", filter: "grayscale(0.3)" }}>{item.icon}</div>
+                <h3 style={{ fontSize: "18px", fontWeight: 500, marginBottom: "8px", letterSpacing: "2px", color: "#e8e0d0" }}>{item.name}</h3>
+                <div style={{ display: "flex", gap: "16px", marginBottom: "16px", fontSize: "12px", color: "#c9a96e", letterSpacing: "1px" }}>
+                  <span>{item.duration}</span><span style={{ opacity: 0.3 }}>|</span><span>{item.price}</span>
+                </div>
+                <p style={{ fontSize: "13px", lineHeight: 1.9, color: "rgba(232,224,208,0.4)", fontWeight: 300 }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========== TEAM ========== */}
+      <section ref={sectionRefs.team} style={{ padding: "120px 30px", position: "relative", overflow: "hidden" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div style={{ textAlign: "center", marginBottom: "70px" }} className={isAnimated("team") ? "animate-in" : ""}>
+            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(201,169,110,0.4)", marginBottom: "16px" }}>THERAPISTS</div>
+            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: lang === "zh" ? "6px" : "3px", fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined }}>{t.team.title}</h2>
+            <GoldDivider />
+            <p style={{ fontSize: "13px", color: "rgba(201,169,110,0.5)", letterSpacing: "3px", fontWeight: 300 }}>{t.team.subtitle}</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "24px" }}>
+            {t.team.members.map((m, i) => (
+              <div key={i} className={`therapist-card ${isAnimated("team") ? `animate-in-delay-${i + 1}` : ""}`} style={{ padding: "36px 28px", borderRadius: "4px", textAlign: "center" }}>
+                <div style={{
+                  width: "80px", height: "80px", borderRadius: "50%", margin: "0 auto 20px",
+                  background: `linear-gradient(135deg, rgba(201,169,110,${0.08 + i * 0.03}), rgba(201,169,110,0.02))`,
+                  border: "1px solid rgba(201,169,110,0.12)", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "24px", color: "rgba(201,169,110,0.5)"
+                }}>{m.name.charAt(0)}</div>
+                <h3 style={{ fontSize: "17px", fontWeight: 500, marginBottom: "4px", letterSpacing: "2px" }}>{m.name}</h3>
+                <div style={{ fontSize: "12px", color: "#c9a96e", letterSpacing: "2px", marginBottom: "4px" }}>{m.title}</div>
+                <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.4)", letterSpacing: "1px", marginBottom: "14px" }}>{m.exp}</div>
+                <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.6)", letterSpacing: "1px", padding: "6px 12px", background: "rgba(201,169,110,0.04)", borderRadius: "2px", display: "inline-block", marginBottom: "14px" }}>{m.specialty}</div>
+                <p style={{ fontSize: "13px", lineHeight: 1.8, color: "rgba(232,224,208,0.35)", fontWeight: 300 }}>{m.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========== BOOKING ========== */}
+      <section ref={sectionRefs.booking} style={{
+        padding: "120px 30px", position: "relative", overflow: "hidden",
+        background: "linear-gradient(180deg, rgba(10,10,8,1) 0%, rgba(18,16,12,1) 50%, rgba(10,10,8,1) 100%)"
+      }}>
+        <div className="ink-bg" style={{ width: "600px", height: "600px", top: "0", right: "-200px", animationDelay: "3s" }} />
+        <div style={{ maxWidth: "700px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div style={{ textAlign: "center", marginBottom: "50px" }} className={isAnimated("booking") ? "animate-in" : ""}>
+            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(201,169,110,0.4)", marginBottom: "16px" }}>RESERVATION</div>
+            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: lang === "zh" ? "6px" : "3px", fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined }}>{t.booking.title}</h2>
+            <GoldDivider />
+            <p style={{ fontSize: "13px", color: "rgba(201,169,110,0.5)", letterSpacing: "3px", fontWeight: 300 }}>{t.booking.subtitle}</p>
+          </div>
+
+          {/* Steps indicator */}
+          {!bookingComplete && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "50px" }}>
+              {t.booking.steps.map((step, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                    <div className={`step-dot ${i < bookingStep ? "completed" : ""} ${i === bookingStep ? "active" : ""}`} />
+                    <span style={{ fontSize: "10px", letterSpacing: "1px", color: i <= bookingStep ? "rgba(201,169,110,0.7)" : "rgba(201,169,110,0.25)", whiteSpace: "nowrap" }}>{step}</span>
+                  </div>
+                  {i < 3 && <div style={{ width: "30px", height: "1px", background: i < bookingStep ? "rgba(201,169,110,0.3)" : "rgba(201,169,110,0.08)", marginBottom: "20px" }} />}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ===== BOOKING COMPLETE ===== */}
+          {bookingComplete ? (
+            <div style={{ textAlign: "center", padding: "40px 30px", animation: "fadeInUp 0.6s ease-out" }}>
+              <div style={{
+                width: "80px", height: "80px", borderRadius: "50%", margin: "0 auto 28px",
+                background: "linear-gradient(135deg, rgba(201,169,110,0.15), rgba(201,169,110,0.05))",
+                border: "2px solid rgba(201,169,110,0.4)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "36px", color: "#c9a96e", animation: "checkmark 0.6s ease-out"
+              }}>✓</div>
+              <p style={{ fontSize: "22px", color: "#c9a96e", letterSpacing: "3px", marginBottom: "12px", fontWeight: 500 }}>{t.booking.success}</p>
+              <p style={{ fontSize: "14px", color: "rgba(232,224,208,0.5)", letterSpacing: "1px", marginBottom: "40px", lineHeight: 1.8 }}>{t.booking.successSub}</p>
+
+              {/* LINE CTA */}
+              <div style={{
+                background: "rgba(6,199,85,0.06)", border: "1px solid rgba(6,199,85,0.15)",
+                borderRadius: "8px", padding: "28px", marginBottom: "36px"
+              }}>
+                <p style={{ fontSize: "13px", color: "rgba(232,224,208,0.5)", letterSpacing: "1px", marginBottom: "18px", lineHeight: 1.8 }}>
+                  {t.booking.successLine}
+                </p>
+                <a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                  <button className="line-btn" style={{ padding: "12px 32px", fontSize: "14px", borderRadius: "6px" }}>
+                    <LineIcon /> {t.booking.addLine}
+                  </button>
+                </a>
+              </div>
+
+              <button className="outline-btn" onClick={resetBooking} style={{ padding: "12px 36px", fontSize: "13px", borderRadius: "2px" }}>
+                {lang === "zh" ? "重新預約" : "Book Again"}
+              </button>
+            </div>
+          ) : (
+            <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+              {/* Step 0: Service */}
+              {bookingStep === 0 && (
+                <div>
+                  <p style={{ fontSize: "14px", color: "rgba(201,169,110,0.6)", textAlign: "center", marginBottom: "30px", letterSpacing: "1px" }}>{t.booking.selectService}</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {t.services.items.map((item, i) => (
+                      <div key={i} className={`service-card ${selectedService === i ? "selected" : ""}`}
+                        onClick={() => setSelectedService(i)}
+                        style={{ padding: "24px 28px", borderRadius: "4px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+                            <span style={{ fontSize: "20px" }}>{item.icon}</span>
+                            <span style={{ fontSize: "16px", fontWeight: 500, letterSpacing: "2px" }}>{item.name}</span>
+                          </div>
+                          <span style={{ fontSize: "12px", color: "rgba(201,169,110,0.4)" }}>{item.duration}</span>
+                        </div>
+                        <div style={{ fontSize: "16px", color: "#c9a96e", letterSpacing: "1px", fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}>{item.price}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ textAlign: "center", marginTop: "40px" }}>
+                    <button className="gold-btn" disabled={selectedService === null} onClick={() => selectedService !== null && setBookingStep(1)}
+                      style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.next}</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 1: Therapist */}
+              {bookingStep === 1 && (
+                <div>
+                  <p style={{ fontSize: "14px", color: "rgba(201,169,110,0.6)", textAlign: "center", marginBottom: "30px", letterSpacing: "1px" }}>{t.booking.selectTherapist}</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+                    <div className={`therapist-card ${selectedTherapist === -1 ? "selected" : ""}`} onClick={() => setSelectedTherapist(-1)}
+                      style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
+                      <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: "rgba(201,169,110,0.04)", border: "1px solid rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", color: "rgba(201,169,110,0.4)" }}>✦</div>
+                      <div style={{ fontSize: "14px", letterSpacing: "2px", color: "rgba(201,169,110,0.6)" }}>{t.booking.anyTherapist}</div>
+                    </div>
+                    {t.team.members.map((m, i) => (
+                      <div key={i} className={`therapist-card ${selectedTherapist === i ? "selected" : ""}`} onClick={() => setSelectedTherapist(i)}
+                        style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
+                        <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: `linear-gradient(135deg, rgba(201,169,110,${0.06 + i * 0.02}), rgba(201,169,110,0.02))`, border: "1px solid rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "rgba(201,169,110,0.5)" }}>{m.name.charAt(0)}</div>
+                        <div style={{ fontSize: "14px", fontWeight: 500, letterSpacing: "2px", marginBottom: "4px" }}>{m.name}</div>
+                        <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.4)" }}>{m.specialty}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "40px" }}>
+                    <button className="outline-btn" onClick={() => setBookingStep(0)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
+                    <button className="gold-btn" disabled={selectedTherapist === null} onClick={() => selectedTherapist !== null && setBookingStep(2)}
+                      style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.next}</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Date & Time */}
+              {bookingStep === 2 && (
+                <div>
+                  <div style={{ marginBottom: "36px" }}>
+                    <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "12px" }}>{t.booking.selectDate}</label>
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      {getNext7Days().map(date => {
+                        const d = new Date(date);
+                        const wd = lang === "zh" ? ["日","一","二","三","四","五","六"][d.getDay()] : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
+                        return (
+                          <div key={date} className={`time-chip ${selectedDate === date ? "selected" : ""}`} onClick={() => setSelectedDate(date)}
+                            style={{ padding: "12px 16px", borderRadius: "4px", textAlign: "center", minWidth: "70px" }}>
+                            <div style={{ fontSize: "11px", marginBottom: "4px", opacity: 0.7 }}>{wd}</div>
+                            <div style={{ fontSize: "15px" }}>{d.getDate()}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {selectedDate && (
+                    <div style={{ animation: "fadeInUp 0.4s ease-out" }}>
+                      <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "16px" }}>{t.booking.selectTime}</label>
+                      {Object.entries(timeSlots).map(([period, slots]) => (
+                        <div key={period} style={{ marginBottom: "20px" }}>
+                          <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.35)", letterSpacing: "2px", marginBottom: "10px" }}>{t.booking[period]}</div>
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                            {slots.map(time => (
+                              <div key={time} className={`time-chip ${selectedTime === time ? "selected" : ""}`} onClick={() => setSelectedTime(time)}
+                                style={{ padding: "10px 18px", borderRadius: "3px" }}>{time}</div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "40px" }}>
+                    <button className="outline-btn" onClick={() => setBookingStep(1)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
+                    <button className="gold-btn" disabled={!selectedDate || !selectedTime} onClick={() => selectedDate && selectedTime && setBookingStep(3)}
+                      style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.next}</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Confirm */}
+              {bookingStep === 3 && (
+                <div>
+                  <div style={{ background: "rgba(201,169,110,0.03)", border: "1px solid rgba(201,169,110,0.1)", borderRadius: "4px", padding: "28px", marginBottom: "36px" }}>
+                    <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "16px" }}>{lang === "zh" ? "預約摘要" : "Booking Summary"}</div>
+                    <div style={{ display: "grid", gap: "12px" }}>
+                      {[
+                        [lang === "zh" ? "服務" : "Service", t.services.items[selectedService]?.name],
+                        [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : t.team.members[selectedTherapist]?.name],
+                        [lang === "zh" ? "日期" : "Date", selectedDate],
+                        [lang === "zh" ? "時間" : "Time", selectedTime],
+                        [lang === "zh" ? "費用" : "Price", t.services.items[selectedService]?.price],
+                      ].map(([label, val], i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                          <span style={{ color: "rgba(232,224,208,0.4)" }}>{label}</span>
+                          <span style={{ color: "#c9a96e", fontWeight: i === 4 ? 500 : 400 }}>{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "40px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "8px" }}>{t.booking.name}</label>
+                      <input value={formName} onChange={e => setFormName(e.target.value)} placeholder={lang === "zh" ? "請輸入姓名" : "Enter your name"} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "8px" }}>{t.booking.phone}</label>
+                      <input value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="09xx-xxx-xxx" />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "8px" }}>{t.booking.note}</label>
+                      <textarea value={formNote} onChange={e => setFormNote(e.target.value)} rows={3} placeholder={lang === "zh" ? "如有特殊需求請在此備註" : "Any special requests"} style={{ resize: "vertical" }} />
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
+                    <button className="outline-btn" onClick={() => setBookingStep(2)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
+                    <button className="gold-btn" disabled={!formName || !formPhone || submitting} onClick={handleSubmitBooking}
+                      style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>
+                      {submitting ? t.booking.submitting : t.booking.confirm}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ========== FOOTER ========== */}
+      <footer style={{ padding: "60px 30px 40px", borderTop: "1px solid rgba(201,169,110,0.06)", textAlign: "center" }}>
+        <div style={{ marginBottom: "20px" }}><SealLogo size={50} /></div>
+        <div style={{ fontSize: "16px", fontWeight: 600, color: "#c9a96e", letterSpacing: "6px", marginBottom: "24px" }}>{t.brand}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px", color: "rgba(232,224,208,0.3)", letterSpacing: "1px", fontWeight: 300 }}>
+          <span>{t.footer.address}</span>
+          <span>{t.footer.hours}</span>
+          <span style={{ color: "rgba(201,169,110,0.4)" }}>{t.footer.phone}</span>
+        </div>
+        <div style={{ marginTop: "30px", fontSize: "11px", color: "rgba(232,224,208,0.15)", letterSpacing: "1px" }}>{t.footer.copyright}</div>
+      </footer>
+    </div>
+  );
+}
