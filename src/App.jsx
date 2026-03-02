@@ -17,12 +17,15 @@ const CONFIG = {
   ADDRESS_EN: "2F, No.88, Sec.1, Dunhua S. Rd., Da'an Dist., Taipei",
 };
 
+// ============================================================
+// 🌐 i18n 双语内容
+// ============================================================
 const i18n = {
   zh: {
     brand: "柔禾養生",
     brandEn: "ROUHE",
     brandSub: "東方頭療 · 經絡養生",
-    nav: { home: "首頁", services: "服務項目", team: "技師團隊", booking: "立即預約", location: "位置", shop: "特色產品" },
+    nav: { home: "首頁", services: "服務項目", team: "技師團隊", booking: "立即預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",
       subtitle: "源自千年中醫智慧的頭部經絡調理",
@@ -99,7 +102,7 @@ const i18n = {
     brand: "ROUHE",
     brandEn: "ROUHE",
     brandSub: "Oriental Head Therapy · Meridian Wellness",
-    nav: { home: "Home", services: "Services", team: "Therapists", booking: "Book Now", location: "Location", shop: "Products" },
+    nav: { home: "Home", services: "Services", team: "Therapists", booking: "Book Now", shop: "Products", contact: "Contact" },
     hero: {
       title: "Gentle\nWellness",
       subtitle: "Ancient Chinese Medicine Wisdom for Modern Healing",
@@ -296,7 +299,7 @@ const Particle = ({ delay, x, duration }) => (
 // ============================================================
 // 主组件
 // ============================================================
-export default function RouheWellness({ onNavigateShop, onLangChange }) {
+export default function RouheWellness({ onNavigateShop, onNavigateContact, onLangChange }) {
   const [lang, setLang] = useState("zh");
   const [bookingStep, setBookingStep] = useState(0);
   const [selectedService, setSelectedService] = useState(null);
@@ -570,13 +573,13 @@ export default function RouheWellness({ onNavigateShop, onLangChange }) {
           </div>
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
             {Object.entries(t.nav).map(([key, label]) => (
-              <span key={key} onClick={() => key === "shop" ? onNavigateShop?.() : scrollTo(key)} style={{
+              <span key={key} onClick={() => key === "shop" ? onNavigateShop?.() : key === "contact" ? onNavigateContact?.() : scrollTo(key)} style={{
                 cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
-                color: key === "booking" ? "#c9a96e" : key === "shop" ? "rgba(201,169,110,0.8)" : "rgba(232,224,208,0.6)",
+                color: key === "booking" ? "#c9a96e" : (key === "shop" || key === "contact") ? "rgba(201,169,110,0.8)" : "rgba(232,224,208,0.6)",
                 transition: "color 0.3s", fontWeight: key === "booking" ? 500 : 300
               }}
               onMouseEnter={e => e.target.style.color = "#c9a96e"}
-              onMouseLeave={e => e.target.style.color = key === "booking" ? "#c9a96e" : key === "shop" ? "rgba(201,169,110,0.8)" : "rgba(232,224,208,0.6)"}
+              onMouseLeave={e => e.target.style.color = key === "booking" ? "#c9a96e" : (key === "shop" || key === "contact") ? "rgba(201,169,110,0.8)" : "rgba(232,224,208,0.6)"}
               >{label}</span>
             ))}
             <span onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); }} style={{
@@ -602,7 +605,7 @@ export default function RouheWellness({ onNavigateShop, onLangChange }) {
             borderBottom: "1px solid rgba(201,169,110,0.1)"
           }}>
             {Object.entries(t.nav).map(([key, label]) => (
-              <span key={key} onClick={() => { if (key === "shop") { onNavigateShop?.(); } else { scrollTo(key); } setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "rgba(232,224,208,0.7)", padding: "8px 0" }}>{label}</span>
+              <span key={key} onClick={() => { if (key === "shop") { onNavigateShop?.(); } else if (key === "contact") { onNavigateContact?.(); } else { scrollTo(key); } setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "rgba(232,224,208,0.7)", padding: "8px 0" }}>{label}</span>
             ))}
             <span onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "13px", letterSpacing: "2px", color: "#c9a96e", padding: "8px 0" }}>{t.langSwitch}</span>
           </div>
@@ -1082,3 +1085,4 @@ export default function RouheWellness({ onNavigateShop, onLangChange }) {
     </div>
   );
 }
+
