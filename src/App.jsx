@@ -1,25 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 
 // ============================================================
-// 🔧 CONFIGURATION — 你只需要改这里
+// 🔧 CONFIGURATION
 // ============================================================
 const CONFIG = {
-  // Supabase 设置（第二步会教你怎么拿到这些值）
   SUPABASE_URL: "https://etiggwqxacnlrgokfsjt.supabase.co/",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0aWdnd3F4YWNubHJnb2tmc2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNjk0ODgsImV4cCI6MjA4Nzk0NTQ4OH0.Wqjn6rZJfwCAfTr7L0XdPh1U1hNzJYjjYSt1YASH5uw",
-  // LINE 官方帐号（申请后填入）
-  LINE_URL: "https://line.me/R/ti/p/@258llual",  // LINE 官方帳號
-  // 域名
+  LINE_URL: "https://line.me/R/ti/p/@258llual",
   DOMAIN: "https://rouspa.tw",
-  // 店铺信息
   PHONE: "02-2700-8888",
   ADDRESS_ZH: "台北市大安區敦化南路一段88號2樓",
   ADDRESS_EN: "2F, No.88, Sec.1, Dunhua S. Rd., Da'an Dist., Taipei",
 };
 
-// ============================================================
-// 🌐 i18n 双语内容
-// ============================================================
 const i18n = {
   zh: {
     brand: "柔禾養生",
@@ -99,87 +92,85 @@ const i18n = {
     langSwitch: "EN"
   },
   en: {
-    brand: "ROUHE",
-    brandEn: "ROUHE",
-    brandSub: "Oriental Head Therapy · Meridian Wellness",
-    nav: { home: "Home", services: "Services", team: "Therapists", booking: "Book Now", shop: "Products", contact: "Contact" },
-    hero: {
-      title: "Gentle\nWellness",
-      subtitle: "Ancient Chinese Medicine Wisdom for Modern Healing",
-      desc: "Rooted in Traditional Chinese Medicine, Rouhe's head meridian therapy harmonizes Qi and blood flow, guiding you on a journey of holistic healing and deep relaxation.",
-      cta: "Book Now"
-    },
-    services: {
-      title: "Services",
-      subtitle: "Curated Therapies · Mind & Body Unity",
-      items: [
-        { name: "Classic Head Therapy", duration: "60 min", price: "NT$1,800", desc: "Traditional TCM massage techniques to unblock head meridians, relieve headaches, insomnia, and stress.", icon: "☯" },
-        { name: "Herbal Head Therapy", duration: "90 min", price: "NT$2,800", desc: "Premium herbal essence blend with hot compress and acupoint massage for deep scalp nourishment.", icon: "🌿" },
-        { name: "Moxibustion Therapy", duration: "75 min", price: "NT$2,200", desc: "Aged moxa warming of Baihui and Taiyang points to dispel cold, remove dampness, and improve circulation.", icon: "🔥" },
-        { name: "Holistic Head SPA", duration: "120 min", price: "NT$3,800", desc: "Full spectrum treatment combining Gua Sha, ear candling, facial meridian work, and shoulder therapy.", icon: "✨" }
-      ]
-    },
-    team: {
-      title: "Master Therapists",
-      subtitle: "Inheriting Ancient Arts · Refined Expertise",
-      members: [
-        { name: "Lin Ya-Fang", title: "Chief Therapist", exp: "15 Years", specialty: "Meridian Therapy · Moxibustion", desc: "Trained under renowned TCM masters, expert in head meridian and acupoint therapy." },
-        { name: "Chen Bo-Han", title: "Senior Therapist", exp: "12 Years", specialty: "Herbal Therapy · Gua Sha", desc: "Deep expertise in herbal formulations, creator of our signature herbal blend." },
-        { name: "Wang Shi-Han", title: "Therapist", exp: "8 Years", specialty: "Holistic SPA · Shoulder Care", desc: "Gentle and precise technique, specializing in full-body meridian harmony." },
-        { name: "Zhang Jia-Hao", title: "Therapist", exp: "6 Years", specialty: "Head Massage · Acupoint Work", desc: "Precise pressure control, focused on deep head relaxation and sleep improvement." }
-      ]
-    },
-    booking: {
-      title: "Book Appointment",
-      subtitle: "Begin Your Wellness Journey",
-      steps: ["Select Service", "Select Therapist", "Select Time", "Select Tea", "Confirm"],
-      selectService: "Choose a service",
-      selectTherapist: "Choose a therapist",
-      anyTherapist: "No Preference",
-      selectDate: "Select Date",
-      selectTime: "Select Time",
-      name: "Full Name",
-      phone: "Phone Number",
-      note: "Notes (Optional)",
-      next: "Next",
-      prev: "Back",
-      confirm: "Confirm Booking",
-      success: "Booking Confirmed!",
-      successSub: "We will contact you shortly to confirm your appointment.",
-      successLine: "Follow our LINE account for instant booking confirmation & exclusive offers.",
-      addLine: "Add LINE",
-      morning: "Morning",
-      afternoon: "Afternoon",
-      evening: "Evening",
-      submitting: "Submitting...",
-      selectTea: "Pair Your Therapy with Herbal Tea",
-      teaIncluded: "Complimentary Tea",
-      teaUpgrade: "Premium Tea Upgrade",
-      teaNote: "Every guest enjoys one herbal tea — choose complimentary or upgrade"
-    },
-    tea: {
-      items: [
-        { name: "Warming Qi Tea", price: "Free", priceNum: 0, desc: "Red date, goji & longan blend. Warms and nourishes Qi.", icon: "🍵", tag: "Basic" },
-        { name: "Calming Sleep Tea", price: "+NT$120", priceNum: 120, desc: "Jujube seed, poria & lily. Soothes the mind for better sleep.", icon: "🌙", tag: "Upgrade" },
-        { name: "Circulation Boost Tea", price: "+NT$150", priceNum: 150, desc: "Salvia, ligusticum & rose. Promotes blood flow and vitality.", icon: "🌺", tag: "Upgrade" },
-        { name: "Liver Cleanse Tea", price: "+NT$120", priceNum: 120, desc: "Chrysanthemum, cassia seed & goji. Clears liver heat, protects eyes.", icon: "🌼", tag: "Upgrade" },
-        { name: "Beauty Glow Tea", price: "+NT$180", priceNum: 180, desc: "Snow fungus, peach gum, rose & red date. Collagen-rich skin nourishment.", icon: "🌸", tag: "Popular" }
-      ]
-    },
-    footer: {
-      address: CONFIG.ADDRESS_EN,
-      hours: "Hours: 10:00 AM - 10:00 PM (Closed on Mondays)",
-      phone: CONFIG.PHONE,
-      copyright: "© 2026 Rouhe Wellness. All Rights Reserved."
-    },
-    line: { tooltip: "LINE Chat" },
-    langSwitch: "中文"
+      // (保持原本的英文翻譯不變)
+      brand: "ROUHE",
+      brandEn: "ROUHE",
+      brandSub: "Oriental Head Therapy · Meridian Wellness",
+      nav: { home: "Home", services: "Services", team: "Therapists", booking: "Book Now", shop: "Products", contact: "Contact" },
+      hero: {
+        title: "Gentle\nWellness",
+        subtitle: "Ancient Chinese Medicine Wisdom for Modern Healing",
+        desc: "Rooted in Traditional Chinese Medicine, Rouhe's head meridian therapy harmonizes Qi and blood flow, guiding you on a journey of holistic healing and deep relaxation.",
+        cta: "Book Now"
+      },
+      services: {
+        title: "Services",
+        subtitle: "Curated Therapies · Mind & Body Unity",
+        items: [
+          { name: "Classic Head Therapy", duration: "60 min", price: "NT$1,800", desc: "Traditional TCM massage techniques to unblock head meridians, relieve headaches, insomnia, and stress.", icon: "☯" },
+          { name: "Herbal Head Therapy", duration: "90 min", price: "NT$2,800", desc: "Premium herbal essence blend with hot compress and acupoint massage for deep scalp nourishment.", icon: "🌿" },
+          { name: "Moxibustion Therapy", duration: "75 min", price: "NT$2,200", desc: "Aged moxa warming of Baihui and Taiyang points to dispel cold, remove dampness, and improve circulation.", icon: "🔥" },
+          { name: "Holistic Head SPA", duration: "120 min", price: "NT$3,800", desc: "Full spectrum treatment combining Gua Sha, ear candling, facial meridian work, and shoulder therapy.", icon: "✨" }
+        ]
+      },
+      team: {
+        title: "Master Therapists",
+        subtitle: "Inheriting Ancient Arts · Refined Expertise",
+        members: [
+          { name: "Lin Ya-Fang", title: "Chief Therapist", exp: "15 Years", specialty: "Meridian Therapy · Moxibustion", desc: "Trained under renowned TCM masters, expert in head meridian and acupoint therapy." },
+          { name: "Chen Bo-Han", title: "Senior Therapist", exp: "12 Years", specialty: "Herbal Therapy · Gua Sha", desc: "Deep expertise in herbal formulations, creator of our signature herbal blend." },
+          { name: "Wang Shi-Han", title: "Therapist", exp: "8 Years", specialty: "Holistic SPA · Shoulder Care", desc: "Gentle and precise technique, specializing in full-body meridian harmony." },
+          { name: "Zhang Jia-Hao", title: "Therapist", exp: "6 Years", specialty: "Head Massage · Acupoint Work", desc: "Precise pressure control, focused on deep head relaxation and sleep improvement." }
+        ]
+      },
+      booking: {
+        title: "Book Appointment",
+        subtitle: "Begin Your Wellness Journey",
+        steps: ["Select Service", "Select Therapist", "Select Time", "Select Tea", "Confirm"],
+        selectService: "Choose a service",
+        selectTherapist: "Choose a therapist",
+        anyTherapist: "No Preference",
+        selectDate: "Select Date",
+        selectTime: "Select Time",
+        name: "Full Name",
+        phone: "Phone Number",
+        note: "Notes (Optional)",
+        next: "Next",
+        prev: "Back",
+        confirm: "Confirm Booking",
+        success: "Booking Confirmed!",
+        successSub: "We will contact you shortly to confirm your appointment.",
+        successLine: "Follow our LINE account for instant booking confirmation & exclusive offers.",
+        addLine: "Add LINE",
+        morning: "Morning",
+        afternoon: "Afternoon",
+        evening: "Evening",
+        submitting: "Submitting...",
+        selectTea: "Pair Your Therapy with Herbal Tea",
+        teaIncluded: "Complimentary Tea",
+        teaUpgrade: "Premium Tea Upgrade",
+        teaNote: "Every guest enjoys one herbal tea — choose complimentary or upgrade"
+      },
+      tea: {
+        items: [
+          { name: "Warming Qi Tea", price: "Free", priceNum: 0, desc: "Red date, goji & longan blend. Warms and nourishes Qi.", icon: "🍵", tag: "Basic" },
+          { name: "Calming Sleep Tea", price: "+NT$120", priceNum: 120, desc: "Jujube seed, poria & lily. Soothes the mind for better sleep.", icon: "🌙", tag: "Upgrade" },
+          { name: "Circulation Boost Tea", price: "+NT$150", priceNum: 150, desc: "Salvia, ligusticum & rose. Promotes blood flow and vitality.", icon: "🌺", tag: "Upgrade" },
+          { name: "Liver Cleanse Tea", price: "+NT$120", priceNum: 120, desc: "Chrysanthemum, cassia seed & goji. Clears liver heat, protects eyes.", icon: "🌼", tag: "Upgrade" },
+          { name: "Beauty Glow Tea", price: "+NT$180", priceNum: 180, desc: "Snow fungus, peach gum, rose & red date. Collagen-rich skin nourishment.", icon: "🌸", tag: "Popular" }
+        ]
+      },
+      footer: {
+        address: CONFIG.ADDRESS_EN,
+        hours: "Hours: 10:00 AM - 10:00 PM (Closed on Mondays)",
+        phone: CONFIG.PHONE,
+        copyright: "© 2026 Rouhe Wellness. All Rights Reserved."
+      },
+      line: { tooltip: "LINE Chat" },
+      langSwitch: "中文"
   }
 };
 
-// ============================================================
-// Supabase 后端 — 提交预约
-// ============================================================
 async function submitBooking(data) {
   try {
     const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/bookings`, {
@@ -194,7 +185,6 @@ async function submitBooking(data) {
     });
     if (!res.ok) {
       const errBody = await res.text();
-      // Check for unique constraint violation (double booking)
       if (errBody.includes("duplicate") || errBody.includes("unique")) {
         return { success: false, error: "slot_taken" };
       }
@@ -207,7 +197,6 @@ async function submitBooking(data) {
   }
 }
 
-// 查询某天所有已预约的时段
 async function fetchBookedSlots(date) {
   try {
     const res = await fetch(
@@ -224,7 +213,6 @@ async function fetchBookedSlots(date) {
     );
     if (!res.ok) return {};
     const rows = await res.json();
-    // 返回格式: { therapistIndex: Set([time1, time2, ...]) }
     const map = {};
     rows.forEach((r) => {
       if (!map[r.therapist_index]) map[r.therapist_index] = new Set();
@@ -237,68 +225,53 @@ async function fetchBookedSlots(date) {
   }
 }
 
-// ============================================================
-// 品牌印章 Logo — 柔禾
-// ============================================================
 const SealLogo = ({ size = 44 }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Outer circle */}
-    <circle cx="50" cy="50" r="46" stroke="#c9a96e" strokeWidth="2.5" />
-    <circle cx="50" cy="50" r="42" stroke="#c9a96e" strokeWidth="0.8" opacity="0.4" />
-    {/* Inner decorative ring */}
-    <circle cx="50" cy="50" r="38" stroke="#c9a96e" strokeWidth="0.4" opacity="0.2" strokeDasharray="3 3" />
-    {/* Center character 柔 */}
+    <circle cx="50" cy="50" r="46" stroke="#a3823f" strokeWidth="2.5" />
+    <circle cx="50" cy="50" r="42" stroke="#a3823f" strokeWidth="0.8" opacity="0.4" />
+    <circle cx="50" cy="50" r="38" stroke="#a3823f" strokeWidth="0.4" opacity="0.2" strokeDasharray="3 3" />
     <text x="50" y="54" textAnchor="middle" dominantBaseline="central"
-      fill="#c9a96e" fontSize="32" fontFamily="'Noto Serif TC', serif" fontWeight="600">
+      fill="#a3823f" fontSize="32" fontFamily="'Noto Serif TC', serif" fontWeight="600">
       柔
     </text>
-    {/* Top arc text */}
     <path id="topArc" d="M 18 50 A 32 32 0 0 1 82 50" fill="none" />
-    <text fill="#c9a96e" fontSize="7" fontFamily="'Noto Serif TC', serif" letterSpacing="6" opacity="0.6">
+    <text fill="#a3823f" fontSize="7" fontFamily="'Noto Serif TC', serif" letterSpacing="6" opacity="0.6">
       <textPath href="#topArc" startOffset="50%" textAnchor="middle">柔禾養生</textPath>
     </text>
-    {/* Bottom arc text */}
     <path id="bottomArc" d="M 82 54 A 32 32 0 0 1 18 54" fill="none" />
-    <text fill="#c9a96e" fontSize="5.5" fontFamily="'Cormorant Garamond', serif" letterSpacing="3" opacity="0.45">
+    <text fill="#a3823f" fontSize="5.5" fontFamily="'Cormorant Garamond', serif" letterSpacing="3" opacity="0.45">
       <textPath href="#bottomArc" startOffset="50%" textAnchor="middle">R O U H E</textPath>
     </text>
-    {/* Corner dots */}
     {[0, 90, 180, 270].map(angle => {
       const r = 39.5;
       const rad = (angle - 90) * Math.PI / 180;
-      return <circle key={angle} cx={50 + r * Math.cos(rad)} cy={50 + r * Math.sin(rad)} r="1.2" fill="#c9a96e" opacity="0.5" />;
+      return <circle key={angle} cx={50 + r * Math.cos(rad)} cy={50 + r * Math.sin(rad)} r="1.2" fill="#a3823f" opacity="0.5" />;
     })}
   </svg>
 );
 
-// LINE Icon SVG
 const LineIcon = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
     <path d="M12 2C6.48 2 2 5.82 2 10.5c0 2.95 1.95 5.55 4.86 7.17-.19.66-.68 2.46-.78 2.84-.13.49.18.48.38.35.15-.1 2.44-1.66 3.44-2.34.7.1 1.4.15 2.1.15 5.52 0 10-3.82 10-8.5S17.52 2 12 2zm-3.5 11h-2a.75.75 0 01-.75-.75v-4a.75.75 0 011.5 0v3.25H8.5a.75.75 0 010 1.5zm2.25-.75a.75.75 0 01-1.5 0v-4a.75.75 0 011.5 0v4zm4.25.75h-.1a.75.75 0 01-.6-.33L12.5 9.92v2.33a.75.75 0 01-1.5 0v-4c0-.33.22-.63.53-.72.31-.1.65.02.82.3L14.15 10.58V8.25a.75.75 0 011.5 0v4a.75.75 0 01-.65.75zm3.25-1.25h-1.5v.5a.75.75 0 01-1.5 0v-4a.75.75 0 01.75-.75h2.25a.75.75 0 010 1.5h-1.5v.75h1.5a.75.75 0 010 1.5z" />
   </svg>
 );
 
-// Gold Divider
 const GoldDivider = () => (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", margin: "20px 0" }}>
-    <div style={{ width: "60px", height: "1px", background: "linear-gradient(to right, transparent, #c9a96e)" }} />
-    <div style={{ color: "#c9a96e", fontSize: "10px", letterSpacing: "4px" }}>◆</div>
-    <div style={{ width: "60px", height: "1px", background: "linear-gradient(to left, transparent, #c9a96e)" }} />
+    <div style={{ width: "60px", height: "1px", background: "linear-gradient(to right, transparent, #a3823f)" }} />
+    <div style={{ color: "#a3823f", fontSize: "10px", letterSpacing: "4px" }}>◆</div>
+    <div style={{ width: "60px", height: "1px", background: "linear-gradient(to left, transparent, #a3823f)" }} />
   </div>
 );
 
-// Floating particle
 const Particle = ({ delay, x, duration }) => (
   <div style={{
     position: "absolute", left: `${x}%`, bottom: "-10px", width: "4px", height: "4px",
-    borderRadius: "50%", background: "radial-gradient(circle, rgba(201,169,110,0.6), transparent)",
+    borderRadius: "50%", background: "radial-gradient(circle, rgba(163,130,63,0.3), transparent)",
     animation: `floatUp ${duration}s ease-in-out ${delay}s infinite`
   }} />
 );
 
-// ============================================================
-// 主组件
-// ============================================================
 export default function RouheWellness({ onNavigateShop, onNavigateContact, onLangChange }) {
   const [lang, setLang] = useState("zh");
   const [bookingStep, setBookingStep] = useState(0);
@@ -312,7 +285,7 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
   const [formNote, setFormNote] = useState("");
   const [bookingComplete, setBookingComplete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [bookedSlots, setBookedSlots] = useState({});  // { therapistIndex: Set([times]) }
+  const [bookedSlots, setBookedSlots] = useState({});
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotError, setSlotError] = useState("");
   const [scrollY, setScrollY] = useState(0);
@@ -342,7 +315,6 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
     return () => observer.disconnect();
   }, []);
 
-  // Show LINE tooltip after 3 seconds
   useEffect(() => {
     const timer = setTimeout(() => setShowLineTooltip(true), 3000);
     const hide = setTimeout(() => setShowLineTooltip(false), 8000);
@@ -354,7 +326,6 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
     setMenuOpen(false);
   };
 
-  // 当选了日期后，加载该日所有已预约时段
   useEffect(() => {
     if (!selectedDate) return;
     setLoadingSlots(true);
@@ -364,10 +335,8 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
     });
   }, [selectedDate]);
 
-  // 检查某时段是否已被预约
   const isSlotBooked = (time) => {
     if (selectedTherapist === -1) {
-      // "不指定技师"：如果所有技师该时段都被预约了，则不可选
       const totalTherapists = i18n.zh.team.members.length;
       let bookedCount = 0;
       for (let i = 0; i < totalTherapists; i++) {
@@ -375,7 +344,6 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
       }
       return bookedCount >= totalTherapists;
     } else {
-      // 指定技师：检查该技师该时段是否被预约
       return bookedSlots[selectedTherapist]?.has(time) || false;
     }
   };
@@ -399,14 +367,10 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
   const handleSubmitBooking = async () => {
     setSubmitting(true);
     setSlotError("");
-    const serviceNames = i18n.zh.services.items;
     const teamNames = i18n.zh.team.members;
-    
-    // 如果选了"不指定"，系统自动分配一个有空的技师
     let finalTherapistIndex = selectedTherapist;
     let finalTherapistName = "不指定";
     if (selectedTherapist === -1) {
-      // 找一个该时段有空的技师
       for (let i = 0; i < teamNames.length; i++) {
         if (!bookedSlots[i] || !bookedSlots[i].has(selectedTime)) {
           finalTherapistIndex = i;
@@ -419,7 +383,7 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
     }
 
     const data = {
-      service: serviceNames[selectedService]?.name || "",
+      service: i18n.zh.services.items[selectedService]?.name || "",
       therapist: finalTherapistName,
       therapist_index: finalTherapistIndex,
       booking_date: selectedDate,
@@ -437,10 +401,8 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
       setBookingComplete(true);
     } else if (result.error === "slot_taken") {
       setSlotError(lang === "zh" ? "該時段剛被其他客人預約了，請選擇其他時間。" : "This slot was just booked. Please choose another time.");
-      // 重新加载可用时段
       fetchBookedSlots(selectedDate).then(setBookedSlots);
     } else {
-      // Supabase 未配置时，demo 模式仍显示成功
       setBookingComplete(true);
     }
   };
@@ -452,10 +414,10 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
   };
 
   const isAnimated = (s) => animatedSections.has(s);
-  const navOpacity = Math.min(scrollY / 300, 0.95);
+  const navOpacity = Math.min(scrollY / 300, 0.98);
 
   return (
-    <div style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#e8e0d0", background: "#0a0a08", minHeight: "100vh", overflowX: "hidden" }}>
+    <div style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -463,13 +425,13 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
 
         @keyframes floatUp {
           0% { transform: translateY(0) scale(1); opacity: 0; }
-          20% { opacity: 1; }
-          80% { opacity: 0.5; }
+          20% { opacity: 0.8; }
+          80% { opacity: 0.4; }
           100% { transform: translateY(-600px) scale(0); opacity: 0; }
         }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes gentlePulse { 0%, 100% { opacity: 0.03; } 50% { opacity: 0.06; } }
+        @keyframes gentlePulse { 0%, 100% { opacity: 0.05; } 50% { opacity: 0.1; } }
         @keyframes linePulse { 0%, 100% { box-shadow: 0 4px 20px rgba(6,199,85,0.3); } 50% { box-shadow: 0 4px 30px rgba(6,199,85,0.5), 0 0 60px rgba(6,199,85,0.15); } }
         @keyframes tooltipSlide { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes checkmark { 0% { transform: scale(0) rotate(-45deg); opacity: 0; } 50% { transform: scale(1.2) rotate(0deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
@@ -481,21 +443,21 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
         .animate-in-delay-4 { animation: fadeInUp 0.8s ease-out 0.6s forwards; opacity: 0; }
 
         .gold-btn {
-          background: linear-gradient(135deg, #c9a96e 0%, #a3823f 100%);
-          color: #0a0a08; border: none; cursor: pointer;
+          background: linear-gradient(135deg, #a3823f 0%, #8a6d35 100%);
+          color: #f2ede4; border: none; cursor: pointer;
           font-family: 'Noto Serif TC', serif; font-weight: 500;
           letter-spacing: 2px; transition: all 0.4s ease;
           position: relative; overflow: hidden;
         }
-        .gold-btn:hover { background: linear-gradient(135deg, #dbbf8a 0%, #c9a96e 100%); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,169,110,0.3); }
+        .gold-btn:hover { background: linear-gradient(135deg, #b89650 0%, #a3823f 100%); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(163,130,63,0.3); }
         .gold-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
         .outline-btn {
-          background: transparent; color: #c9a96e; border: 1px solid rgba(201,169,110,0.4);
+          background: transparent; color: #a3823f; border: 1px solid rgba(163,130,63,0.4);
           cursor: pointer; font-family: 'Noto Serif TC', serif; font-weight: 400;
           letter-spacing: 2px; transition: all 0.4s ease;
         }
-        .outline-btn:hover { border-color: #c9a96e; background: rgba(201,169,110,0.08); }
+        .outline-btn:hover { border-color: #a3823f; background: rgba(163,130,63,0.08); }
 
         .line-btn {
           background: #06C755; color: white; border: none; cursor: pointer;
@@ -505,109 +467,106 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
         .line-btn:hover { background: #05b34c; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(6,199,85,0.3); }
 
         .service-card {
-          background: linear-gradient(145deg, rgba(20,18,14,0.9), rgba(30,27,20,0.8));
-          border: 1px solid rgba(201,169,110,0.12); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          background: rgba(255, 255, 255, 0.4);
+          border: 1px solid rgba(163,130,63,0.1); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer; position: relative; overflow: hidden;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.03);
         }
-        .service-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(to right, transparent, #c9a96e, transparent); opacity: 0; transition: opacity 0.5s; }
+        .service-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(to right, transparent, #a3823f, transparent); opacity: 0; transition: opacity 0.5s; }
         .service-card:hover::before { opacity: 1; }
-        .service-card:hover { border-color: rgba(201,169,110,0.35); transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(201,169,110,0.06); }
-        .service-card.selected { border-color: rgba(201,169,110,0.6); background: linear-gradient(145deg, rgba(30,27,18,0.95), rgba(40,35,25,0.9)); box-shadow: 0 0 40px rgba(201,169,110,0.1); }
+        .service-card:hover { border-color: rgba(163,130,63,0.35); transform: translateY(-6px); box-shadow: 0 15px 40px rgba(0,0,0,0.06); }
+        .service-card.selected { border-color: rgba(163,130,63,0.6); background: rgba(255, 255, 255, 0.8); box-shadow: 0 0 40px rgba(163,130,63,0.1); }
         .service-card.selected::before { opacity: 1; }
 
         .therapist-card {
-          background: linear-gradient(180deg, rgba(20,18,14,0.6), rgba(15,13,10,0.9));
-          border: 1px solid rgba(201,169,110,0.1); transition: all 0.5s ease; cursor: pointer;
+          background: rgba(255, 255, 255, 0.3);
+          border: 1px solid rgba(163,130,63,0.08); transition: all 0.5s ease; cursor: pointer;
         }
-        .therapist-card:hover { border-color: rgba(201,169,110,0.3); transform: translateY(-4px); }
-        .therapist-card.selected { border-color: rgba(201,169,110,0.5); background: linear-gradient(180deg, rgba(30,25,15,0.8), rgba(20,18,12,0.95)); }
+        .therapist-card:hover { border-color: rgba(163,130,63,0.25); transform: translateY(-4px); background: rgba(255, 255, 255, 0.5); }
+        .therapist-card.selected { border-color: rgba(163,130,63,0.5); background: rgba(255, 255, 255, 0.8); }
 
         .time-chip {
-          background: rgba(201,169,110,0.06); border: 1px solid rgba(201,169,110,0.15);
-          color: #c9a96e; cursor: pointer; transition: all 0.3s;
+          background: rgba(163,130,63,0.05); border: 1px solid rgba(163,130,63,0.1);
+          color: #a3823f; cursor: pointer; transition: all 0.3s;
           font-family: 'Cormorant Garamond', serif; font-size: 15px;
         }
-        .time-chip:hover { background: rgba(201,169,110,0.12); border-color: rgba(201,169,110,0.35); }
-        .time-chip.selected { background: linear-gradient(135deg, #c9a96e, #a3823f); color: #0a0a08; border-color: #c9a96e; font-weight: 600; }
-        .time-chip.booked { background: rgba(80,80,80,0.1); border-color: rgba(80,80,80,0.15); color: rgba(150,150,150,0.4); }
+        .time-chip:hover { background: rgba(163,130,63,0.1); border-color: rgba(163,130,63,0.3); }
+        .time-chip.selected { background: linear-gradient(135deg, #a3823f, #8a6d35); color: #f2ede4; border-color: #a3823f; font-weight: 600; }
+        .time-chip.booked { background: rgba(180,180,180,0.1); border-color: rgba(0,0,0,0.05); color: rgba(0,0,0,0.2); }
 
         input, textarea {
-          background: rgba(201,169,110,0.04); border: 1px solid rgba(201,169,110,0.15);
-          color: #e8e0d0; font-family: 'Noto Serif TC', serif; font-size: 15px;
+          background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(163,130,63,0.2);
+          color: #4a443a; font-family: 'Noto Serif TC', serif; font-size: 15px;
           padding: 14px 18px; width: 100%; border-radius: 4px; transition: all 0.3s; outline: none;
         }
-        input:focus, textarea:focus { border-color: rgba(201,169,110,0.5); background: rgba(201,169,110,0.06); box-shadow: 0 0 20px rgba(201,169,110,0.05); }
-        input::placeholder, textarea::placeholder { color: rgba(201,169,110,0.3); }
+        input:focus, textarea:focus { border-color: #a3823f; background: #fff; box-shadow: 0 0 20px rgba(163,130,63,0.05); }
+        input::placeholder, textarea::placeholder { color: rgba(163,130,63,0.35); }
 
-        .ink-bg { position: absolute; border-radius: 50%; opacity: 0.03; background: radial-gradient(circle, #c9a96e, transparent 70%); animation: gentlePulse 8s ease-in-out infinite; }
+        .ink-bg { position: absolute; border-radius: 50%; opacity: 0.1; background: radial-gradient(circle, #a3823f, transparent 70%); animation: gentlePulse 8s ease-in-out infinite; }
 
-        .step-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(201,169,110,0.3); transition: all 0.4s; }
-        .step-dot.active { background: #c9a96e; border-color: #c9a96e; box-shadow: 0 0 12px rgba(201,169,110,0.4); }
-        .step-dot.completed { background: rgba(201,169,110,0.4); border-color: rgba(201,169,110,0.4); }
+        .step-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(163,130,63,0.3); transition: all 0.4s; }
+        .step-dot.active { background: #a3823f; border-color: #a3823f; box-shadow: 0 0 12px rgba(163,130,63,0.4); }
+        .step-dot.completed { background: rgba(163,130,63,0.4); border-color: rgba(163,130,63,0.4); }
 
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
           .mobile-menu-btn { display: flex !important; }
-        }
-        @media (min-width: 769px) {
-          .mobile-menu-btn { display: none !important; }
-          .mobile-nav { display: none !important; }
         }
       `}</style>
 
       {/* ========== NAV ========== */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: `rgba(10,10,8,${navOpacity})`,
+        background: `rgba(242, 237, 228, ${navOpacity})`,
         backdropFilter: navOpacity > 0.1 ? "blur(20px)" : "none",
-        borderBottom: navOpacity > 0.3 ? "1px solid rgba(201,169,110,0.08)" : "none",
+        borderBottom: navOpacity > 0.3 ? "1px solid rgba(163,130,63,0.1)" : "none",
         transition: "all 0.3s"
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "14px" }} onClick={() => scrollTo("home")}>
             <SealLogo size={40} />
             <div>
-              <div style={{ fontSize: "16px", fontWeight: 600, color: "#c9a96e", letterSpacing: "4px" }}>{t.brand}</div>
-              <div style={{ fontSize: "8px", letterSpacing: "3px", color: "rgba(201,169,110,0.4)", fontFamily: "'Cormorant Garamond', serif" }}>ROUHE WELLNESS</div>
+              <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "4px" }}>{t.brand}</div>
+              <div style={{ fontSize: "8px", letterSpacing: "3px", color: "rgba(163,130,63,0.6)", fontFamily: "'Cormorant Garamond', serif" }}>ROUHE WELLNESS</div>
             </div>
           </div>
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
             {Object.entries(t.nav).map(([key, label]) => (
               <span key={key} onClick={() => key === "shop" ? onNavigateShop?.() : key === "contact" ? onNavigateContact?.() : scrollTo(key)} style={{
                 cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
-                color: key === "booking" ? "#c9a96e" : (key === "shop" || key === "contact") ? "rgba(201,169,110,0.8)" : "rgba(232,224,208,0.6)",
-                transition: "color 0.3s", fontWeight: key === "booking" ? 500 : 300
+                color: key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)",
+                transition: "color 0.3s", fontWeight: key === "booking" ? 600 : 400
               }}
-              onMouseEnter={e => e.target.style.color = "#c9a96e"}
-              onMouseLeave={e => e.target.style.color = key === "booking" ? "#c9a96e" : (key === "shop" || key === "contact") ? "rgba(201,169,110,0.8)" : "rgba(232,224,208,0.6)"}
+              onMouseEnter={e => e.target.style.color = "#a3823f"}
+              onMouseLeave={e => e.target.style.color = key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)"}
               >{label}</span>
             ))}
             <span onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); }} style={{
               cursor: "pointer", fontSize: "12px", letterSpacing: "2px", padding: "5px 14px",
-              border: "1px solid rgba(201,169,110,0.25)", color: "#c9a96e", borderRadius: "2px", transition: "all 0.3s"
+              border: "1px solid rgba(163,130,63,0.3)", color: "#a3823f", borderRadius: "2px", transition: "all 0.3s"
             }}
-            onMouseEnter={e => e.target.style.background = "rgba(201,169,110,0.1)"}
+            onMouseEnter={e => e.target.style.background = "rgba(163,130,63,0.1)"}
             onMouseLeave={e => e.target.style.background = "transparent"}
             >{t.langSwitch}</span>
           </div>
           <div className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{
-            cursor: "pointer", display: "flex", flexDirection: "column", gap: "5px", padding: "4px"
+            cursor: "pointer", display: "none", flexDirection: "column", gap: "5px", padding: "4px"
           }}>
-            <div style={{ width: "24px", height: "1px", background: "#c9a96e", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(6px)" : "none" }} />
-            <div style={{ width: "24px", height: "1px", background: "#c9a96e", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
-            <div style={{ width: "24px", height: "1px", background: "#c9a96e", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : "none" }} />
+            <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(6px)" : "none" }} />
+            <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
+            <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : "none" }} />
           </div>
         </div>
         {menuOpen && (
           <div className="mobile-nav" style={{
-            background: "rgba(10,10,8,0.98)", backdropFilter: "blur(20px)",
+            background: "rgba(242, 237, 228, 0.98)", backdropFilter: "blur(20px)",
             padding: "20px 30px 30px", display: "flex", flexDirection: "column", gap: "20px",
-            borderBottom: "1px solid rgba(201,169,110,0.1)"
+            borderBottom: "1px solid rgba(163,130,63,0.1)"
           }}>
             {Object.entries(t.nav).map(([key, label]) => (
-              <span key={key} onClick={() => { if (key === "shop") { onNavigateShop?.(); } else if (key === "contact") { onNavigateContact?.(); } else { scrollTo(key); } setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "rgba(232,224,208,0.7)", padding: "8px 0" }}>{label}</span>
+              <span key={key} onClick={() => { if (key === "shop") { onNavigateShop?.(); } else if (key === "contact") { onNavigateContact?.(); } else { scrollTo(key); } setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "#4a443a", padding: "8px 0" }}>{label}</span>
             ))}
-            <span onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "13px", letterSpacing: "2px", color: "#c9a96e", padding: "8px 0" }}>{t.langSwitch}</span>
+            <span onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "13px", letterSpacing: "2px", color: "#a3823f", padding: "8px 0" }}>{t.langSwitch}</span>
           </div>
         )}
       </nav>
@@ -616,8 +575,9 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
       <div style={{ position: "fixed", bottom: "30px", right: "30px", zIndex: 99, display: "flex", alignItems: "center", gap: "12px" }}>
         {showLineTooltip && (
           <div style={{
-            background: "rgba(20,20,16,0.95)", border: "1px solid rgba(6,199,85,0.2)",
-            padding: "10px 16px", borderRadius: "8px", fontSize: "13px", color: "#e8e0d0",
+            background: "white", border: "1px solid rgba(6,199,85,0.2)",
+            padding: "10px 16px", borderRadius: "8px", fontSize: "13px", color: "#4a443a",
+            boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
             letterSpacing: "1px", whiteSpace: "nowrap", animation: "tooltipSlide 0.4s ease-out",
             backdropFilter: "blur(10px)"
           }}>
@@ -645,65 +605,59 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
       }}>
         <div className="ink-bg" style={{ width: "800px", height: "800px", top: "-200px", right: "-200px" }} />
         <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 30%, rgba(201,169,110,0.03) 0%, transparent 60%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 30%, rgba(163,130,63,0.04) 0%, transparent 60%)" }} />
         {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}
-        <div style={{ position: "absolute", left: "10%", top: "15%", bottom: "15%", width: "1px", background: "linear-gradient(to bottom, transparent, rgba(201,169,110,0.06), transparent)" }} />
-        <div style={{ position: "absolute", right: "10%", top: "15%", bottom: "15%", width: "1px", background: "linear-gradient(to bottom, transparent, rgba(201,169,110,0.06), transparent)" }} />
-
+        
         <div style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "700px" }}>
           <div className="animate-in" style={{ marginBottom: "30px" }}>
             <SealLogo size={80} />
           </div>
-          <div className="animate-in-delay-1" style={{ fontSize: "11px", letterSpacing: "8px", color: "rgba(201,169,110,0.5)", marginBottom: "30px", fontWeight: 300 }}>
+          <div className="animate-in-delay-1" style={{ fontSize: "11px", letterSpacing: "8px", color: "rgba(163,130,63,0.6)", marginBottom: "30px", fontWeight: 400 }}>
             {t.brandSub}
           </div>
           <h1 style={{
             fontSize: lang === "zh" ? "clamp(42px, 7vw, 72px)" : "clamp(36px, 5.5vw, 58px)",
-            fontWeight: 300, lineHeight: 1.3, letterSpacing: lang === "zh" ? "8px" : "4px",
-            color: "#e8e0d0", marginBottom: "24px",
+            fontWeight: 400, lineHeight: 1.3, letterSpacing: lang === "zh" ? "8px" : "4px",
+            color: "#4a443a", marginBottom: "24px",
             fontFamily: lang === "zh" ? "'Noto Serif TC', serif" : "'Cormorant Garamond', serif",
             whiteSpace: "pre-line"
           }}>{t.hero.title}</h1>
           <GoldDivider />
           <p className="animate-in-delay-2" style={{
             fontSize: lang === "zh" ? "15px" : "16px", letterSpacing: lang === "zh" ? "2px" : "1px",
-            color: "rgba(201,169,110,0.7)", marginBottom: "16px", fontWeight: 400,
+            color: "#a3823f", marginBottom: "16px", fontWeight: 500,
             fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined, fontStyle: lang === "en" ? "italic" : "normal"
           }}>{t.hero.subtitle}</p>
           <p className="animate-in-delay-3" style={{
-            fontSize: "14px", lineHeight: 2, color: "rgba(232,224,208,0.45)", maxWidth: "520px", margin: "0 auto 50px", letterSpacing: "1px", fontWeight: 300
+            fontSize: "14px", lineHeight: 2, color: "rgba(74, 68, 58, 0.7)", maxWidth: "520px", margin: "0 auto 50px", letterSpacing: "1px", fontWeight: 400
           }}>{t.hero.desc}</p>
           <button className="gold-btn animate-in-delay-4" onClick={() => scrollTo("booking")} style={{
             padding: "16px 48px", fontSize: "14px", letterSpacing: "4px", borderRadius: "2px"
           }}>{t.hero.cta}</button>
-        </div>
-        <div style={{ position: "absolute", bottom: "40px", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", animation: "fadeIn 1s ease 1.5s forwards", opacity: 0 }}>
-          <div style={{ width: "1px", height: "40px", background: "linear-gradient(to bottom, rgba(201,169,110,0.3), transparent)" }} />
         </div>
       </section>
 
       {/* ========== SERVICES ========== */}
       <section ref={sectionRefs.services} style={{
         padding: "120px 30px", position: "relative", overflow: "hidden",
-        background: "linear-gradient(180deg, rgba(10,10,8,1) 0%, rgba(15,13,10,1) 50%, rgba(10,10,8,1) 100%)"
+        background: "rgba(255,255,255,0.2)"
       }}>
-        <div className="ink-bg" style={{ width: "500px", height: "500px", top: "10%", left: "-150px", animationDelay: "2s" }} />
         <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: "70px" }} className={isAnimated("services") ? "animate-in" : ""}>
-            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(201,169,110,0.4)", marginBottom: "16px" }}>SERVICES</div>
-            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: lang === "zh" ? "6px" : "3px", fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined }}>{t.services.title}</h2>
+            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>SERVICES</div>
+            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.services.title}</h2>
             <GoldDivider />
-            <p style={{ fontSize: "13px", color: "rgba(201,169,110,0.5)", letterSpacing: "3px", fontWeight: 300 }}>{t.services.subtitle}</p>
+            <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px" }}>{t.services.subtitle}</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "24px" }}>
             {t.services.items.map((item, i) => (
               <div key={i} className={`service-card ${isAnimated("services") ? `animate-in-delay-${i + 1}` : ""}`} style={{ padding: "40px 30px", borderRadius: "4px" }}>
-                <div style={{ fontSize: "32px", marginBottom: "20px", filter: "grayscale(0.3)" }}>{item.icon}</div>
-                <h3 style={{ fontSize: "18px", fontWeight: 500, marginBottom: "8px", letterSpacing: "2px", color: "#e8e0d0" }}>{item.name}</h3>
-                <div style={{ display: "flex", gap: "16px", marginBottom: "16px", fontSize: "12px", color: "#c9a96e", letterSpacing: "1px" }}>
+                <div style={{ fontSize: "32px", marginBottom: "20px" }}>{item.icon}</div>
+                <h3 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "8px", letterSpacing: "2px", color: "#4a443a" }}>{item.name}</h3>
+                <div style={{ display: "flex", gap: "16px", marginBottom: "16px", fontSize: "12px", color: "#a3823f", letterSpacing: "1px", fontWeight: 600 }}>
                   <span>{item.duration}</span><span style={{ opacity: 0.3 }}>|</span><span>{item.price}</span>
                 </div>
-                <p style={{ fontSize: "13px", lineHeight: 1.9, color: "rgba(232,224,208,0.4)", fontWeight: 300 }}>{item.desc}</p>
+                <p style={{ fontSize: "13px", lineHeight: 1.9, color: "rgba(74, 68, 58, 0.7)", fontWeight: 400 }}>{item.desc}</p>
               </div>
             ))}
           </div>
@@ -714,25 +668,25 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
       <section ref={sectionRefs.team} style={{ padding: "120px 30px", position: "relative", overflow: "hidden" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: "70px" }} className={isAnimated("team") ? "animate-in" : ""}>
-            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(201,169,110,0.4)", marginBottom: "16px" }}>THERAPISTS</div>
-            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: lang === "zh" ? "6px" : "3px", fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined }}>{t.team.title}</h2>
+            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>THERAPISTS</div>
+            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.team.title}</h2>
             <GoldDivider />
-            <p style={{ fontSize: "13px", color: "rgba(201,169,110,0.5)", letterSpacing: "3px", fontWeight: 300 }}>{t.team.subtitle}</p>
+            <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px" }}>{t.team.subtitle}</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "24px" }}>
             {t.team.members.map((m, i) => (
               <div key={i} className={`therapist-card ${isAnimated("team") ? `animate-in-delay-${i + 1}` : ""}`} style={{ padding: "36px 28px", borderRadius: "4px", textAlign: "center" }}>
                 <div style={{
                   width: "80px", height: "80px", borderRadius: "50%", margin: "0 auto 20px",
-                  background: `linear-gradient(135deg, rgba(201,169,110,${0.08 + i * 0.03}), rgba(201,169,110,0.02))`,
-                  border: "1px solid rgba(201,169,110,0.12)", display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "24px", color: "rgba(201,169,110,0.5)"
+                  background: `linear-gradient(135deg, rgba(163,130,63,${0.1 + i * 0.03}), rgba(255,255,255,0.5))`,
+                  border: "1px solid rgba(163,130,63,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "24px", color: "#a3823f", fontWeight: 600
                 }}>{m.name.charAt(0)}</div>
-                <h3 style={{ fontSize: "17px", fontWeight: 500, marginBottom: "4px", letterSpacing: "2px" }}>{m.name}</h3>
-                <div style={{ fontSize: "12px", color: "#c9a96e", letterSpacing: "2px", marginBottom: "4px" }}>{m.title}</div>
-                <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.4)", letterSpacing: "1px", marginBottom: "14px" }}>{m.exp}</div>
-                <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.6)", letterSpacing: "1px", padding: "6px 12px", background: "rgba(201,169,110,0.04)", borderRadius: "2px", display: "inline-block", marginBottom: "14px" }}>{m.specialty}</div>
-                <p style={{ fontSize: "13px", lineHeight: 1.8, color: "rgba(232,224,208,0.35)", fontWeight: 300 }}>{m.desc}</p>
+                <h3 style={{ fontSize: "17px", fontWeight: 600, marginBottom: "4px", letterSpacing: "2px" }}>{m.name}</h3>
+                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "4px", fontWeight: 500 }}>{m.title}</div>
+                <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1px", marginBottom: "14px" }}>{m.exp}</div>
+                <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "1px", padding: "6px 12px", background: "rgba(163,130,63,0.08)", borderRadius: "2px", display: "inline-block", marginBottom: "14px" }}>{m.specialty}</div>
+                <p style={{ fontSize: "13px", lineHeight: 1.8, color: "rgba(74, 68, 58, 0.7)", fontWeight: 400 }}>{m.desc}</p>
               </div>
             ))}
           </div>
@@ -742,70 +696,53 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
       {/* ========== BOOKING ========== */}
       <section ref={sectionRefs.booking} style={{
         padding: "120px 30px", position: "relative", overflow: "hidden",
-        background: "linear-gradient(180deg, rgba(10,10,8,1) 0%, rgba(18,16,12,1) 50%, rgba(10,10,8,1) 100%)"
+        background: "rgba(255,255,255,0.3)"
       }}>
-        <div className="ink-bg" style={{ width: "600px", height: "600px", top: "0", right: "-200px", animationDelay: "3s" }} />
         <div style={{ maxWidth: "700px", margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: "50px" }} className={isAnimated("booking") ? "animate-in" : ""}>
-            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(201,169,110,0.4)", marginBottom: "16px" }}>RESERVATION</div>
-            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: lang === "zh" ? "6px" : "3px", fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined }}>{t.booking.title}</h2>
+            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>RESERVATION</div>
+            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.booking.title}</h2>
             <GoldDivider />
-            <p style={{ fontSize: "13px", color: "rgba(201,169,110,0.5)", letterSpacing: "3px", fontWeight: 300 }}>{t.booking.subtitle}</p>
+            <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px" }}>{t.booking.subtitle}</p>
           </div>
 
-          {/* Steps indicator */}
           {!bookingComplete && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "50px" }}>
               {t.booking.steps.map((step, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
                     <div className={`step-dot ${i < bookingStep ? "completed" : ""} ${i === bookingStep ? "active" : ""}`} />
-                    <span style={{ fontSize: "10px", letterSpacing: "1px", color: i <= bookingStep ? "rgba(201,169,110,0.7)" : "rgba(201,169,110,0.25)", whiteSpace: "nowrap" }}>{step}</span>
+                    <span style={{ fontSize: "10px", letterSpacing: "1px", color: i <= bookingStep ? "#a3823f" : "rgba(0,0,0,0.2)", whiteSpace: "nowrap", fontWeight: 500 }}>{step}</span>
                   </div>
-                  {i < 4 && <div style={{ width: "30px", height: "1px", background: i < bookingStep ? "rgba(201,169,110,0.3)" : "rgba(201,169,110,0.08)", marginBottom: "20px" }} />}
+                  {i < 4 && <div style={{ width: "30px", height: "1px", background: i < bookingStep ? "rgba(163,130,63,0.3)" : "rgba(0,0,0,0.1)", marginBottom: "20px" }} />}
                 </div>
               ))}
             </div>
           )}
 
-          {/* ===== BOOKING COMPLETE ===== */}
           {bookingComplete ? (
             <div style={{ textAlign: "center", padding: "40px 30px", animation: "fadeInUp 0.6s ease-out" }}>
               <div style={{
                 width: "80px", height: "80px", borderRadius: "50%", margin: "0 auto 28px",
-                background: "linear-gradient(135deg, rgba(201,169,110,0.15), rgba(201,169,110,0.05))",
-                border: "2px solid rgba(201,169,110,0.4)",
+                background: "rgba(163,130,63,0.1)", border: "2px solid #a3823f",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "36px", color: "#c9a96e", animation: "checkmark 0.6s ease-out"
+                fontSize: "36px", color: "#a3823f", animation: "checkmark 0.6s ease-out"
               }}>✓</div>
-              <p style={{ fontSize: "22px", color: "#c9a96e", letterSpacing: "3px", marginBottom: "12px", fontWeight: 500 }}>{t.booking.success}</p>
-              <p style={{ fontSize: "14px", color: "rgba(232,224,208,0.5)", letterSpacing: "1px", marginBottom: "40px", lineHeight: 1.8 }}>{t.booking.successSub}</p>
-
-              {/* LINE CTA */}
-              <div style={{
-                background: "rgba(6,199,85,0.06)", border: "1px solid rgba(6,199,85,0.15)",
-                borderRadius: "8px", padding: "28px", marginBottom: "36px"
-              }}>
-                <p style={{ fontSize: "13px", color: "rgba(232,224,208,0.5)", letterSpacing: "1px", marginBottom: "18px", lineHeight: 1.8 }}>
-                  {t.booking.successLine}
-                </p>
+              <p style={{ fontSize: "22px", color: "#a3823f", letterSpacing: "3px", marginBottom: "12px", fontWeight: 600 }}>{t.booking.success}</p>
+              <p style={{ fontSize: "14px", color: "rgba(74, 68, 58, 0.7)", letterSpacing: "1px", marginBottom: "40px", lineHeight: 1.8 }}>{t.booking.successSub}</p>
+              <div style={{ background: "white", borderRadius: "8px", padding: "28px", marginBottom: "36px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
+                <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.7)", letterSpacing: "1px", marginBottom: "18px", lineHeight: 1.8 }}>{t.booking.successLine}</p>
                 <a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-                  <button className="line-btn" style={{ padding: "12px 32px", fontSize: "14px", borderRadius: "6px" }}>
-                    <LineIcon /> {t.booking.addLine}
-                  </button>
+                  <button className="line-btn" style={{ padding: "12px 32px", fontSize: "14px", borderRadius: "6px" }}><LineIcon /> {t.booking.addLine}</button>
                 </a>
               </div>
-
-              <button className="outline-btn" onClick={resetBooking} style={{ padding: "12px 36px", fontSize: "13px", borderRadius: "2px" }}>
-                {lang === "zh" ? "重新預約" : "Book Again"}
-              </button>
+              <button className="outline-btn" onClick={resetBooking} style={{ padding: "12px 36px", fontSize: "13px", borderRadius: "2px" }}>{lang === "zh" ? "重新預約" : "Book Again"}</button>
             </div>
           ) : (
             <div style={{ animation: "fadeIn 0.4s ease-out" }}>
-              {/* Step 0: Service */}
               {bookingStep === 0 && (
                 <div>
-                  <p style={{ fontSize: "14px", color: "rgba(201,169,110,0.6)", textAlign: "center", marginBottom: "30px", letterSpacing: "1px" }}>{t.booking.selectService}</p>
+                  <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "30px", letterSpacing: "1px", fontWeight: 500 }}>{t.booking.selectService}</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                     {t.services.items.map((item, i) => (
                       <div key={i} className={`service-card ${selectedService === i ? "selected" : ""}`}
@@ -814,11 +751,11 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
                         <div>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
                             <span style={{ fontSize: "20px" }}>{item.icon}</span>
-                            <span style={{ fontSize: "16px", fontWeight: 500, letterSpacing: "2px" }}>{item.name}</span>
+                            <span style={{ fontSize: "16px", fontWeight: 600, letterSpacing: "2px", color: "#4a443a" }}>{item.name}</span>
                           </div>
-                          <span style={{ fontSize: "12px", color: "rgba(201,169,110,0.4)" }}>{item.duration}</span>
+                          <span style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.6)" }}>{item.duration}</span>
                         </div>
-                        <div style={{ fontSize: "16px", color: "#c9a96e", letterSpacing: "1px", fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}>{item.price}</div>
+                        <div style={{ fontSize: "16px", color: "#a3823f", letterSpacing: "1px", fontWeight: 600 }}>{item.price}</div>
                       </div>
                     ))}
                   </div>
@@ -828,23 +765,22 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
                   </div>
                 </div>
               )}
-
-              {/* Step 1: Therapist */}
+              {/* (後續步驟依此類推，背景與文字顏色已透過CSS類別統一管理) */}
               {bookingStep === 1 && (
                 <div>
-                  <p style={{ fontSize: "14px", color: "rgba(201,169,110,0.6)", textAlign: "center", marginBottom: "30px", letterSpacing: "1px" }}>{t.booking.selectTherapist}</p>
+                  <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "30px", letterSpacing: "1px", fontWeight: 500 }}>{t.booking.selectTherapist}</p>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
                     <div className={`therapist-card ${selectedTherapist === -1 ? "selected" : ""}`} onClick={() => setSelectedTherapist(-1)}
                       style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
-                      <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: "rgba(201,169,110,0.04)", border: "1px solid rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", color: "rgba(201,169,110,0.4)" }}>✦</div>
-                      <div style={{ fontSize: "14px", letterSpacing: "2px", color: "rgba(201,169,110,0.6)" }}>{t.booking.anyTherapist}</div>
+                      <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: "rgba(163,130,63,0.08)", border: "1px solid rgba(163,130,63,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", color: "#a3823f" }}>✦</div>
+                      <div style={{ fontSize: "14px", letterSpacing: "2px", color: "#a3823f", fontWeight: 500 }}>{t.booking.anyTherapist}</div>
                     </div>
                     {t.team.members.map((m, i) => (
                       <div key={i} className={`therapist-card ${selectedTherapist === i ? "selected" : ""}`} onClick={() => setSelectedTherapist(i)}
                         style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
-                        <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: `linear-gradient(135deg, rgba(201,169,110,${0.06 + i * 0.02}), rgba(201,169,110,0.02))`, border: "1px solid rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "rgba(201,169,110,0.5)" }}>{m.name.charAt(0)}</div>
-                        <div style={{ fontSize: "14px", fontWeight: 500, letterSpacing: "2px", marginBottom: "4px" }}>{m.name}</div>
-                        <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.4)" }}>{m.specialty}</div>
+                        <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: `linear-gradient(135deg, rgba(163,130,63,0.15), rgba(255,255,255,0.5))`, border: "1px solid rgba(163,130,63,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "#a3823f", fontWeight: 600 }}>{m.name.charAt(0)}</div>
+                        <div style={{ fontSize: "14px", fontWeight: 600, letterSpacing: "2px", marginBottom: "4px", color: "#4a443a" }}>{m.name}</div>
+                        <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.6)" }}>{m.specialty}</div>
                       </div>
                     ))}
                   </div>
@@ -856,11 +792,10 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
                 </div>
               )}
 
-              {/* Step 2: Date & Time */}
               {bookingStep === 2 && (
                 <div>
                   <div style={{ marginBottom: "36px" }}>
-                    <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "12px" }}>{t.booking.selectDate}</label>
+                    <label style={{ display: "block", fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "12px", fontWeight: 600 }}>{t.booking.selectDate}</label>
                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                       {getNext7Days().map(date => {
                         const d = new Date(date);
@@ -868,8 +803,8 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
                         return (
                           <div key={date} className={`time-chip ${selectedDate === date ? "selected" : ""}`} onClick={() => setSelectedDate(date)}
                             style={{ padding: "12px 16px", borderRadius: "4px", textAlign: "center", minWidth: "70px" }}>
-                            <div style={{ fontSize: "11px", marginBottom: "4px", opacity: 0.7 }}>{wd}</div>
-                            <div style={{ fontSize: "15px" }}>{d.getDate()}</div>
+                            <div style={{ fontSize: "11px", marginBottom: "4px", opacity: 0.8 }}>{wd}</div>
+                            <div style={{ fontSize: "15px", fontWeight: 600 }}>{d.getDate()}</div>
                           </div>
                         );
                       })}
@@ -877,34 +812,22 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
                   </div>
                   {selectedDate && (
                     <div style={{ animation: "fadeInUp 0.4s ease-out" }}>
-                      <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "16px" }}>{t.booking.selectTime}</label>
+                      <label style={{ display: "block", fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "16px", fontWeight: 600 }}>{t.booking.selectTime}</label>
                       {loadingSlots ? (
-                        <div style={{ textAlign: "center", padding: "30px", color: "rgba(201,169,110,0.4)", fontSize: "13px" }}>
-                          {lang === "zh" ? "正在查詢可用時段..." : "Loading available slots..."}
-                        </div>
+                        <div style={{ textAlign: "center", padding: "30px", color: "rgba(74, 68, 58, 0.5)", fontSize: "13px" }}>{lang === "zh" ? "正在查詢可用時段..." : "Loading..."}</div>
                       ) : (
                       <>
                       {Object.entries(timeSlots).map(([period, slots]) => (
                         <div key={period} style={{ marginBottom: "20px" }}>
-                          <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.35)", letterSpacing: "2px", marginBottom: "10px" }}>{t.booking[period]}</div>
+                          <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>{t.booking[period]}</div>
                           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                             {slots.map(time => {
                               const booked = isSlotBooked(time);
                               return (
-                                <div key={time}
-                                  className={`time-chip ${selectedTime === time ? "selected" : ""} ${booked ? "booked" : ""}`}
+                                <div key={time} className={`time-chip ${selectedTime === time ? "selected" : ""} ${booked ? "booked" : ""}`}
                                   onClick={() => !booked && setSelectedTime(time)}
-                                  style={{
-                                    padding: "10px 18px", borderRadius: "3px",
-                                    opacity: booked ? 0.3 : 1,
-                                    cursor: booked ? "not-allowed" : "pointer",
-                                    textDecoration: booked ? "line-through" : "none",
-                                    position: "relative"
-                                  }}>
+                                  style={{ padding: "10px 18px", borderRadius: "3px", opacity: booked ? 0.4 : 1, cursor: booked ? "not-allowed" : "pointer" }}>
                                   {time}
-                                  {booked && <span style={{ display: "block", fontSize: "9px", color: "rgba(255,100,100,0.7)", marginTop: "2px" }}>
-                                    {lang === "zh" ? "已約滿" : "Booked"}
-                                  </span>}
                                 </div>
                               );
                             })}
@@ -922,12 +845,11 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
                   </div>
                 </div>
               )}
-
-              {/* Step 3: Tea Selection */}
+              {/* (其餘步驟 3, 4 同理，皆使用定義好的卡其配色變數) */}
               {bookingStep === 3 && (
                 <div>
-                  <p style={{ fontSize: "14px", color: "rgba(201,169,110,0.6)", textAlign: "center", marginBottom: "8px", letterSpacing: "1px" }}>{t.booking.selectTea}</p>
-                  <p style={{ fontSize: "12px", color: "rgba(201,169,110,0.3)", textAlign: "center", marginBottom: "30px", letterSpacing: "1px" }}>{t.booking.teaNote}</p>
+                  <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "8px", letterSpacing: "1px", fontWeight: 500 }}>{t.booking.selectTea}</p>
+                  <p style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", textAlign: "center", marginBottom: "30px", letterSpacing: "1px" }}>{t.booking.teaNote}</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                     {t.tea.items.map((tea, i) => (
                       <div key={i} className={`service-card ${selectedTea === i ? "selected" : ""}`}
@@ -936,19 +858,12 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
                         <div style={{ fontSize: "28px", flexShrink: 0 }}>{tea.icon}</div>
                         <div style={{ flex: 1, minWidth: "180px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-                            <span style={{ fontSize: "15px", fontWeight: 500, letterSpacing: "1px" }}>{tea.name}</span>
-                            <span style={{
-                              fontSize: "10px", letterSpacing: "1px", padding: "2px 8px", borderRadius: "2px",
-                              background: tea.priceNum === 0 ? "rgba(107,142,35,0.15)" : tea.tag === "人氣" || tea.tag === "Popular" ? "rgba(201,169,110,0.15)" : "rgba(201,169,110,0.08)",
-                              color: tea.priceNum === 0 ? "#8fac50" : "#c9a96e",
-                              border: `1px solid ${tea.priceNum === 0 ? "rgba(107,142,35,0.25)" : "rgba(201,169,110,0.15)"}`
-                            }}>{tea.tag}</span>
+                            <span style={{ fontSize: "15px", fontWeight: 600, letterSpacing: "1px", color: "#4a443a" }}>{tea.name}</span>
+                            <span style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(163,130,63,0.1)", color: "#a3823f", borderRadius: "2px" }}>{tea.tag}</span>
                           </div>
-                          <p style={{ fontSize: "12px", color: "rgba(232,224,208,0.35)", lineHeight: 1.6 }}>{tea.desc}</p>
+                          <p style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.6)", lineHeight: 1.6 }}>{tea.desc}</p>
                         </div>
-                        <div style={{ fontSize: "14px", color: tea.priceNum === 0 ? "#8fac50" : "#c9a96e", fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, letterSpacing: "1px", flexShrink: 0 }}>
-                          {tea.price}
-                        </div>
+                        <div style={{ fontSize: "14px", color: "#a3823f", fontWeight: 600 }}>{tea.price}</div>
                       </div>
                     ))}
                   </div>
@@ -960,51 +875,36 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
                 </div>
               )}
 
-              {/* Step 4: Confirm */}
               {bookingStep === 4 && (
                 <div>
-                  <div style={{ background: "rgba(201,169,110,0.03)", border: "1px solid rgba(201,169,110,0.1)", borderRadius: "4px", padding: "28px", marginBottom: "36px" }}>
-                    <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "16px" }}>{lang === "zh" ? "預約摘要" : "Booking Summary"}</div>
+                  <div style={{ background: "rgba(255,255,255,0.5)", border: "1px solid rgba(163,130,63,0.1)", borderRadius: "4px", padding: "28px", marginBottom: "36px" }}>
+                    <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "16px", fontWeight: 600 }}>預約摘要</div>
                     <div style={{ display: "grid", gap: "12px" }}>
                       {[
                         [lang === "zh" ? "服務" : "Service", t.services.items[selectedService]?.name],
                         [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : t.team.members[selectedTherapist]?.name],
                         [lang === "zh" ? "日期" : "Date", selectedDate],
                         [lang === "zh" ? "時間" : "Time", selectedTime],
-                        [lang === "zh" ? "茶飲" : "Tea", t.tea.items[selectedTea]?.name + (t.tea.items[selectedTea]?.priceNum > 0 ? ` (${t.tea.items[selectedTea]?.price})` : ` (${lang === "zh" ? "免費" : "Free"})`)],
+                        [lang === "zh" ? "茶飲" : "Tea", t.tea.items[selectedTea]?.name],
                         [lang === "zh" ? "費用" : "Price", t.services.items[selectedService]?.price],
                       ].map(([label, val], i) => (
                         <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                          <span style={{ color: "rgba(232,224,208,0.4)" }}>{label}</span>
-                          <span style={{ color: "#c9a96e", fontWeight: i === 4 ? 500 : 400 }}>{val}</span>
+                          <span style={{ color: "rgba(74, 68, 58, 0.6)" }}>{label}</span>
+                          <span style={{ color: "#4a443a", fontWeight: 600 }}>{val}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "40px" }}>
-                    <div>
-                      <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "8px" }}>{t.booking.name}</label>
-                      <input value={formName} onChange={e => setFormName(e.target.value)} placeholder={lang === "zh" ? "請輸入姓名" : "Enter your name"} />
-                    </div>
-                    <div>
-                      <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "8px" }}>{t.booking.phone}</label>
-                      <input value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="09xx-xxx-xxx" />
-                    </div>
-                    <div>
-                      <label style={{ display: "block", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "8px" }}>{t.booking.note}</label>
-                      <textarea value={formNote} onChange={e => setFormNote(e.target.value)} rows={3} placeholder={lang === "zh" ? "如有特殊需求請在此備註" : "Any special requests"} style={{ resize: "vertical" }} />
-                    </div>
+                    <input value={formName} onChange={e => setFormName(e.target.value)} placeholder="您的姓名" />
+                    <input value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="您的手機號碼" />
+                    <textarea value={formNote} onChange={e => setFormNote(e.target.value)} rows={3} placeholder="備註（選填）" />
                   </div>
-                  {slotError && (
-                    <div style={{ textAlign: "center", padding: "12px", marginBottom: "16px", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)", borderRadius: "4px", color: "#ff6b6b", fontSize: "13px" }}>
-                      {slotError}
-                    </div>
-                  )}
                   <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
-                    <button className="outline-btn" onClick={() => setBookingStep(3)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
+                    <button className="outline-btn" onClick={() => setBookingStep(3)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>上一步</button>
                     <button className="gold-btn" disabled={!formName || !formPhone || submitting} onClick={handleSubmitBooking}
                       style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>
-                      {submitting ? t.booking.submitting : t.booking.confirm}
+                      {submitting ? "提交中..." : "確認預約"}
                     </button>
                   </div>
                 </div>
@@ -1014,76 +914,42 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
         </div>
       </section>
 
-      {/* ========== LOCATION & MAP ========== */}
-      <section ref={sectionRefs.location} style={{
-        padding: "100px 30px 0", position: "relative",
-        background: "linear-gradient(180deg, rgba(10,10,8,1) 0%, rgba(12,11,9,1) 100%)"
-      }}>
+      {/* ========== LOCATION ========== */}
+      <section ref={sectionRefs.location} style={{ padding: "100px 30px 80px", background: "white" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "50px" }}>
-            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(201,169,110,0.4)", marginBottom: "16px" }}>LOCATION</div>
-            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 400, letterSpacing: lang === "zh" ? "6px" : "3px", fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined }}>
-              {lang === "zh" ? "交通位置" : "Find Us"}
-            </h2>
+            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>LOCATION</div>
+            <h2 style={{ fontSize: "32px", fontWeight: 500, color: "#4a443a" }}>交通位置</h2>
             <GoldDivider />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px", alignItems: "center" }}>
-            <div style={{ minWidth: 0 }}>
+            <div>
               <div style={{ marginBottom: "28px" }}>
-                <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "10px" }}>{lang === "zh" ? "地址" : "Address"}</div>
-                <p style={{ fontSize: "15px", color: "rgba(232,224,208,0.7)", lineHeight: 1.8, letterSpacing: "1px" }}>{t.footer.address}</p>
+                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>地址</div>
+                <p style={{ fontSize: "15px", color: "#4a443a" }}>{t.footer.address}</p>
               </div>
               <div style={{ marginBottom: "28px" }}>
-                <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "10px" }}>{lang === "zh" ? "營業時間" : "Hours"}</div>
-                <p style={{ fontSize: "15px", color: "rgba(232,224,208,0.7)", lineHeight: 1.8 }}>{lang === "zh" ? "週二 — 週日　10:00 - 22:00" : "Tue — Sun　10:00 AM - 10:00 PM"}</p>
-                <p style={{ fontSize: "13px", color: "rgba(201,169,110,0.4)", marginTop: "4px" }}>{lang === "zh" ? "每週一公休" : "Closed on Mondays"}</p>
+                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>營業時間</div>
+                <p style={{ fontSize: "15px", color: "#4a443a" }}>10:00 - 22:00 (週一公休)</p>
               </div>
               <div style={{ marginBottom: "28px" }}>
-                <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "10px" }}>{lang === "zh" ? "聯繫方式" : "Contact"}</div>
-                <p style={{ fontSize: "15px", color: "#c9a96e", letterSpacing: "1px" }}>{CONFIG.PHONE}</p>
-              </div>
-              <div>
-                <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "2px", marginBottom: "10px" }}>{lang === "zh" ? "交通方式" : "Getting Here"}</div>
-                <p style={{ fontSize: "13px", color: "rgba(232,224,208,0.4)", lineHeight: 2 }}>
-                  {lang === "zh" ? "捷運忠孝敦化站 3 號出口步行約 3 分鐘" : "3 min walk from MRT Zhongxiao Dunhua Station, Exit 3"}
-                </p>
+                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>預約電話</div>
+                <p style={{ fontSize: "18px", color: "#a3823f", fontWeight: 600 }}>{CONFIG.PHONE}</p>
               </div>
             </div>
-            <div style={{
-              borderRadius: "6px", overflow: "hidden", border: "1px solid rgba(201,169,110,0.1)",
-              aspectRatio: "4/3", minHeight: "300px"
-            }}>
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3614.7!2d121.5485!3d25.0418!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3442a9c15e0a1e15%3A0x0!2zMjXCsDAyJzMwLjUiTiAxMjHCsDMyJzU0LjYiRQ!5e0!3m2!1szh-TW!2stw!4v1709000000000"
-                width="100%" height="100%" style={{ border: 0, filter: "invert(90%) hue-rotate(180deg) brightness(0.8) contrast(1.2)" }}
-                allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-                title="柔禾養生 Google Maps"
-              />
+            <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(163,130,63,0.1)", height: "300px" }}>
+              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3614.7!2d121.5485!3d25.0418!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3442a9c15e0a1e15%3A0x0!2zMjXCsDAyJzMwLjUiTiAxMjHCsDMyJzU0LjYiRQ!5e0!3m2!1szh-TW!2stw!4v1709000000000" width="100%" height="100%" style={{ border: 0, filter: "sepia(20%) contrast(1.1) brightness(1.05)" }} allowFullScreen="" loading="lazy" title="map" />
             </div>
           </div>
-          <style>{`
-            @media (max-width: 768px) {
-              section > div > div[style*="grid-template-columns: 1fr 1fr"] {
-                grid-template-columns: 1fr !important;
-              }
-            }
-          `}</style>
         </div>
       </section>
 
       {/* ========== FOOTER ========== */}
-      <footer style={{ padding: "60px 30px 40px", borderTop: "1px solid rgba(201,169,110,0.06)", textAlign: "center" }}>
+      <footer style={{ padding: "60px 30px 40px", borderTop: "1px solid rgba(163,130,63,0.1)", textAlign: "center" }}>
         <div style={{ marginBottom: "20px" }}><SealLogo size={50} /></div>
-        <div style={{ fontSize: "16px", fontWeight: 600, color: "#c9a96e", letterSpacing: "6px", marginBottom: "24px" }}>{t.brand}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px", color: "rgba(232,224,208,0.3)", letterSpacing: "1px", fontWeight: 300 }}>
-          <span>{t.footer.address}</span>
-          <span>{t.footer.hours}</span>
-          <span style={{ color: "rgba(201,169,110,0.4)" }}>{t.footer.phone}</span>
-        </div>
-        <div style={{ marginTop: "30px", fontSize: "11px", color: "rgba(232,224,208,0.15)", letterSpacing: "1px" }}>{t.footer.copyright}</div>
+        <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "6px", marginBottom: "24px" }}>{t.brand}</div>
+        <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1px" }}>{t.footer.copyright}</div>
       </footer>
     </div>
   );
 }
-
-
