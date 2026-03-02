@@ -6,8 +6,8 @@ const CONFIG = {
   EMAIL: "rosa12345@gmail.com",
   PHONE: "02-2700-8888",
   // ⬇️ 后期填入真实链接
-  LINE_URL: "https://line.me/R/ti/p/@YOUR_LINE_ID",
-  LINE_ID: "@yourlineid",
+  LINE_URL: "https://line.me/R/ti/p/@258llual",
+  LINE_ID: "@258llual",
   WECHAT_ID: "your_wechat_id",
   FACEBOOK_URL: "https://facebook.com/your_page",
   FACEBOOK_NAME: "柔禾養生 Rouhe Wellness",
