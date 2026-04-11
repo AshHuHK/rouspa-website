@@ -4,10 +4,10 @@ import { useState } from "react";
 // 聯繫資訊配置
 // ============================================================
 const CONFIG = {
-  ADDRESS_ZH: "台北市大安區敦化南路一段88號2樓",
-  ADDRESS_EN: "2F, No.88, Sec.1, Dunhua S. Rd., Da'an Dist., Taipei",
+  ADDRESS_ZH: "嘉義市西區蘭井街421號",
+  ADDRESS_EN: "No.421, Lanjing St., West Dist., Chiayi City",
   EMAIL: "rosa12345@gmail.com",
-  PHONE: "02-2700-8888",
+  PHONE: "0978-918-737",
   LINE_URL: "https://line.me/R/ti/p/@258llual",
   LINE_ID: "@258llual",
   WECHAT_ID: "your_wechat_id",
@@ -27,14 +27,14 @@ const contactInfo = {
     wechat: "微信",
     facebook: "Facebook 粉絲專頁",
     hours: "營業時間",
-    hoursDetail: "週二至週日 10:00 - 22:00（週一公休）",
+    hoursDetail: "每日 10:00 - 02:00（全年無休）",
     scanLine: "掃碼加好友",
     scanWechat: "掃碼加微信",
     visitFb: "前往粉絲專頁",
     sendEmail: "發送郵件",
     copyTip: "已複製",
     mapTitle: "交通位置",
-    mrt: "🚇 捷運：忠孝敦化站 3 號出口，步行約 3 分鐘",
+    mrt: "🚗 建議騎乘機車或開車前往，門市附近設有停車位",
   },
   en: {
     title: "Contact Us",
@@ -47,14 +47,14 @@ const contactInfo = {
     wechat: "WeChat",
     facebook: "Facebook Page",
     hours: "Business Hours",
-    hoursDetail: "Tue - Sun 10:00 AM - 10:00 PM (Closed on Mondays)",
+    hoursDetail: "Daily 10:00 AM - 2:00 AM (Open Year Round)",
     scanLine: "Scan to add",
     scanWechat: "Scan to add",
     visitFb: "Visit Page",
     sendEmail: "Send Email",
     copyTip: "Copied",
     mapTitle: "Find Us",
-    mrt: "🚇 MRT: Zhongxiao Dunhua Exit 3, approx. 3 min walk",
+    mrt: "🚗 Scooter or car recommended. Parking available nearby."
   }
 };
 
@@ -310,7 +310,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
             border: "1px solid rgba(163,130,63,0.2)", boxShadow: "0 10px 30px rgba(0,0,0,0.05)"
           }}>
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3615.0!2d121.5485!3d25.0418!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjXCsDAyJzMwLjUiTiAxMjHCsDMyJzU0LjYiRQ!5e0!3m2!1szh-TW!2stw!4v1"
+              src="https://www.google.com/maps?q=嘉義市西區蘭井街421號&output=embed"
               width="100%" height="100%" style={{ border: 0, filter: "sepia(20%) contrast(1.1) brightness(1.05)" }}
               allowFullScreen="" loading="lazy"
             />

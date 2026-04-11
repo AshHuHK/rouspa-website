@@ -8,9 +8,9 @@ const CONFIG = {
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0aWdnd3F4YWNubHJnb2tmc2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNjk0ODgsImV4cCI6MjA4Nzk0NTQ4OH0.Wqjn6rZJfwCAfTr7L0XdPh1U1hNzJYjjYSt1YASH5uw",
   LINE_URL: "https://line.me/R/ti/p/@258llual",
   DOMAIN: "https://rouspa.tw",
-  PHONE: "02-2700-8888",
-  ADDRESS_ZH: "台北市大安區敦化南路一段88號2樓",
-  ADDRESS_EN: "2F, No.88, Sec.1, Dunhua S. Rd., Da'an Dist., Taipei",
+  PHONE: "0978-918-737",
+  ADDRESS_ZH: "嘉義市西區蘭井街421號",
+  ADDRESS_EN: "No.421, Lanjing St., West Dist., Chiayi City",
 };
 
 const i18n = {
@@ -84,7 +84,7 @@ const i18n = {
     },
     footer: {
       address: CONFIG.ADDRESS_ZH,
-      hours: "營業時間：10:00 - 22:00（週一公休）",
+      hours: "營業時間：10:00 - 02:00（全年無休）",
       phone: CONFIG.PHONE,
       copyright: "© 2026 柔禾養生 版權所有"
     },
@@ -162,7 +162,7 @@ const i18n = {
       },
       footer: {
         address: CONFIG.ADDRESS_EN,
-        hours: "Hours: 10:00 AM - 10:00 PM (Closed on Mondays)",
+        hours: "Hours: 10:00 AM - 2:00 AM (Open Daily)",
         phone: CONFIG.PHONE,
         copyright: "© 2026 Rouhe Wellness. All Rights Reserved."
       },
@@ -912,7 +912,7 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
               </div>
               <div style={{ marginBottom: "28px" }}>
                 <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>營業時間</div>
-                <p style={{ fontSize: "15px", color: "#4a443a" }}>10:00 - 22:00 (週一公休)</p>
+                <p style={{ fontSize: "15px", color: "#4a443a" }}>10:00 - 02:00（全年無休）</p>
               </div>
               <div style={{ marginBottom: "28px" }}>
                 <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>預約電話</div>
@@ -920,7 +920,7 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
               </div>
             </div>
             <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(163,130,63,0.1)", height: "300px" }}>
-              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3614.7!2d121.5485!3d25.0418!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3442a9c15e0a1e15%3A0x0!2zMjXCsDAyJzMwLjUiTiAxMjHCsDMyJzU0LjYiRQ!5e0!3m2!1szh-TW!2stw!4v1709000000000" width="100%" height="100%" style={{ border: 0, filter: "sepia(20%) contrast(1.1) brightness(1.05)" }} allowFullScreen="" loading="lazy" title="map" />
+              <iframe src="https://www.google.com/maps?q=嘉義市西區蘭井街421號&output=embed" width="100%" height="100%" style={{ border: 0, filter: "sepia(20%) contrast(1.1) brightness(1.05)" }} allowFullScreen="" loading="lazy" title="map" />
             </div>
           </div>
         </div>

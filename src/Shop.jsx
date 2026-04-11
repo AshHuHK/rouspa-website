@@ -289,7 +289,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
               : "All products are available for in-store trial. \nFeel free to explore our collection during your visit."}
           </p>
           <div style={{ marginTop: "30px", fontSize: "14px", color: "#a3823f", fontWeight: 500 }}>
-            {isZh ? "台北市大安區敦化南路一段88號2樓" : "2F, No.88, Sec.1, Dunhua S. Rd., Taipei"}
+            {isZh ? "嘉義市西區蘭井街421號" : "No.421, Lanjing St., West Dist., Chiayi City"}
           </div>
         </div>
       </div>
