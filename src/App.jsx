@@ -226,28 +226,11 @@ async function fetchBookedSlots(date) {
 }
 
 const SealLogo = ({ size = 44 }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="46" stroke="#a3823f" strokeWidth="2.5" />
-    <circle cx="50" cy="50" r="42" stroke="#a3823f" strokeWidth="0.8" opacity="0.4" />
-    <circle cx="50" cy="50" r="38" stroke="#a3823f" strokeWidth="0.4" opacity="0.2" strokeDasharray="3 3" />
-    <text x="50" y="54" textAnchor="middle" dominantBaseline="central"
-      fill="#a3823f" fontSize="32" fontFamily="'Noto Serif TC', serif" fontWeight="600">
-      柔
-    </text>
-    <path id="topArc" d="M 18 50 A 32 32 0 0 1 82 50" fill="none" />
-    <text fill="#a3823f" fontSize="7" fontFamily="'Noto Serif TC', serif" letterSpacing="6" opacity="0.6">
-      <textPath href="#topArc" startOffset="50%" textAnchor="middle">柔禾養生</textPath>
-    </text>
-    <path id="bottomArc" d="M 82 54 A 32 32 0 0 1 18 54" fill="none" />
-    <text fill="#a3823f" fontSize="5.5" fontFamily="'Cormorant Garamond', serif" letterSpacing="3" opacity="0.45">
-      <textPath href="#bottomArc" startOffset="50%" textAnchor="middle">R O U H E</textPath>
-    </text>
-    {[0, 90, 180, 270].map(angle => {
-      const r = 39.5;
-      const rad = (angle - 90) * Math.PI / 180;
-      return <circle key={angle} cx={50 + r * Math.cos(rad)} cy={50 + r * Math.sin(rad)} r="1.2" fill="#a3823f" opacity="0.5" />;
-    })}
-  </svg>
+  <img 
+    src="/logo2.png" 
+    alt="柔禾養生" 
+    style={{ width: size, height: size, objectFit: 'contain' }}
+  />
 );
 
 const LineIcon = () => (
