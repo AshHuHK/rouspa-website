@@ -12,7 +12,7 @@ const CONFIG = {
   LINE_ID: "@258llual",
   WECHAT_ID: "your_wechat_id",
   FACEBOOK_URL: "https://facebook.com/your_page",
-  FACEBOOK_NAME: "柔禾養生 Rouhe Wellness",
+  FACEBOOK_NAME: "柔療養生 Rouhe Wellness",
 };
 
 const contactInfo = {
@@ -148,7 +148,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <div onClick={onNavigateHome} style={{ cursor: "pointer" }}>
             <span style={{ fontSize: "18px", color: "#a3823f", letterSpacing: "4px", fontWeight: 700 }}>
-              {isZh ? "柔禾養生" : "ROUHE"}
+              {isZh ? "柔療養生" : "ROUHE"}
             </span>
           </div>
           <span style={{ color: "rgba(163,130,63,0.2)" }}>|</span>
@@ -324,7 +324,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
       {/* FOOTER */}
       <footer style={{ padding: "60px 30px 40px", borderTop: "1px solid rgba(163,130,63,0.1)", textAlign: "center" }}>
         <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.4)", letterSpacing: "1px", fontWeight: 500 }}>
-          © 2026 {isZh ? "柔禾養生 版權所有" : "Rouhe Wellness. All Rights Reserved."}
+          © 2026 {isZh ? "柔療養生 版權所有" : "Rouhe Wellness. All Rights Reserved."}
         </div>
       </footer>
     </div>

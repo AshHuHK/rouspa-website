@@ -15,14 +15,14 @@ const CONFIG = {
 
 const i18n = {
   zh: {
-    brand: "柔禾養生",
+    brand: "柔療養生",
     brandEn: "ROUHE",
     brandSub: "東方頭療 · 經絡養生",
     nav: { home: "首頁", services: "服務項目", team: "技師團隊", booking: "立即預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",
       subtitle: "源自千年中醫智慧的頭部經絡調理",
-      desc: "柔禾養生以傳統中醫理論為根基，融合現代養生手法，為您開啟身心療癒之旅。疏通頭部經絡，調和氣血，讓身心回歸自然平衡。",
+      desc: "柔療養生以傳統中醫理論為根基，融合現代養生手法，為您開啟身心療癒之旅。疏通頭部經絡，調和氣血，讓身心回歸自然平衡。",
       cta: "預約體驗"
     },
     services: {
@@ -86,7 +86,7 @@ const i18n = {
       address: CONFIG.ADDRESS_ZH,
       hours: "營業時間：10:00 - 02:00（全年無休）",
       phone: CONFIG.PHONE,
-      copyright: "© 2026 柔禾養生 版權所有"
+      copyright: "© 2026 柔療養生 版權所有"
     },
     line: { tooltip: "LINE 諮詢" },
     langSwitch: "EN"
@@ -228,7 +228,7 @@ async function fetchBookedSlots(date) {
 const SealLogo = ({ size = 44 }) => (
   <img 
     src="/logo2.png" 
-    alt="柔禾養生" 
+    alt="柔療養生" 
     style={{ width: size, height: size, objectFit: 'contain' }}
   />
 );
@@ -635,7 +635,6 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "24px" }}>
             {t.services.items.map((item, i) => (
               <div key={i} className={`service-card ${isAnimated("services") ? `animate-in-delay-${i + 1}` : ""}`} style={{ padding: "40px 30px", borderRadius: "4px" }}>
-                <div style={{ fontSize: "32px", marginBottom: "20px" }}>{item.icon}</div>
                 <h3 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "8px", letterSpacing: "2px", color: "#4a443a" }}>{item.name}</h3>
                 <div style={{ display: "flex", gap: "16px", marginBottom: "16px", fontSize: "12px", color: "#a3823f", letterSpacing: "1px", fontWeight: 600 }}>
                   <span>{item.duration}</span><span style={{ opacity: 0.3 }}>|</span><span>{item.price}</span>

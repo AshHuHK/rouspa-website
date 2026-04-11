@@ -154,7 +154,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <div onClick={onNavigateHome} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontSize: "18px", color: "#a3823f", letterSpacing: "4px", fontWeight: 700 }}>
-              {isZh ? "柔禾養生" : "ROUHE"}
+              {isZh ? "柔療養生" : "ROUHE"}
             </span>
           </div>
           <span style={{ color: "rgba(163,130,63,0.2)" }}>|</span>
@@ -187,7 +187,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
             fontWeight: 500, letterSpacing: isZh ? "8px" : "3px",
             color: "#4a443a", marginBottom: "20px"
           }}>
-            {isZh ? "柔禾·好物選" : "Curated Wellness"}
+            {isZh ? "柔療·好物選" : "Curated Wellness"}
           </h1>
           <div style={{ width: "40px", height: "2px", background: "#a3823f", margin: "0 auto 24px" }} />
           <p style={{ fontSize: "14px", color: "rgba(74, 68, 58, 0.7)", letterSpacing: "1px", maxWidth: "600px", margin: "0 auto", lineHeight: 1.8 }}>
@@ -297,7 +297,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
       {/* ===== FOOTER ===== */}
       <footer style={{ padding: "60px 30px 40px", borderTop: "1px solid rgba(163,130,63,0.1)", textAlign: "center" }}>
         <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.4)", letterSpacing: "1px", fontWeight: 500 }}>
-          © 2026 {isZh ? "柔禾養生 版權所有" : "Rouhe Wellness. All Rights Reserved."}
+          © 2026 {isZh ? "柔療養生 版權所有" : "Rouhe Wellness. All Rights Reserved."}
         </div>
       </footer>
     </div>
