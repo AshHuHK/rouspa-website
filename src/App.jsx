@@ -507,7 +507,7 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "14px" }} onClick={() => scrollTo("home")}>
-            <SealLogo size={40} />
+            <SealLogo size={36} />
             <div>
               <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "4px" }}>{t.brand}</div>
               <div style={{ fontSize: "8px", letterSpacing: "3px", color: "rgba(163,130,63,0.6)", fontFamily: "'Cormorant Garamond', serif" }}>ROUHE WELLNESS</div>
@@ -593,7 +593,7 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
         
         <div style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "700px" }}>
           <div className="animate-in" style={{ marginBottom: "30px" }}>
-            <SealLogo size={80} />
+            <SealLogo size={100} />
           </div>
           <div className="animate-in-delay-1" style={{ fontSize: "11px", letterSpacing: "8px", color: "rgba(163,130,63,0.6)", marginBottom: "30px", fontWeight: 400 }}>
             {t.brandSub}
