@@ -15,14 +15,14 @@ const CONFIG = {
 
 const i18n = {
   zh: {
-    brand: "柔療養生",
+    brand: "柔療髮浴",
     brandEn: "ROUHE",
     brandSub: "東方頭療 · 經絡養生",
     nav: { home: "首頁", services: "服務項目", team: "技師團隊", booking: "立即預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",
       subtitle: "源自千年中醫智慧的頭部經絡調理",
-      desc: "柔療養生以傳統中醫理論為根基，融合現代養生手法，為您開啟身心療癒之旅。疏通頭部經絡，調和氣血，讓身心回歸自然平衡。",
+      desc: "柔療髮浴以傳統中醫理論為根基，融合現代養生手法，為您開啟身心療癒之旅。疏通頭部經絡，調和氣血，讓身心回歸自然平衡。",
       cta: "預約體驗"
     },
     services: {
@@ -86,7 +86,7 @@ const i18n = {
       address: CONFIG.ADDRESS_ZH,
       hours: "營業時間：10:00 - 02:00（全年無休）",
       phone: CONFIG.PHONE,
-      copyright: "© 2026 柔療養生 版權所有"
+      copyright: "© 2026 柔療髮浴 版權所有"
     },
     line: { tooltip: "LINE 諮詢" },
     langSwitch: "EN"
@@ -228,7 +228,7 @@ async function fetchBookedSlots(date) {
 const SealLogo = ({ size = 44 }) => (
   <img 
     src="/logo2.png" 
-    alt="柔療養生" 
+    alt="柔療髮浴" 
     style={{ width: size, height: size, objectFit: 'contain' }}
   />
 );

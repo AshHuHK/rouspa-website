@@ -115,7 +115,7 @@ export default function AdminDashboard() {
       <div style={{ fontFamily: "'Noto Serif TC', Georgia, serif", background: "#0a0a08", color: "#e8e0d0", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap');`}</style>
         <div style={{ textAlign: "center", maxWidth: "360px", padding: "40px" }}>
-          <div style={{ fontSize: "28px", color: "#c9a96e", letterSpacing: "6px", marginBottom: "8px" }}>柔療養生</div>
+          <div style={{ fontSize: "28px", color: "#c9a96e", letterSpacing: "6px", marginBottom: "8px" }}>柔療髮浴</div>
           <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.4)", letterSpacing: "3px", marginBottom: "40px" }}>管理後台</div>
           <input
             type="password" value={password} onChange={e => setPassword(e.target.value)}
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
       <div style={{ maxWidth: "1200px", margin: "0 auto", marginBottom: "30px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
           <div>
-            <span style={{ fontSize: "20px", color: "#c9a96e", letterSpacing: "4px" }}>柔療養生</span>
+            <span style={{ fontSize: "20px", color: "#c9a96e", letterSpacing: "4px" }}>柔療髮浴</span>
             <span style={{ fontSize: "12px", color: "rgba(201,169,110,0.4)", marginLeft: "16px", letterSpacing: "2px" }}>管理後台</span>
           </div>
           <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>

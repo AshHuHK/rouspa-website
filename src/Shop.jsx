@@ -154,7 +154,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <div onClick={onNavigateHome} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontSize: "18px", color: "#a3823f", letterSpacing: "4px", fontWeight: 700 }}>
-              {isZh ? "柔療養生" : "ROUHE"}
+              {isZh ? "柔療髮浴" : "ROUHE"}
             </span>
           </div>
           <span style={{ color: "rgba(163,130,63,0.2)" }}>|</span>
@@ -297,7 +297,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
       {/* ===== FOOTER ===== */}
       <footer style={{ padding: "60px 30px 40px", borderTop: "1px solid rgba(163,130,63,0.1)", textAlign: "center" }}>
         <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.4)", letterSpacing: "1px", fontWeight: 500 }}>
-          © 2026 {isZh ? "柔療養生 版權所有" : "Rouhe Wellness. All Rights Reserved."}
+          © 2026 {isZh ? "柔療髮浴 版權所有" : "Rouhe Wellness. All Rights Reserved."}
         </div>
       </footer>
     </div>
