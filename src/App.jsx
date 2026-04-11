@@ -750,7 +750,6 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
                         style={{ padding: "24px 28px", borderRadius: "4px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
                         <div>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
-                            <span style={{ fontSize: "20px" }}>{item.icon}</span>
                             <span style={{ fontSize: "16px", fontWeight: 600, letterSpacing: "2px", color: "#4a443a" }}>{item.name}</span>
                           </div>
                           <span style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.6)" }}>{item.duration}</span>
