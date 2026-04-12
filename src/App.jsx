@@ -570,19 +570,21 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         }
         
         @media (max-width: 640px) {
-          /* 90分與120分卡片手機版改為2欄 */
-          .service-grid-3col {
-            grid-template-columns: repeat(2, 1fr) !important;
+          /* 養生項目縱向列表手機版優化 */
+          .service-vertical-list {
             gap: 12px !important;
+            padding: 0 20px !important;
           }
-          .service-grid-3col .service-card {
-            padding: 20px 12px !important;
+          .service-item-vertical {
+            padding: 18px 20px !important;
           }
-          .service-grid-3col .service-card > div:first-child {
-            font-size: 12px !important;
+          .service-item-vertical > div:first-child {
+            font-size: 14px !important;
+            letter-spacing: 1.5px !important;
           }
-          .service-grid-3col .service-card > div:last-child {
-            font-size: 10px !important;
+          .service-item-vertical > div:last-child {
+            font-size: 11px !important;
+            letter-spacing: 0.5px !important;
           }
           
           /* 預約頁面服務選項手機版 - 保持橫向 */
@@ -790,14 +792,14 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           
           {/* 45分方子區塊 */}
           <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-1" : ""}>
-            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+            <div style={{ textAlign: "center", marginBottom: "28px" }}>
               <span style={{ fontSize: "17px", letterSpacing: "3px", color: "#4a443a", fontWeight: 500 }}>45分方子</span>
               <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價1100</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", maxWidth: "600px", margin: "0 auto" }}>
+            <div className="service-vertical-list" style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "480px", margin: "0 auto" }}>
               {["苦茶籽潔淨髮浴", "溫熱生薑泥髮浴"].map((name, i) => (
-                <div key={i} className="service-card" style={{ padding: "24px 20px", borderRadius: "4px", textAlign: "center" }}>
-                  <div style={{ fontSize: "14px", letterSpacing: "2px", color: "#4a443a", fontWeight: 500 }}>{name}</div>
+                <div key={i} className="service-card service-item-vertical" style={{ padding: "22px 28px", borderRadius: "4px", textAlign: "center" }}>
+                  <div style={{ fontSize: "15px", letterSpacing: "2px", color: "#4a443a", fontWeight: 500 }}>{name}</div>
                 </div>
               ))}
             </div>
@@ -805,19 +807,19 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           
           {/* 90分方子區塊 */}
           <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-2" : ""}>
-            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+            <div style={{ textAlign: "center", marginBottom: "28px" }}>
               <span style={{ fontSize: "17px", letterSpacing: "3px", color: "#4a443a", fontWeight: 500 }}>90分方子</span>
               <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價2360</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+            <div className="service-vertical-list" style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "480px", margin: "0 auto" }}>
               {[
                 { title: "森呼吸", subtitle: "深層淨化養髮", desc: "基礎粉刺清潔，喚醒毛囊清淨時分" },
                 { title: "墨玉烏", subtitle: "全方位去角質固髮", desc: "天然燕麥去角質，穩健毛囊鞏固秀髮" },
                 { title: "薑暖陽", subtitle: "溫熱撥筋促髮", desc: "輕顏撥筋，溫陽補氣" }
               ].map((item, i) => (
-                <div key={i} className="service-card" style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
-                  <div style={{ fontSize: "13px", letterSpacing: "1px", color: "#a3823f", marginBottom: "6px" }}>{item.title}－{item.subtitle}</div>
-                  <div style={{ fontSize: "11px", letterSpacing: "0.5px", color: "rgba(74,68,58,0.6)", lineHeight: 1.6 }}>{item.desc}</div>
+                <div key={i} className="service-card service-item-vertical" style={{ padding: "24px 28px", borderRadius: "4px", textAlign: "center" }}>
+                  <div style={{ fontSize: "15px", letterSpacing: "2px", color: "#a3823f", marginBottom: "8px" }}>{item.title}－{item.subtitle}</div>
+                  <div style={{ fontSize: "12px", letterSpacing: "1px", color: "rgba(74,68,58,0.65)", lineHeight: 1.7 }}>{item.desc}</div>
                 </div>
               ))}
             </div>
@@ -825,19 +827,19 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           
           {/* 120分全息區塊 */}
           <div style={{ marginBottom: "40px" }} className={isAnimated("services") ? "animate-in-delay-3" : ""}>
-            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+            <div style={{ textAlign: "center", marginBottom: "28px" }}>
               <span style={{ fontSize: "17px", letterSpacing: "3px", color: "#4a443a", fontWeight: 500 }}>120分全息</span>
               <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價3200</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+            <div className="service-vertical-list" style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "480px", margin: "0 auto" }}>
               {[
                 { title: "森呼吸", subtitle: "深層淨化養髮" },
                 { title: "墨玉烏", subtitle: "全方位去角質固髮" },
                 { title: "薑暖陽", subtitle: "溫熱撥筋促髮" }
               ].map((item, i) => (
-                <div key={i} className="service-card" style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
-                  <div style={{ fontSize: "13px", letterSpacing: "1px", color: "#a3823f", marginBottom: "8px" }}>{item.title}－{item.subtitle}</div>
-                  <div style={{ fontSize: "10px", letterSpacing: "0.5px", color: "rgba(74,68,58,0.55)", lineHeight: 1.7 }}>耳部撥筋・羽式采耳・草本膚泥・放鬆足浴・休憩茶席</div>
+                <div key={i} className="service-card service-item-vertical" style={{ padding: "24px 28px", borderRadius: "4px", textAlign: "center" }}>
+                  <div style={{ fontSize: "15px", letterSpacing: "2px", color: "#a3823f", marginBottom: "10px" }}>{item.title}－{item.subtitle}</div>
+                  <div style={{ fontSize: "11px", letterSpacing: "1px", color: "rgba(74,68,58,0.6)", lineHeight: 1.8 }}>耳部撥筋・羽式采耳・草本膚泥・放鬆足浴・休憩茶席</div>
                 </div>
               ))}
             </div>
