@@ -731,7 +731,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         
         <div className="hero-content" style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "720px" }}>
           <div className="animate-in" style={{ marginBottom: "30px" }}>
-            <SealLogo size={300} />
+            <SealLogo size={200} />
           </div>
           <div className="animate-in-delay-1" style={{ fontSize: "11px", letterSpacing: "8px", color: "rgba(163,130,63,0.6)", marginBottom: "30px", fontWeight: 400 }}>
             {t.brandSub}
