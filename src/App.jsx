@@ -546,7 +546,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             padding: 0 !important;
             margin: 0 auto !important;
             text-align: center !important;
-            transform: none !important;
+            transform: translateX(-7px) !important; /* 整體往左移7px */
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
