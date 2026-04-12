@@ -16,7 +16,7 @@ const CONFIG = {
 const i18n = {
   zh: {
     brand: "柔療髮浴",
-    brandEn: "ROUHE",
+    brandEn: "ROU SPA",
     brandSub: "東方頭療 · 經絡養生",
     nav: { home: "首頁", services: "服務項目", team: "技師團隊", booking: "立即預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
@@ -93,14 +93,14 @@ const i18n = {
   },
   en: {
       // (保持原本的英文翻譯不變)
-      brand: "ROUHE",
-      brandEn: "ROUHE",
+      brand: "ROU SPA",
+      brandEn: "ROU SPA",
       brandSub: "Oriental Head Therapy · Meridian Wellness",
       nav: { home: "Home", services: "Services", team: "Therapists", booking: "Book Now", shop: "Products", contact: "Contact" },
       hero: {
         title: "Gentle\nWellness",
         subtitle: "Ancient Chinese Medicine Wisdom for Modern Healing",
-        desc: "Rooted in Traditional Chinese Medicine, Rouhe's head meridian therapy harmonizes Qi and blood flow, guiding you on a journey of holistic healing and deep relaxation.",
+        desc: "Rooted in Traditional Chinese Medicine, Rou Spa's head therapy harmonizes Qi and blood flow, guiding you on a journey of holistic healing and deep relaxation.",
         cta: "Book Now"
       },
       services: {
@@ -164,7 +164,7 @@ const i18n = {
         address: CONFIG.ADDRESS_EN,
         hours: "Hours: 10:00 AM - 2:00 AM (Open Daily)",
         phone: CONFIG.PHONE,
-        copyright: "© 2026 Rouhe Wellness. All Rights Reserved."
+        copyright: "© 2026 Rou Spa. All Rights Reserved."
       },
       line: { tooltip: "LINE Chat" },
       langSwitch: "中文"
@@ -255,7 +255,7 @@ const Particle = ({ delay, x, duration }) => (
   }} />
 );
 
-export default function RouheWellness({ onNavigateShop, onNavigateContact, onLangChange }) {
+export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange }) {
   const [lang, setLang] = useState("zh");
   const [bookingStep, setBookingStep] = useState(0);
   const [selectedService, setSelectedService] = useState(null);
@@ -510,7 +510,7 @@ export default function RouheWellness({ onNavigateShop, onNavigateContact, onLan
             <SealLogo size={36} />
             <div>
               <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "4px" }}>{t.brand}</div>
-              <div style={{ fontSize: "8px", letterSpacing: "3px", color: "rgba(163,130,63,0.6)", fontFamily: "'Cormorant Garamond', serif" }}>ROUHE WELLNESS</div>
+              <div style={{ fontSize: "8px", letterSpacing: "3px", color: "rgba(163,130,63,0.6)", fontFamily: "'Cormorant Garamond', serif" }}>ROU SPA</div>
             </div>
           </div>
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
