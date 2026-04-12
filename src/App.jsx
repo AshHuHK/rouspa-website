@@ -535,7 +535,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             padding: 0 20px;
           }
           
-          /* Hero區塊手機版 - 完全置中 */
+          /* Hero區塊手機版 - 完全置中對稱 */
           .hero-section {
             padding: 0 20px !important;
             background-position: center center !important;
@@ -546,23 +546,38 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             padding: 0 !important;
             margin: 0 auto !important;
             text-align: center !important;
-            transform: translateX(-8px) !important; /* 整體往左移8px */
+            transform: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
           }
           .hero-content > * {
             margin-left: auto !important;
             margin-right: auto !important;
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
           }
           /* Logo位置 */
           .hero-content > div:first-child {
             margin-top: 20px !important;
             margin-bottom: 24px !important;
+            display: flex !important;
+            justify-content: center !important;
+          }
+          /* 五感療癒小標手機版 */
+          .hero-content .animate-in-delay-3 {
+            gap: 16px !important;
           }
           .hero-subtitle-line {
-            width: 30px !important;
+            width: 40px !important;
+            flex-shrink: 0 !important;
           }
           .hero-subtitle-text {
             font-size: 15px !important;
             letter-spacing: 6px !important;
+            white-space: nowrap !important;
           }
           /* Hero文案置中 */
           .hero-content p,
@@ -572,6 +587,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             margin-left: auto !important;
             margin-right: auto !important;
             padding: 0 !important;
+            width: 100% !important;
           }
           
           /* 服務項目小卡片手機版 */
@@ -756,11 +772,21 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
         {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}]}]}>
         
-        <div className="hero-content" style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "720px", width: "100%", margin: "0 auto" }}>
-          <div className="animate-in" style={{ marginBottom: "30px" }}>
+        <div className="hero-content" style={{ 
+          textAlign: "center", 
+          position: "relative", 
+          zIndex: 1, 
+          maxWidth: "720px", 
+          width: "100%", 
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center"
+        }}>
+          <div className="animate-in" style={{ marginBottom: "30px", display: "flex", justifyContent: "center" }}>
             <SealLogo size={200} />
           </div>
-          <div className="animate-in-delay-1" style={{ fontSize: "11px", letterSpacing: "8px", color: "rgba(163,130,63,0.6)", marginBottom: "30px", fontWeight: 400 }}>
+          <div className="animate-in-delay-1" style={{ fontSize: "11px", letterSpacing: "8px", color: "rgba(163,130,63,0.6)", marginBottom: "30px", fontWeight: 400, textAlign: "center", width: "100%" }}>
             {t.brandSub}
           </div>
           <h1 style={{
@@ -769,12 +795,17 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             color: "#3d382f", marginBottom: "28px",
             fontFamily: lang === "zh" ? "'Noto Serif TC', serif" : "'Cormorant Garamond', serif",
             whiteSpace: "pre-line",
-            textShadow: "0 2px 20px rgba(242,237,228,0.8)"
+            textShadow: "0 2px 20px rgba(242,237,228,0.8)",
+            textAlign: "center",
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            paddingLeft: lang === "zh" ? "8px" : "4px"
           }}>{t.hero.title}</h1>
           <GoldDivider />
           {/* 第一段文案 */}
           <p className="animate-in-delay-2" style={{
-            fontSize: "15px", lineHeight: 2.2, color: "rgba(74, 68, 58, 0.85)", 
+            fontSize: "15px", lineHeight: 2.6, color: "rgba(74, 68, 58, 0.85)", 
             maxWidth: "480px", margin: "0 auto 40px", letterSpacing: "2px", fontWeight: 400,
             textAlign: "center", whiteSpace: "pre-line"
           }}>取東方養護之意，循舒緩調理之法，
@@ -783,14 +814,15 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           {/* 五感療癒小標 */}
           <div className="animate-in-delay-3" style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            gap: "20px", margin: "0 auto 36px", maxWidth: "600px"
+            gap: "24px", margin: "0 auto 36px", maxWidth: "600px", width: "100%"
           }}>
-            <div className="hero-subtitle-line" style={{ width: "50px", height: "1px", background: "rgba(163,130,63,0.4)" }} />
+            <div className="hero-subtitle-line" style={{ width: "60px", height: "1px", background: "rgba(163,130,63,0.4)", flexShrink: 0 }} />
             <h2 className="hero-subtitle-text" style={{
               fontSize: "17px", fontWeight: 500, letterSpacing: "8px",
-              color: "#a3823f", fontFamily: "'Noto Serif TC', serif"
+              color: "#a3823f", fontFamily: "'Noto Serif TC', serif",
+              textAlign: "center", whiteSpace: "nowrap"
             }}>五感療癒</h2>
-            <div className="hero-subtitle-line" style={{ width: "50px", height: "1px", background: "rgba(163,130,63,0.4)" }} />
+            <div className="hero-subtitle-line" style={{ width: "60px", height: "1px", background: "rgba(163,130,63,0.4)", flexShrink: 0 }} />
           </div>
           
           {/* 五感說明文案 */}
