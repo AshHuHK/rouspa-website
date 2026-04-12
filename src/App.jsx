@@ -546,19 +546,25 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           .hero-content {
             max-width: 100% !important;
             width: 100% !important;
-            padding: 0 4px 0 0 !important; /* 微調左邊距修正偏右 */
+            padding: 0 !important;
             margin: 0 auto !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             text-align: center !important;
             box-sizing: border-box !important;
+            transform: translateX(-24px) !important; /* 整體往左移一個tab */
           }
           .hero-content > * {
             width: 100% !important;
             max-width: 100% !important;
             margin-left: auto !important;
             margin-right: auto !important;
+          }
+          /* Logo往下移2個tab */
+          .hero-content > div:first-child {
+            margin-top: 48px !important;
+            margin-bottom: 20px !important;
           }
           .hero-subtitle-line {
             width: 24px !important;
