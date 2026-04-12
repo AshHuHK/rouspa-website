@@ -731,7 +731,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         
         <div className="hero-content" style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "720px" }}>
           <div className="animate-in" style={{ marginBottom: "30px" }}>
-            <SealLogo size={100} />
+            <SealLogo size={300} />
           </div>
           <div className="animate-in-delay-1" style={{ fontSize: "11px", letterSpacing: "8px", color: "rgba(163,130,63,0.6)", marginBottom: "30px", fontWeight: 400 }}>
             {t.brandSub}
@@ -1153,7 +1153,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
       {/* ========== FOOTER ========== */}
       <footer style={{ padding: "60px 30px 40px", borderTop: "1px solid rgba(163,130,63,0.1)", textAlign: "center" }}>
-        <div style={{ marginBottom: "20px" }}><SealLogo size={50} /></div>
+        <div style={{ marginBottom: "20px" }}><SealLogo size={150} /></div>
         <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "6px", marginBottom: "24px" }}>{t.brand}</div>
         <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1px" }}>{t.footer.copyright}</div>
       </footer>
