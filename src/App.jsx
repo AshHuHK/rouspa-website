@@ -534,6 +534,23 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             letter-spacing: 1px !important;
             padding: 0 20px;
           }
+          
+          /* Hero區塊手機版優化 */
+          .hero-section {
+            padding: 0 24px !important;
+            background-position: 60% center !important;
+          }
+          .hero-content {
+            max-width: 100% !important;
+            padding: 0 10px;
+          }
+          .hero-subtitle-line {
+            width: 30px !important;
+          }
+          .hero-subtitle-text {
+            font-size: 15px !important;
+            letter-spacing: 6px !important;
+          }
         }
       `}</style>
 
@@ -622,16 +639,31 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
       </div>
 
       {/* ========== HERO ========== */}
-      <section ref={sectionRefs.home} style={{
+      <section ref={sectionRefs.home} className="hero-section" style={{
         minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        position: "relative", overflow: "hidden", padding: "0 30px"
+        position: "relative", overflow: "hidden", padding: "0 30px",
+        backgroundImage: "url('/hero-bg.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat"
       }}>
+        {/* 淺米白色遮罩層 */}
+        <div style={{ 
+          position: "absolute", 
+          inset: 0, 
+          background: "linear-gradient(135deg, rgba(242,237,228,0.82) 0%, rgba(248,244,238,0.75) 50%, rgba(242,237,228,0.82) 100%)"
+        }} />
+        {/* 額外柔光遮罩 */}
+        <div style={{ 
+          position: "absolute", 
+          inset: 0, 
+          background: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.3) 0%, rgba(242,237,228,0.2) 60%, transparent 100%)"
+        }} />
         <div className="ink-bg" style={{ width: "800px", height: "800px", top: "-200px", right: "-200px" }} />
         <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 30%, rgba(163,130,63,0.04) 0%, transparent 60%)" }} />
-        {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}
+        {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}]}]}>
         
-        <div style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "700px" }}>
+        <div className="hero-content" style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "720px" }}>
           <div className="animate-in" style={{ marginBottom: "30px" }}>
             <SealLogo size={100} />
           </div>
@@ -641,15 +673,16 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           <h1 style={{
             fontSize: lang === "zh" ? "clamp(42px, 7vw, 72px)" : "clamp(36px, 5.5vw, 58px)",
             fontWeight: 400, lineHeight: 1.3, letterSpacing: lang === "zh" ? "8px" : "4px",
-            color: "#4a443a", marginBottom: "24px",
+            color: "#3d382f", marginBottom: "28px",
             fontFamily: lang === "zh" ? "'Noto Serif TC', serif" : "'Cormorant Garamond', serif",
-            whiteSpace: "pre-line"
+            whiteSpace: "pre-line",
+            textShadow: "0 2px 20px rgba(242,237,228,0.8)"
           }}>{t.hero.title}</h1>
           <GoldDivider />
           {/* 第一段文案 */}
           <p className="animate-in-delay-2" style={{
-            fontSize: "15px", lineHeight: 2, color: "rgba(74, 68, 58, 0.75)", 
-            maxWidth: "480px", margin: "0 auto 36px", letterSpacing: "2px", fontWeight: 400,
+            fontSize: "15px", lineHeight: 2.2, color: "rgba(74, 68, 58, 0.85)", 
+            maxWidth: "480px", margin: "0 auto 40px", letterSpacing: "2px", fontWeight: 400,
             textAlign: "center", whiteSpace: "pre-line"
           }}>取東方養護之意，循舒緩調理之法，
 由頭開始，漸入身心。</p>
@@ -657,21 +690,20 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           {/* 五感療癒小標 */}
           <div className="animate-in-delay-3" style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            gap: "16px", margin: "0 auto 32px", maxWidth: "600px"
+            gap: "20px", margin: "0 auto 36px", maxWidth: "600px"
           }}>
-            <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.6)" }} />
-            <h2 style={{
-              fontSize: "18px", fontWeight: 500, letterSpacing: "6px",
-              color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Serif TC', serif",
-              textShadow: "0 1px 2px rgba(0,0,0,0.1)"
+            <div className="hero-subtitle-line" style={{ width: "50px", height: "1px", background: "rgba(163,130,63,0.4)" }} />
+            <h2 className="hero-subtitle-text" style={{
+              fontSize: "17px", fontWeight: 500, letterSpacing: "8px",
+              color: "#a3823f", fontFamily: "'Noto Serif TC', serif"
             }}>五感療癒</h2>
-            <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.6)" }} />
+            <div className="hero-subtitle-line" style={{ width: "50px", height: "1px", background: "rgba(163,130,63,0.4)" }} />
           </div>
           
           {/* 五感說明文案 */}
           <p className="animate-in-delay-3" style={{
-            fontSize: "14px", lineHeight: 2.2, color: "rgba(74, 68, 58, 0.7)", 
-            maxWidth: "520px", margin: "0 auto 50px", letterSpacing: "1.5px", fontWeight: 400,
+            fontSize: "14px", lineHeight: 2.4, color: "rgba(74, 68, 58, 0.8)", 
+            maxWidth: "520px", margin: "0 auto 50px", letterSpacing: "2px", fontWeight: 400,
             textAlign: "center"
           }}>香和其息，音靜其神，觸柔其體，境緩其意，養歸於心。</p>
           <button className="gold-btn animate-in-delay-4" onClick={() => scrollTo("booking")} style={{
