@@ -553,7 +553,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             align-items: center !important;
             text-align: center !important;
             box-sizing: border-box !important;
-            transform: translateX(-24px) !important; /* 整體往右微調6px */
+            transform: translateX(-19px) !important; /* 整體再往右5px */
           }
           .hero-content > * {
             width: 100% !important;
