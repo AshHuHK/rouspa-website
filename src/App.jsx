@@ -42,7 +42,9 @@ const i18n = {
         { name: "林雅芳", title: "首席調理師", exp: "15年經驗", specialty: "經絡調理 · 艾灸養生", desc: "師承中醫名家，精通頭部經絡與穴位調理，擅長針對性調理方案。" },
         { name: "陳柏翰", title: "資深調理師", exp: "12年經驗", specialty: "草本頭療 · 刮痧排毒", desc: "深研漢方草本學，獨創御方頭療配方，深受顧客好評。" },
         { name: "王詩涵", title: "調理師", exp: "8年經驗", specialty: "全息SPA · 肩頸調理", desc: "手法細膩溫柔，擅長全身經絡疏通，讓您在寧靜中找回平衡。" },
-        { name: "張家豪", title: "調理師", exp: "6年經驗", specialty: "頭部推拿 · 穴位按摩", desc: "力道精準到位，專注於頭部深層放鬆，有效改善睡眠品質。" }
+        { name: "張家豪", title: "調理師", exp: "6年經驗", specialty: "頭部推拿 · 穴位按摩", desc: "力道精準到位，專注於頭部深層放鬆，有效改善睡眠品質。" },
+        { name: "李靜怡", title: "調理師", exp: "5年經驗", specialty: "芳香療法 · 淋巴排毒", desc: "專精精油調配與淋巴引流手法，結合東西方療癒智慧。" },
+        { name: "吳俊霖", title: "調理師", exp: "4年經驗", specialty: "經絡推拿 · 拔罐理療", desc: "嫻熟傳統推拿技法，擅長針對肩頸腰背痠痛調理。" }
       ]
     },
     booking: {
@@ -495,6 +497,35 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           .desktop-nav { display: none !important; }
           .mobile-menu-btn { display: flex !important; }
         }
+        
+        /* 技师卡片响应式布局 */
+        .team-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 28px 24px;
+          max-width: 1000px;
+          margin: 0 auto;
+        }
+        
+        @media (max-width: 768px) {
+          .team-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px 12px;
+            padding: 0 16px;
+          }
+          .team-grid .therapist-card {
+            padding: 20px 8px !important;
+          }
+          .team-grid .therapist-card h3 {
+            font-size: 14px !important;
+            letter-spacing: 1px !important;
+          }
+          .team-grid .therapist-card > div:first-child {
+            width: 56px !important;
+            height: 56px !important;
+            font-size: 18px !important;
+          }
+        }
       `}</style>
 
       {/* ========== NAV ========== */}
@@ -655,20 +686,28 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <GoldDivider />
             <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px" }}>{t.team.subtitle}</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "24px" }}>
+          <div className="team-grid">
             {t.team.members.map((m, i) => (
-              <div key={i} className={`therapist-card ${isAnimated("team") ? `animate-in-delay-${i + 1}` : ""}`} style={{ padding: "36px 28px", borderRadius: "4px", textAlign: "center" }}>
+              <div key={i} className={`therapist-card ${isAnimated("team") ? `animate-in-delay-${(i % 3) + 1}` : ""}`} style={{ 
+                padding: "32px 24px", 
+                borderRadius: "4px", 
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                height: "100%"
+              }}>
                 <div style={{
-                  width: "80px", height: "80px", borderRadius: "50%", margin: "0 auto 20px",
-                  background: `linear-gradient(135deg, rgba(163,130,63,${0.1 + i * 0.03}), rgba(255,255,255,0.5))`,
+                  width: "72px", height: "72px", borderRadius: "50%", marginBottom: "16px",
+                  background: `linear-gradient(135deg, rgba(163,130,63,${0.1 + (i % 6) * 0.02}), rgba(255,255,255,0.5))`,
                   border: "1px solid rgba(163,130,63,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "24px", color: "#a3823f", fontWeight: 600
+                  fontSize: "22px", color: "#a3823f", fontWeight: 600,
+                  flexShrink: 0
                 }}>{m.name.charAt(0)}</div>
                 <h3 style={{ fontSize: "17px", fontWeight: 600, marginBottom: "4px", letterSpacing: "2px" }}>{m.name}</h3>
                 <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "4px", fontWeight: 500 }}>{m.title}</div>
-                <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1px", marginBottom: "14px" }}>{m.exp}</div>
-                <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "1px", padding: "6px 12px", background: "rgba(163,130,63,0.08)", borderRadius: "2px", display: "inline-block", marginBottom: "14px" }}>{m.specialty}</div>
-                <p style={{ fontSize: "13px", lineHeight: 1.8, color: "rgba(74, 68, 58, 0.7)", fontWeight: 400 }}>{m.desc}</p>
+                <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1px", marginBottom: "12px" }}>{m.exp}</div>
+                <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "1px", padding: "5px 10px", background: "rgba(163,130,63,0.08)", borderRadius: "2px", display: "inline-block", marginBottom: "12px" }}>{m.specialty}</div>
               </div>
             ))}
           </div>
