@@ -535,55 +535,43 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             padding: 0 20px;
           }
           
-          /* Hero區塊手機版優化 - 確保置中 */
+          /* Hero區塊手機版 - 完全置中 */
           .hero-section {
-            padding: 0 16px !important;
-            background-position: 60% center !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            padding: 0 20px !important;
+            background-position: center center !important;
           }
           .hero-content {
             max-width: 100% !important;
             width: 100% !important;
             padding: 0 !important;
             margin: 0 auto !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
             text-align: center !important;
-            box-sizing: border-box !important;
-            transform: translateX(-19px) !important; /* 整體再往右5px */
+            transform: none !important;
           }
           .hero-content > * {
-            width: 100% !important;
-            max-width: 100% !important;
             margin-left: auto !important;
             margin-right: auto !important;
           }
-          /* Logo往下移2個tab */
+          /* Logo位置 */
           .hero-content > div:first-child {
-            margin-top: 48px !important;
-            margin-bottom: 20px !important;
+            margin-top: 20px !important;
+            margin-bottom: 24px !important;
           }
           .hero-subtitle-line {
-            width: 24px !important;
+            width: 30px !important;
           }
           .hero-subtitle-text {
-            font-size: 14px !important;
-            letter-spacing: 5px !important;
+            font-size: 15px !important;
+            letter-spacing: 6px !important;
           }
-          /* Hero文案手機版置中 */
-          .hero-content p {
+          /* Hero文案置中 */
+          .hero-content p,
+          .hero-content h1,
+          .hero-content h2 {
             text-align: center !important;
             margin-left: auto !important;
             margin-right: auto !important;
-            padding: 0 5px !important;
-          }
-          /* 主標題手機版修正 */
-          .hero-content h1 {
-            letter-spacing: 5px !important;
-            padding-left: 5px !important;
+            padding: 0 !important;
           }
           
           /* 服務項目小卡片手機版 */
