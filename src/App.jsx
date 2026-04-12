@@ -551,6 +551,39 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             font-size: 15px !important;
             letter-spacing: 6px !important;
           }
+          
+          /* 服務項目小卡片手機版 */
+          .service-section-mobile {
+            padding: 80px 20px !important;
+          }
+          .service-section-mobile .service-title-row {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .service-section-mobile .service-title-row span:first-child {
+            font-size: 16px !important;
+          }
+          .service-section-mobile .service-title-row span:last-child {
+            font-size: 12px !important;
+            margin-left: 0 !important;
+          }
+        }
+        
+        @media (max-width: 640px) {
+          /* 90分與120分卡片手機版改為2欄 */
+          .service-grid-3col {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          .service-grid-3col .service-card {
+            padding: 20px 12px !important;
+          }
+          .service-grid-3col .service-card > div:first-child {
+            font-size: 12px !important;
+          }
+          .service-grid-3col .service-card > div:last-child {
+            font-size: 10px !important;
+          }
         }
       `}</style>
 
@@ -717,23 +750,66 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         padding: "120px 30px", position: "relative", overflow: "hidden",
         background: "rgba(255,255,255,0.2)"
       }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative", zIndex: 1 }}>
-          <div style={{ textAlign: "center", marginBottom: "70px" }} className={isAnimated("services") ? "animate-in" : ""}>
+        <div style={{ maxWidth: "900px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div style={{ textAlign: "center", marginBottom: "80px" }} className={isAnimated("services") ? "animate-in" : ""}>
             <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>SERVICES</div>
             <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.services.title}</h2>
             <GoldDivider />
-            <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px" }}>{t.services.subtitle}</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "24px" }}>
-            {t.services.items.map((item, i) => (
-              <div key={i} className={`service-card ${isAnimated("services") ? `animate-in-delay-${i + 1}` : ""}`} style={{ padding: "40px 30px", borderRadius: "4px" }}>
-                <h3 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "8px", letterSpacing: "2px", color: "#4a443a" }}>{item.name}</h3>
-                <div style={{ display: "flex", gap: "16px", marginBottom: "16px", fontSize: "12px", color: "#a3823f", letterSpacing: "1px", fontWeight: 600 }}>
-                  <span>{item.duration}</span><span style={{ opacity: 0.3 }}>|</span><span>{item.price}</span>
+          
+          {/* 45分方子區塊 */}
+          <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-1" : ""}>
+            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+              <span style={{ fontSize: "17px", letterSpacing: "3px", color: "#4a443a", fontWeight: 500 }}>45分方子</span>
+              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價1100</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", maxWidth: "600px", margin: "0 auto" }}>
+              {["苦茶籽潔淨髮浴", "溫熱生薑泥髮浴"].map((name, i) => (
+                <div key={i} className="service-card" style={{ padding: "24px 20px", borderRadius: "4px", textAlign: "center" }}>
+                  <div style={{ fontSize: "14px", letterSpacing: "2px", color: "#4a443a", fontWeight: 500 }}>{name}</div>
                 </div>
-                <p style={{ fontSize: "13px", lineHeight: 1.9, color: "rgba(74, 68, 58, 0.7)", fontWeight: 400 }}>{item.desc}</p>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+          
+          {/* 90分方子區塊 */}
+          <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-2" : ""}>
+            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+              <span style={{ fontSize: "17px", letterSpacing: "3px", color: "#4a443a", fontWeight: 500 }}>90分方子</span>
+              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價2360</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+              {[
+                { title: "森呼吸", subtitle: "深層淨化養髮", desc: "基礎粉刺清潔，喚醒毛囊清淨時分" },
+                { title: "墨玉烏", subtitle: "全方位去角質固髮", desc: "天然燕麥去角質，穩健毛囊鞏固秀髮" },
+                { title: "薑暖陽", subtitle: "溫熱撥筋促髮", desc: "輕顏撥筋，溫陽補氣" }
+              ].map((item, i) => (
+                <div key={i} className="service-card" style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
+                  <div style={{ fontSize: "13px", letterSpacing: "1px", color: "#a3823f", marginBottom: "6px" }}>{item.title}－{item.subtitle}</div>
+                  <div style={{ fontSize: "11px", letterSpacing: "0.5px", color: "rgba(74,68,58,0.6)", lineHeight: 1.6 }}>{item.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* 120分全息區塊 */}
+          <div style={{ marginBottom: "40px" }} className={isAnimated("services") ? "animate-in-delay-3" : ""}>
+            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+              <span style={{ fontSize: "17px", letterSpacing: "3px", color: "#4a443a", fontWeight: 500 }}>120分全息</span>
+              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價3200</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+              {[
+                { title: "森呼吸", subtitle: "深層淨化養髮" },
+                { title: "墨玉烏", subtitle: "全方位去角質固髮" },
+                { title: "薑暖陽", subtitle: "溫熱撥筋促髮" }
+              ].map((item, i) => (
+                <div key={i} className="service-card" style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
+                  <div style={{ fontSize: "13px", letterSpacing: "1px", color: "#a3823f", marginBottom: "8px" }}>{item.title}－{item.subtitle}</div>
+                  <div style={{ fontSize: "10px", letterSpacing: "0.5px", color: "rgba(74,68,58,0.55)", lineHeight: 1.7 }}>耳部撥筋・羽式采耳・草本膚泥・放鬆足浴・休憩茶席</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -824,19 +900,27 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <div style={{ animation: "fadeIn 0.4s ease-out" }}>
               {bookingStep === 0 && (
                 <div>
-                  <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "30px", letterSpacing: "1px", fontWeight: 500 }}>{t.booking.selectService}</p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {t.services.items.map((item, i) => (
-                      <div key={i} className={`service-card ${selectedService === i ? "selected" : ""}`}
+                  <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "40px", letterSpacing: "2px", fontWeight: 500 }}>{t.booking.selectService}</p>
+                  {/* 横向三選項 */}
+                  <div style={{ display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap", marginBottom: "40px" }}>
+                    {[
+                      { name: "45分方子", duration: "45分鐘" },
+                      { name: "90分方子", duration: "90分鐘" },
+                      { name: "120分全息", duration: "120分鐘" }
+                    ].map((item, i) => (
+                      <div key={i} 
+                        className={`service-card ${selectedService === i ? "selected" : ""}`}
                         onClick={() => setSelectedService(i)}
-                        style={{ padding: "24px 28px", borderRadius: "4px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
-                            <span style={{ fontSize: "16px", fontWeight: 600, letterSpacing: "2px", color: "#4a443a" }}>{item.name}</span>
-                          </div>
-                          <span style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.6)" }}>{item.duration}</span>
-                        </div>
-                        <div style={{ fontSize: "16px", color: "#a3823f", letterSpacing: "1px", fontWeight: 600 }}>{item.price}</div>
+                        style={{ 
+                          padding: "20px 28px", 
+                          borderRadius: "30px", 
+                          textAlign: "center",
+                          minWidth: "120px",
+                          cursor: "pointer",
+                          transition: "all 0.3s ease"
+                        }}>
+                        <div style={{ fontSize: "15px", fontWeight: 500, letterSpacing: "2px", color: "#4a443a", marginBottom: "4px" }}>{item.name}</div>
+                        <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "1px" }}>{item.duration}</div>
                       </div>
                     ))}
                   </div>
