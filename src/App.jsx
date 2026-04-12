@@ -546,7 +546,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             padding: 0 !important;
             margin: 0 auto !important;
             text-align: center !important;
-            transform: none !important;
+            transform: translateX(-8px) !important; /* 整體往左移8px */
           }
           .hero-content > * {
             margin-left: auto !important;
