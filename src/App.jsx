@@ -507,6 +507,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           margin: 0 auto;
         }
         
+        /* Hero文案响应式优化 */
         @media (max-width: 768px) {
           .team-grid {
             grid-template-columns: repeat(3, 1fr);
@@ -524,6 +525,14 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             width: 56px !important;
             height: 56px !important;
             font-size: 18px !important;
+          }
+        }
+        
+        @media (max-width: 640px) {
+          .hero-text-mobile {
+            font-size: 14px !important;
+            letter-spacing: 1px !important;
+            padding: 0 20px;
           }
         }
       `}</style>
@@ -637,14 +646,34 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             whiteSpace: "pre-line"
           }}>{t.hero.title}</h1>
           <GoldDivider />
+          {/* 第一段文案 */}
           <p className="animate-in-delay-2" style={{
-            fontSize: lang === "zh" ? "15px" : "16px", letterSpacing: lang === "zh" ? "2px" : "1px",
-            color: "#a3823f", marginBottom: "16px", fontWeight: 500,
-            fontFamily: lang === "en" ? "'Cormorant Garamond', serif" : undefined, fontStyle: lang === "en" ? "italic" : "normal"
-          }}>{t.hero.subtitle}</p>
+            fontSize: "15px", lineHeight: 2, color: "rgba(74, 68, 58, 0.75)", 
+            maxWidth: "480px", margin: "0 auto 36px", letterSpacing: "2px", fontWeight: 400,
+            textAlign: "center", whiteSpace: "pre-line"
+          }}>取東方養護之意，循舒緩調理之法，
+由頭開始，漸入身心。</p>
+          
+          {/* 五感療癒小標 */}
+          <div className="animate-in-delay-3" style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            gap: "16px", margin: "0 auto 32px", maxWidth: "600px"
+          }}>
+            <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.6)" }} />
+            <h2 style={{
+              fontSize: "18px", fontWeight: 500, letterSpacing: "6px",
+              color: "rgba(255,255,255,0.85)", fontFamily: "'Noto Serif TC', serif",
+              textShadow: "0 1px 2px rgba(0,0,0,0.1)"
+            }}>五感療癒</h2>
+            <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.6)" }} />
+          </div>
+          
+          {/* 五感說明文案 */}
           <p className="animate-in-delay-3" style={{
-            fontSize: "14px", lineHeight: 2, color: "rgba(74, 68, 58, 0.7)", maxWidth: "520px", margin: "0 auto 50px", letterSpacing: "1px", fontWeight: 400
-          }}>{t.hero.desc}</p>
+            fontSize: "14px", lineHeight: 2.2, color: "rgba(74, 68, 58, 0.7)", 
+            maxWidth: "520px", margin: "0 auto 50px", letterSpacing: "1.5px", fontWeight: 400,
+            textAlign: "center"
+          }}>香和其息，音靜其神，觸柔其體，境緩其意，養歸於心。</p>
           <button className="gold-btn animate-in-delay-4" onClick={() => scrollTo("booking")} style={{
             padding: "16px 48px", fontSize: "14px", letterSpacing: "4px", borderRadius: "2px"
           }}>{t.hero.cta}</button>
