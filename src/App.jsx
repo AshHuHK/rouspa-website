@@ -535,14 +535,27 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             padding: 0 20px;
           }
           
-          /* Hero區塊手機版優化 */
+          /* Hero區塊手機版優化 - 確保置中 */
           .hero-section {
-            padding: 0 24px !important;
+            padding: 0 20px !important;
             background-position: 60% center !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
           }
           .hero-content {
             max-width: 100% !important;
-            padding: 0 10px;
+            width: 100% !important;
+            padding: 0 10px !important;
+            margin: 0 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+          }
+          .hero-content > * {
+            width: 100% !important;
+            max-width: 100% !important;
           }
           .hero-subtitle-line {
             width: 30px !important;
@@ -550,6 +563,12 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           .hero-subtitle-text {
             font-size: 15px !important;
             letter-spacing: 6px !important;
+          }
+          /* Hero文案手機版置中 */
+          .hero-content p {
+            text-align: center !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
           }
           
           /* 服務項目小卡片手機版 */
@@ -706,8 +725,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
       {/* ========== HERO ========== */}
       <section ref={sectionRefs.home} className="hero-section" style={{
-        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        position: "relative", overflow: "hidden", padding: "0 30px",
+        minHeight: "100vh", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        position: "relative", 
+        overflow: "hidden", 
+        padding: "0 30px",
         backgroundImage: "url('/hero-bg.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -729,7 +753,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
         {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}]}]}>
         
-        <div className="hero-content" style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "720px" }}>
+        <div className="hero-content" style={{ textAlign: "center", position: "relative", zIndex: 1, maxWidth: "720px", width: "100%", margin: "0 auto" }}>
           <div className="animate-in" style={{ marginBottom: "30px" }}>
             <SealLogo size={200} />
           </div>
