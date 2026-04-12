@@ -584,6 +584,37 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           .service-grid-3col .service-card > div:last-child {
             font-size: 10px !important;
           }
+          
+          /* 預約頁面服務選項手機版 - 保持橫向 */
+          .booking-service-options {
+            gap: 10px !important;
+            padding: 0 10px;
+          }
+          .booking-service-options .booking-option-card {
+            padding: 14px 16px !important;
+            border-radius: 30px !important;
+            min-width: auto !important;
+            flex: 1 !important;
+            max-width: none !important;
+          }
+          .booking-service-options .booking-option-card > div {
+            font-size: 13px !important;
+            letter-spacing: 1px !important;
+          }
+        }
+        
+        @media (max-width: 380px) {
+          /* 超小手機螢幕 */
+          .booking-service-options {
+            gap: 8px !important;
+          }
+          .booking-service-options .booking-option-card {
+            padding: 12px 12px !important;
+          }
+          .booking-service-options .booking-option-card > div {
+            font-size: 12px !important;
+            letter-spacing: 0.5px !important;
+          }
         }
       `}</style>
 
@@ -900,27 +931,36 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <div style={{ animation: "fadeIn 0.4s ease-out" }}>
               {bookingStep === 0 && (
                 <div>
-                  <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "40px", letterSpacing: "2px", fontWeight: 500 }}>{t.booking.selectService}</p>
-                  {/* 横向三選項 */}
-                  <div style={{ display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap", marginBottom: "40px" }}>
-                    {[
-                      { name: "45分方子", duration: "45分鐘" },
-                      { name: "90分方子", duration: "90分鐘" },
-                      { name: "120分全息", duration: "120分鐘" }
-                    ].map((item, i) => (
+                  <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "50px", letterSpacing: "2px", fontWeight: 500 }}>{t.booking.selectService}</p>
+                  {/* 橫向三選項 - 膠囊式按鈕 */}
+                  <div className="booking-service-options" style={{ 
+                    display: "flex", 
+                    justifyContent: "center", 
+                    gap: "24px", 
+                    marginBottom: "50px",
+                    flexWrap: "nowrap"
+                  }}>
+                    {["45分方子", "90分方子", "120分全息"].map((name, i) => (
                       <div key={i} 
-                        className={`service-card ${selectedService === i ? "selected" : ""}`}
+                        className={`service-card booking-option-card ${selectedService === i ? "selected" : ""}`}
                         onClick={() => setSelectedService(i)}
                         style={{ 
-                          padding: "20px 28px", 
-                          borderRadius: "30px", 
+                          padding: "18px 36px", 
+                          borderRadius: "40px", 
                           textAlign: "center",
-                          minWidth: "120px",
                           cursor: "pointer",
-                          transition: "all 0.3s ease"
+                          transition: "all 0.3s ease",
+                          minWidth: "100px",
+                          flex: "1",
+                          maxWidth: "160px"
                         }}>
-                        <div style={{ fontSize: "15px", fontWeight: 500, letterSpacing: "2px", color: "#4a443a", marginBottom: "4px" }}>{item.name}</div>
-                        <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "1px" }}>{item.duration}</div>
+                        <div style={{ 
+                          fontSize: "15px", 
+                          fontWeight: 500, 
+                          letterSpacing: "2px", 
+                          color: selectedService === i ? "#a3823f" : "#4a443a",
+                          whiteSpace: "nowrap"
+                        }}>{name}</div>
                       </div>
                     ))}
                   </div>
