@@ -421,6 +421,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         @keyframes tooltipSlide { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes checkmark { 0% { transform: scale(0) rotate(-45deg); opacity: 0; } 50% { transform: scale(1.2) rotate(0deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
 
+        /* 手機版控制斷行 - 預設隱藏 */
+        .mobile-break { display: none; }
+        
+        @media (max-width: 640px) {
+          .mobile-break { display: inline !important; }
+        }
+
         .animate-in { animation: fadeInUp 0.8s ease-out forwards; }
         .animate-in-delay-1 { animation: fadeInUp 0.8s ease-out 0.15s forwards; opacity: 0; }
         .animate-in-delay-2 { animation: fadeInUp 0.8s ease-out 0.3s forwards; opacity: 0; }
@@ -750,7 +757,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         justifyContent: "center",
         position: "relative", 
         overflow: "hidden", 
-        padding: "0 30px",
+        padding: "0 20px",
         backgroundImage: "url('/hero-bg.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -770,70 +777,121 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         }} />
         <div className="ink-bg" style={{ width: "800px", height: "800px", top: "-200px", right: "-200px" }} />
         <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
-        {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}]}]}>
+        {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}
         
-        <div className="hero-content" style={{ 
-          textAlign: "center", 
+        {/* 主內容容器 - 統一中軸 */}
+        <div className="hero-main-container" style={{ 
           position: "relative", 
           zIndex: 1, 
-          maxWidth: "720px", 
-          width: "100%", 
+          width: "min(100%, 400px)",
           margin: "0 auto",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center"
+          alignItems: "center",
+          textAlign: "center",
+          boxSizing: "border-box"
         }}>
-          <div className="animate-in" style={{ marginBottom: "30px", display: "flex", justifyContent: "center" }}>
-            <SealLogo size={200} />
+          {/* Logo */}
+          <div className="animate-in" style={{ marginBottom: "24px", display: "flex", justifyContent: "center" }}>
+            <SealLogo size={180} />
           </div>
-          <div className="animate-in-delay-1" style={{ fontSize: "11px", letterSpacing: "8px", color: "rgba(163,130,63,0.6)", marginBottom: "30px", fontWeight: 400, textAlign: "center", width: "100%" }}>
+          
+          {/* 品牌副標 */}
+          <div className="animate-in-delay-1 hero-brand-sub" style={{ 
+            fontSize: "11px", 
+            letterSpacing: "7px", 
+            color: "rgba(163,130,63,0.6)", 
+            marginBottom: "24px", 
+            fontWeight: 400
+          }}>
             {t.brandSub}
           </div>
-          <h1 style={{
-            fontSize: lang === "zh" ? "clamp(42px, 7vw, 72px)" : "clamp(36px, 5.5vw, 58px)",
-            fontWeight: 400, lineHeight: 1.3, letterSpacing: lang === "zh" ? "8px" : "4px",
-            color: "#3d382f", marginBottom: "28px",
-            fontFamily: lang === "zh" ? "'Noto Serif TC', serif" : "'Cormorant Garamond', serif",
-            whiteSpace: "pre-line",
-            textShadow: "0 2px 20px rgba(242,237,228,0.8)",
-            textAlign: "center",
-            width: "100%",
-            display: "flex",
-            justifyContent: "center",
-            paddingLeft: lang === "zh" ? "8px" : "4px"
-          }}>{t.hero.title}</h1>
-          <GoldDivider />
-          {/* 第一段文案 */}
-          <p className="animate-in-delay-2" style={{
-            fontSize: "15px", lineHeight: 2.6, color: "rgba(74, 68, 58, 0.85)", 
-            maxWidth: "480px", margin: "0 auto 40px", letterSpacing: "2px", fontWeight: 400,
-            textAlign: "center", whiteSpace: "pre-line"
-          }}>取東方養護之意，循舒緩調理之法，
-由頭開始，漸入身心。</p>
           
-          {/* 五感療癒小標 */}
-          <div className="animate-in-delay-3" style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            gap: "24px", margin: "0 auto 36px", maxWidth: "600px", width: "100%"
-          }}>
-            <div className="hero-subtitle-line" style={{ width: "60px", height: "1px", background: "rgba(163,130,63,0.4)", flexShrink: 0 }} />
-            <h2 className="hero-subtitle-text" style={{
-              fontSize: "17px", fontWeight: 500, letterSpacing: "8px",
-              color: "#a3823f", fontFamily: "'Noto Serif TC', serif",
-              textAlign: "center", whiteSpace: "nowrap"
-            }}>五感療癒</h2>
-            <div className="hero-subtitle-line" style={{ width: "60px", height: "1px", background: "rgba(163,130,63,0.4)", flexShrink: 0 }} />
+          {/* 主標題 */}
+          <h1 className="animate-in-delay-2" style={{
+            fontSize: lang === "zh" ? "clamp(36px, 10vw, 56px)" : "clamp(32px, 8vw, 48px)",
+            fontWeight: 400, 
+            lineHeight: 1.4, 
+            letterSpacing: lang === "zh" ? "6px" : "3px",
+            color: "#3d382f", 
+            marginBottom: "20px",
+            fontFamily: lang === "zh" ? "'Noto Serif TC', serif" : "'Cormorant Garamond', serif",
+            textShadow: "0 2px 20px rgba(242,237,228,0.8)"
+          }}>{t.hero.title}</h1>
+          
+          {/* 裝飾線 */}
+          <div className="animate-in-delay-2" style={{ marginBottom: "24px" }}>
+            <GoldDivider />
           </div>
           
-          {/* 五感說明文案 */}
-          <p className="animate-in-delay-3" style={{
-            fontSize: "14px", lineHeight: 2.4, color: "rgba(74, 68, 58, 0.8)", 
-            maxWidth: "520px", margin: "0 auto 50px", letterSpacing: "2px", fontWeight: 400,
+          {/* 第一段內文 - 控制斷行 */}
+          <p className="animate-in-delay-3 hero-intro-1" style={{
+            fontSize: "15px", 
+            lineHeight: 2, 
+            color: "rgba(74, 68, 58, 0.85)", 
+            margin: "0 0 28px 0", 
+            letterSpacing: "2px", 
+            fontWeight: 400,
             textAlign: "center"
-          }}>香和其息，音靜其神，觸柔其體，境緩其意，養歸於心。</p>
-          <button className="gold-btn animate-in-delay-4" onClick={() => scrollTo("booking")} style={{
-            padding: "16px 48px", fontSize: "14px", letterSpacing: "4px", borderRadius: "2px"
-          }}>{t.hero.cta}</button>
+          }}>
+            取東方養護之意，循舒緩調理之法<span className="mobile-break"><br /></span>
+            由頭開始，漸入身心。
+          </p>
+          
+          {/* 五感療癒小標 */}
+          <div className="animate-in-delay-4 hero-subtitle-wrap" style={{
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center",
+            gap: "16px", 
+            marginBottom: "24px",
+            width: "100%"
+          }}>
+            <div className="hero-subtitle-line" style={{ 
+              width: "40px", 
+              height: "1px", 
+              background: "rgba(163,130,63,0.4)",
+              flexShrink: 0 
+            }} />
+            <h2 style={{
+              fontSize: "16px", 
+              fontWeight: 500, 
+              letterSpacing: "6px",
+              color: "#a3823f", 
+              fontFamily: "'Noto Serif TC', serif",
+              whiteSpace: "nowrap"
+            }}>五感療癒</h2>
+            <div className="hero-subtitle-line" style={{ 
+              width: "40px", 
+              height: "1px", 
+              background: "rgba(163,130,63,0.4)",
+              flexShrink: 0 
+            }} />
+          </div>
+          
+          {/* 第二段內文 - 控制斷行 */}
+          <p className="animate-in-delay-4 hero-intro-2" style={{
+            fontSize: "14px", 
+            lineHeight: 2, 
+            color: "rgba(74, 68, 58, 0.8)", 
+            margin: "0 0 36px 0", 
+            letterSpacing: "2px", 
+            fontWeight: 400,
+            textAlign: "center"
+          }}>
+            香和其息，音靜其神，觸柔其體，<span className="mobile-break"><br /></span>
+            境緩其意，養歸於心。
+          </p>
+          
+          {/* CTA 按鈕 */}
+          <div className="animate-in-delay-4" style={{ width: "100%" }}>
+            <button className="gold-btn" onClick={() => scrollTo("booking")} style={{
+              padding: "16px 48px", 
+              fontSize: "14px", 
+              letterSpacing: "4px", 
+              borderRadius: "2px"
+            }}>{t.hero.cta}</button>
+          </div>
         </div>
       </section>
 
