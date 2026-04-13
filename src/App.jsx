@@ -559,9 +559,9 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             flex-direction: column !important;
             align-items: center !important;
           }
-          /* Logo位置 */
+          /* Logo位置 - 往下移避免與上方重疊 */
           .hero-content > div:first-child {
-            margin-top: 20px !important;
+            margin-top: 48px !important;
             margin-bottom: 24px !important;
             display: flex !important;
             justify-content: center !important;
