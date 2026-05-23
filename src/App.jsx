@@ -18,7 +18,7 @@ const i18n = {
     brand: "柔療髮浴",
     brandEn: "ROU SPA",
     brandSub: "東方頭療 · 經絡養生",
-    nav: { home: "首頁", services: "服務項目", team: "技師團隊", booking: "立即預約", shop: "特色產品", contact: "聯繫我們" },
+    nav: { home: "首頁", services: "服務項目", booking: "立即預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",
       subtitle: "源自千年中醫智慧的頭部經絡調理",
@@ -36,8 +36,6 @@ const i18n = {
       ]
     },
     team: {
-      title: "匠心技師",
-      subtitle: "傳承古法 · 精研技藝",
       members: [
         { name: "林雅芳", title: "首席調理師", exp: "15年經驗", specialty: "經絡調理 · 艾灸養生", desc: "師承中醫名家，精通頭部經絡與穴位調理，擅長針對性調理方案。" },
         { name: "陳柏翰", title: "資深調理師", exp: "12年經驗", specialty: "草本頭療 · 刮痧排毒", desc: "深研漢方草本學，獨創御方頭療配方，深受顧客好評。" },
@@ -98,7 +96,7 @@ const i18n = {
       brand: "ROU SPA",
       brandEn: "ROU SPA",
       brandSub: "Oriental Head Therapy · Meridian Wellness",
-      nav: { home: "Home", services: "Services", team: "Therapists", booking: "Book Now", shop: "Products", contact: "Contact" },
+      nav: { home: "Home", services: "Services", booking: "Book Now", shop: "Products", contact: "Contact" },
       hero: {
         title: "Gentle\nWellness",
         subtitle: "Ancient Chinese Medicine Wisdom for Modern Healing",
@@ -116,8 +114,6 @@ const i18n = {
         ]
       },
       team: {
-        title: "Master Therapists",
-        subtitle: "Inheriting Ancient Arts · Refined Expertise",
         members: [
           { name: "Lin Ya-Fang", title: "Chief Therapist", exp: "15 Years", specialty: "Meridian Therapy · Moxibustion", desc: "Trained under renowned TCM masters, expert in head meridian and acupoint therapy." },
           { name: "Chen Bo-Han", title: "Senior Therapist", exp: "12 Years", specialty: "Herbal Therapy · Gua Sha", desc: "Deep expertise in herbal formulations, creator of our signature herbal blend." },
@@ -280,7 +276,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   const [showLineTooltip, setShowLineTooltip] = useState(false);
 
   const t = i18n[lang];
-  const sectionRefs = { home: useRef(), services: useRef(), team: useRef(), booking: useRef(), location: useRef() };
+  const sectionRefs = { home: useRef(), services: useRef(), booking: useRef(), location: useRef() };
 
   useEffect(() => {
     const h = () => setScrollY(window.scrollY || 0);
@@ -960,43 +956,6 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========== TEAM ========== */}
-      <section ref={sectionRefs.team} style={{ padding: "120px 30px", position: "relative", overflow: "hidden" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative", zIndex: 1 }}>
-          <div style={{ textAlign: "center", marginBottom: "70px" }} className={isAnimated("team") ? "animate-in" : ""}>
-            <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>THERAPISTS</div>
-            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.team.title}</h2>
-            <GoldDivider />
-            <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px" }}>{t.team.subtitle}</p>
-          </div>
-          <div className="team-grid">
-            {t.team.members.map((m, i) => (
-              <div key={i} className={`therapist-card ${isAnimated("team") ? `animate-in-delay-${(i % 3) + 1}` : ""}`} style={{ 
-                padding: "32px 24px", 
-                borderRadius: "4px", 
-                textAlign: "center",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                height: "100%"
-              }}>
-                <div style={{
-                  width: "72px", height: "72px", borderRadius: "50%", marginBottom: "16px",
-                  background: `linear-gradient(135deg, rgba(163,130,63,${0.1 + (i % 6) * 0.02}), rgba(255,255,255,0.5))`,
-                  border: "1px solid rgba(163,130,63,0.15)", display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "22px", color: "#a3823f", fontWeight: 600,
-                  flexShrink: 0
-                }}>{m.name.charAt(0)}</div>
-                <h3 style={{ fontSize: "17px", fontWeight: 600, marginBottom: "4px", letterSpacing: "2px" }}>{m.name}</h3>
-                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "4px", fontWeight: 500 }}>{m.title}</div>
-                <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1px", marginBottom: "12px" }}>{m.exp}</div>
-                <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "1px", padding: "5px 10px", background: "rgba(163,130,63,0.08)", borderRadius: "2px", display: "inline-block", marginBottom: "12px" }}>{m.specialty}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
