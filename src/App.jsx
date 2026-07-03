@@ -233,17 +233,18 @@ const SealLogo = ({ size = 44, variant = "mark" }) => (
 );
 
 // 圓圈章印（清・養・通）+ 展開式方子卡片
-function FormulaCard({ stamp, title, steps, isOpen, onEnter, onLeave, onToggle }) {
+function FormulaCard({ stamp, title, steps, isOpen, onEnter, onLeave, onToggle, variant = "v90", badge }) {
   return (
     <div
-      className={`service-card formula-card ${isOpen ? "open" : ""}`}
+      className={`service-card formula-card ${variant} ${isOpen ? "open" : ""}`}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       onClick={onToggle}
     >
       <div className="formula-head">
-        {stamp && <span className="seal-stamp">{stamp}</span>}
+        {stamp && <span className={`seal-stamp seal-${variant}`}>{stamp}</span>}
         <div className={stamp ? "formula-title" : "formula-title formula-title-center"}>{title}</div>
+        {badge && <span className="formula-badge">{badge}</span>}
         <span className="formula-toggle">⌄</span>
       </div>
       <div className="formula-body">
@@ -434,12 +435,12 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   const formulas90 = [
     { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
     { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "木質萃湯浴養髮", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-    { stamp: "通", title: "生薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "通", title: "薑暖陽　鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
   ];
   const formulas120 = [
     { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
     { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "木質萃湯浴養髮", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-    { stamp: "通", title: "生薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "通", title: "薑暖陽　鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
   ];
 
   return (
@@ -729,6 +730,31 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           font-family: 'Noto Serif TC', serif;
           background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.7), rgba(163,130,63,0.06));
         }
+        /* 90分：淡雅描邊章（預設 .seal-stamp 即為此樣式） */
+        /* 120分：精緻實心金章 + 雙圈外框，明顯區別 */
+        .seal-stamp.seal-v120 {
+          width: 50px; height: 50px;
+          color: #f6efdd;
+          border: 1px solid #6f5628;
+          box-shadow: inset 0 0 0 3px rgba(246,239,221,0.55), 0 3px 12px rgba(110,86,40,0.4);
+          background:
+            radial-gradient(circle at 34% 28%, #c2a05a 0%, #9a7b3a 55%, #7a5f2a 100%);
+          font-size: 22px; font-weight: 600;
+          text-shadow: 0 1px 2px rgba(90,68,28,0.5);
+        }
+        .formula-badge {
+          flex-shrink: 0;
+          font-size: 10px; letter-spacing: 1px; color: #8a6d35;
+          border: 1px solid rgba(163,130,63,0.45);
+          border-radius: 20px; padding: 3px 9px; margin-left: 8px;
+          font-family: 'Cormorant Garamond', serif; white-space: nowrap;
+          background: rgba(163,130,63,0.06);
+        }
+        /* 120分卡片整體略作區隔 */
+        .formula-card.v120 .formula-inner {
+          background: linear-gradient(180deg, rgba(228,216,193,0.7) 0%, rgba(221,229,214,0.55) 100%);
+          border-top: 1px double rgba(163,130,63,0.4);
+        }
         .formula-title { flex: 1; font-size: 16px; letter-spacing: 2px; color: #4a443a; font-weight: 500; }
         .formula-title-center { text-align: center; }
         .formula-toggle {
@@ -763,6 +789,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           .hero-logo-wrap img { height: 170px !important; }
           .formula-head { padding: 18px 20px; gap: 14px; }
           .seal-stamp { width: 42px; height: 42px; font-size: 19px; }
+          .seal-stamp.seal-v120 { width: 46px; height: 46px; font-size: 20px; }
+          .formula-badge { font-size: 9px; padding: 2px 7px; margin-left: 6px; }
           .formula-title { font-size: 15px; letter-spacing: 1.5px; }
           .formula-inner { padding: 18px 20px 22px; }
           .formula-steps { grid-template-columns: 1fr; gap: 11px; }
@@ -901,26 +929,27 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <SealLogo variant="hero" size={200} />
           </div>
 
-          {/* 主標題：東方頭療・經絡養生 */}
-          <h1 className="animate-in-delay-1 hero-main-title" style={{
-            fontSize: lang === "zh" ? "clamp(30px, 8vw, 46px)" : "clamp(28px, 6vw, 42px)",
-            fontWeight: 500,
-            lineHeight: 1.35,
-            letterSpacing: lang === "zh" ? "5px" : "2px",
-            color: "#3d382f",
-            marginBottom: "18px",
-            fontFamily: lang === "zh" ? "'Noto Serif TC', serif" : "'Cormorant Garamond', serif",
-            textShadow: "0 2px 20px rgba(242,237,228,0.8)"
+          {/* 副標文字（兩段同字級・同顏色）：東方頭療・經絡養生 / 以柔養生 */}
+          <h1 className="animate-in-delay-1 hero-sub-title" style={{
+            fontSize: lang === "zh" ? "clamp(17px, 4.6vw, 22px)" : "clamp(15px, 3.6vw, 19px)",
+            fontWeight: 400,
+            lineHeight: 1.6,
+            letterSpacing: lang === "zh" ? "6px" : "3px",
+            color: "#a3823f",
+            margin: "0 0 8px 0",
+            fontFamily: "'Noto Serif TC', serif",
+            textShadow: "0 2px 20px rgba(242,237,228,0.7)"
           }}>{t.brandSub}</h1>
 
-          {/* 副標題：以柔養生 */}
           <div className="animate-in-delay-2 hero-sub-title" style={{
-            fontSize: lang === "zh" ? "clamp(15px, 4vw, 20px)" : "clamp(14px, 3.5vw, 18px)",
+            fontSize: lang === "zh" ? "clamp(17px, 4.6vw, 22px)" : "clamp(15px, 3.6vw, 19px)",
             fontWeight: 400,
-            letterSpacing: lang === "zh" ? "8px" : "3px",
+            lineHeight: 1.6,
+            letterSpacing: lang === "zh" ? "6px" : "3px",
             color: "#a3823f",
             marginBottom: "18px",
-            fontFamily: "'Noto Serif TC', serif"
+            fontFamily: "'Noto Serif TC', serif",
+            textShadow: "0 2px 20px rgba(242,237,228,0.7)"
           }}>{t.hero.title}</div>
 
           {/* 裝飾線 */}
@@ -1067,6 +1096,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                   stamp={f.stamp}
                   title={f.title}
                   steps={f.steps}
+                  variant="v120"
+                  badge="120min"
                   isOpen={openFormula === `120-${i}`}
                   onEnter={() => enterFormula(`120-${i}`)}
                   onLeave={() => leaveFormula(`120-${i}`)}
