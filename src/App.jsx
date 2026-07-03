@@ -17,7 +17,7 @@ const i18n = {
   zh: {
     brand: "柔療髮浴",
     brandEn: "ROU SPA",
-    brandSub: "東方頭療 · 經絡養生",
+    brandSub: "東方頭療・經絡養生",
     nav: { home: "首頁", services: "服務項目", booking: "立即預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",
@@ -223,13 +223,41 @@ async function fetchBookedSlots(date) {
   }
 }
 
-const SealLogo = ({ size = 44 }) => (
-  <img 
-    src="/logo2.png" 
-    alt="柔療髮浴" 
-    style={{ width: size, height: size, objectFit: 'contain' }}
+const SealLogo = ({ size = 44, variant = "mark" }) => (
+  <img
+    src={variant === "hero" ? "/logo-hero.png" : "/logo-mark.png"}
+    alt="柔療髮浴 ROU SPA"
+    style={{ height: size, width: "auto", maxWidth: "100%", objectFit: "contain", display: "block", userSelect: "none" }}
+    draggable={false}
   />
 );
+
+// 圓圈章印（清・養・通）+ 展開式方子卡片
+function FormulaCard({ stamp, title, steps, isOpen, onEnter, onLeave, onToggle }) {
+  return (
+    <div
+      className={`service-card formula-card ${isOpen ? "open" : ""}`}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onClick={onToggle}
+    >
+      <div className="formula-head">
+        {stamp && <span className="seal-stamp">{stamp}</span>}
+        <div className={stamp ? "formula-title" : "formula-title formula-title-center"}>{title}</div>
+        <span className="formula-toggle">⌄</span>
+      </div>
+      <div className="formula-body">
+        <div className="formula-inner">
+          <div className="formula-steps">
+            {steps.map((s, i) => (
+              <span key={i} className="formula-step">{s}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const LineIcon = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
@@ -274,6 +302,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   const [animatedSections, setAnimatedSections] = useState(new Set());
   const [lineHover, setLineHover] = useState(false);
   const [showLineTooltip, setShowLineTooltip] = useState(false);
+  const [openFormula, setOpenFormula] = useState(null);
+  const enterFormula = (key) => setOpenFormula(key);
+  const leaveFormula = (key) => setOpenFormula((prev) => (prev === key ? null : prev));
+  const toggleFormula = (key) => setOpenFormula((prev) => (prev === key ? null : key));
 
   const t = i18n[lang];
   const sectionRefs = { home: useRef(), services: useRef(), booking: useRef(), location: useRef() };
@@ -396,6 +428,19 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
   const isAnimated = (s) => animatedSections.has(s);
   const navOpacity = Math.min(scrollY / 300, 0.98);
+
+  // ===== 養生方子資料 =====
+  const steps45 = ["頭肩頸筋絡按摩", "頭皮洗淨", "水療眼部", "手技收尾"];
+  const formulas90 = [
+    { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "木質萃湯浴養髮", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "通", title: "生薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+  ];
+  const formulas120 = [
+    { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "木質萃湯浴養髮", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "通", title: "生薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+  ];
 
   return (
     <div style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "hidden" }}>
@@ -659,6 +704,70 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             letter-spacing: 0.5px !important;
           }
         }
+
+        /* ===== 養生方子展開卡片 ===== */
+        .formula-list { display: flex; flex-direction: column; gap: 14px; }
+        .formula-card {
+          padding: 0 !important;
+          border-radius: 8px;
+          text-align: left;
+          overflow: hidden;
+          background: rgba(255,255,255,0.5);
+        }
+        .formula-card:hover { transform: none; border-color: rgba(163,130,63,0.3); }
+        .formula-head {
+          display: flex; align-items: center; gap: 18px;
+          padding: 22px 26px;
+        }
+        .seal-stamp {
+          width: 46px; height: 46px; flex-shrink: 0;
+          border-radius: 50%;
+          border: 1.5px solid #a3823f;
+          box-shadow: inset 0 0 0 3px rgba(163,130,63,0.14);
+          display: flex; align-items: center; justify-content: center;
+          color: #8a6d35; font-size: 21px; font-weight: 500;
+          font-family: 'Noto Serif TC', serif;
+          background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.7), rgba(163,130,63,0.06));
+        }
+        .formula-title { flex: 1; font-size: 16px; letter-spacing: 2px; color: #4a443a; font-weight: 500; }
+        .formula-title-center { text-align: center; }
+        .formula-toggle {
+          flex-shrink: 0; font-size: 18px; color: #a3823f; opacity: 0.7;
+          transition: transform 0.4s ease; line-height: 1;
+        }
+        .formula-card.open .formula-toggle { transform: rotate(180deg); }
+        .formula-card.open {
+          background: rgba(255,255,255,0.75);
+          box-shadow: 0 10px 34px rgba(163,130,63,0.12);
+          border-color: rgba(163,130,63,0.35);
+        }
+        .formula-body { max-height: 0; overflow: hidden; transition: max-height 0.55s cubic-bezier(0.4,0,0.2,1); }
+        .formula-card.open .formula-body { max-height: 680px; }
+        .formula-inner {
+          padding: 20px 28px 26px;
+          border-top: 1px dashed rgba(163,130,63,0.28);
+          background: linear-gradient(180deg, rgba(234,225,208,0.62) 0%, rgba(224,231,218,0.5) 100%);
+        }
+        .formula-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 26px; }
+        .formula-step {
+          position: relative; padding-left: 18px;
+          font-size: 14px; letter-spacing: 1px; color: #5b5346; line-height: 1.6;
+        }
+        .formula-step::before {
+          content: ''; position: absolute; left: 2px; top: 8px;
+          width: 6px; height: 6px; border-radius: 50%;
+          background: #a3823f; opacity: 0.55;
+        }
+
+        @media (max-width: 640px) {
+          .hero-logo-wrap img { height: 170px !important; }
+          .formula-head { padding: 18px 20px; gap: 14px; }
+          .seal-stamp { width: 42px; height: 42px; font-size: 19px; }
+          .formula-title { font-size: 15px; letter-spacing: 1.5px; }
+          .formula-inner { padding: 18px 20px 22px; }
+          .formula-steps { grid-template-columns: 1fr; gap: 11px; }
+          .formula-step { font-size: 14px; }
+        }
       `}</style>
 
       {/* ========== NAV ========== */}
@@ -788,33 +897,32 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           boxSizing: "border-box"
         }}>
           {/* Logo */}
-          <div className="animate-in" style={{ marginBottom: "24px", display: "flex", justifyContent: "center" }}>
-            <SealLogo size={180} />
+          <div className="animate-in hero-logo-wrap" style={{ marginBottom: "22px", display: "flex", justifyContent: "center" }}>
+            <SealLogo variant="hero" size={200} />
           </div>
-          
-          {/* 品牌副標 */}
-          <div className="animate-in-delay-1 hero-brand-sub" style={{ 
-            fontSize: "11px", 
-            letterSpacing: "7px", 
-            color: "rgba(163,130,63,0.6)", 
-            marginBottom: "24px", 
-            fontWeight: 400
-          }}>
-            {t.brandSub}
-          </div>
-          
-          {/* 主標題 */}
-          <h1 className="animate-in-delay-2" style={{
-            fontSize: lang === "zh" ? "clamp(36px, 10vw, 56px)" : "clamp(32px, 8vw, 48px)",
-            fontWeight: 400, 
-            lineHeight: 1.4, 
-            letterSpacing: lang === "zh" ? "6px" : "3px",
-            color: "#3d382f", 
-            marginBottom: "20px",
+
+          {/* 主標題：東方頭療・經絡養生 */}
+          <h1 className="animate-in-delay-1 hero-main-title" style={{
+            fontSize: lang === "zh" ? "clamp(30px, 8vw, 46px)" : "clamp(28px, 6vw, 42px)",
+            fontWeight: 500,
+            lineHeight: 1.35,
+            letterSpacing: lang === "zh" ? "5px" : "2px",
+            color: "#3d382f",
+            marginBottom: "18px",
             fontFamily: lang === "zh" ? "'Noto Serif TC', serif" : "'Cormorant Garamond', serif",
             textShadow: "0 2px 20px rgba(242,237,228,0.8)"
-          }}>{t.hero.title}</h1>
-          
+          }}>{t.brandSub}</h1>
+
+          {/* 副標題：以柔養生 */}
+          <div className="animate-in-delay-2 hero-sub-title" style={{
+            fontSize: lang === "zh" ? "clamp(15px, 4vw, 20px)" : "clamp(14px, 3.5vw, 18px)",
+            fontWeight: 400,
+            letterSpacing: lang === "zh" ? "8px" : "3px",
+            color: "#a3823f",
+            marginBottom: "18px",
+            fontFamily: "'Noto Serif TC', serif"
+          }}>{t.hero.title}</div>
+
           {/* 裝飾線 */}
           <div className="animate-in-delay-2" style={{ marginBottom: "24px" }}>
             <GoldDivider />
@@ -901,39 +1009,47 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>SERVICES</div>
             <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.services.title}</h2>
             <GoldDivider />
+            <p style={{ fontSize: "12px", letterSpacing: "2px", color: "rgba(74,68,58,0.5)", marginTop: "4px" }}>
+              {lang === "zh" ? "滑鼠移入或點擊項目，展開完整療程內容" : "Hover or tap each item to reveal the full ritual"}
+            </p>
           </div>
           
           {/* 45分方子區塊 */}
           <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-1" : ""}>
             <div style={{ textAlign: "center", marginBottom: "28px" }}>
-              <span style={{ fontSize: "17px", letterSpacing: "3px", color: "#4a443a", fontWeight: 500 }}>45分方子</span>
+              <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>45分方子</span>
               <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價1100</span>
             </div>
-            <div className="service-vertical-list" style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "480px", margin: "0 auto" }}>
-              {["苦茶籽潔淨髮浴", "溫熱生薑泥髮浴"].map((name, i) => (
-                <div key={i} className="service-card service-item-vertical" style={{ padding: "22px 28px", borderRadius: "4px", textAlign: "center" }}>
-                  <div style={{ fontSize: "15px", letterSpacing: "2px", color: "#4a443a", fontWeight: 500 }}>{name}</div>
-                </div>
-              ))}
+            <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
+              <FormulaCard
+                title="苦茶籽潔淨髮浴"
+                steps={steps45}
+                isOpen={openFormula === "45-0"}
+                onEnter={() => enterFormula("45-0")}
+                onLeave={() => leaveFormula("45-0")}
+                onToggle={() => toggleFormula("45-0")}
+              />
             </div>
           </div>
           
           {/* 90分方子區塊 */}
           <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-2" : ""}>
             <div style={{ textAlign: "center", marginBottom: "28px" }}>
-              <span style={{ fontSize: "17px", letterSpacing: "3px", color: "#4a443a", fontWeight: 500 }}>90分方子</span>
+              <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>90分方子</span>
               <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價2360</span>
             </div>
-            <div className="service-vertical-list" style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "480px", margin: "0 auto" }}>
-              {[
-                { title: "森呼吸", subtitle: "深層淨化養髮", desc: "基礎粉刺清潔，喚醒毛囊清淨時分" },
-                { title: "墨玉烏", subtitle: "全方位去角質固髮", desc: "天然燕麥去角質，穩健毛囊鞏固秀髮" },
-                { title: "薑暖陽", subtitle: "溫熱撥筋促髮", desc: "輕顏撥筋，溫陽補氣" }
-              ].map((item, i) => (
-                <div key={i} className="service-card service-item-vertical" style={{ padding: "24px 28px", borderRadius: "4px", textAlign: "center" }}>
-                  <div style={{ fontSize: "15px", letterSpacing: "2px", color: "#a3823f", marginBottom: "8px" }}>{item.title}－{item.subtitle}</div>
-                  <div style={{ fontSize: "12px", letterSpacing: "1px", color: "rgba(74,68,58,0.65)", lineHeight: 1.7 }}>{item.desc}</div>
-                </div>
+            <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
+              {formulas90.map((f, i) => (
+                <FormulaCard
+                  key={i}
+                  stamp={f.stamp}
+                  title={f.title}
+                  steps={f.steps}
+                  isOpen={openFormula === `90-${i}`}
+                  onEnter={() => enterFormula(`90-${i}`)}
+                  onLeave={() => leaveFormula(`90-${i}`)}
+                  onToggle={() => toggleFormula(`90-${i}`)}
+                />
               ))}
             </div>
           </div>
@@ -941,19 +1057,21 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           {/* 120分全息區塊 */}
           <div style={{ marginBottom: "40px" }} className={isAnimated("services") ? "animate-in-delay-3" : ""}>
             <div style={{ textAlign: "center", marginBottom: "28px" }}>
-              <span style={{ fontSize: "17px", letterSpacing: "3px", color: "#4a443a", fontWeight: 500 }}>120分全息</span>
+              <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>120分方子</span>
               <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價3200</span>
             </div>
-            <div className="service-vertical-list" style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "480px", margin: "0 auto" }}>
-              {[
-                { title: "森呼吸", subtitle: "深層淨化養髮" },
-                { title: "墨玉烏", subtitle: "全方位去角質固髮" },
-                { title: "薑暖陽", subtitle: "溫熱撥筋促髮" }
-              ].map((item, i) => (
-                <div key={i} className="service-card service-item-vertical" style={{ padding: "24px 28px", borderRadius: "4px", textAlign: "center" }}>
-                  <div style={{ fontSize: "15px", letterSpacing: "2px", color: "#a3823f", marginBottom: "10px" }}>{item.title}－{item.subtitle}</div>
-                  <div style={{ fontSize: "11px", letterSpacing: "1px", color: "rgba(74,68,58,0.6)", lineHeight: 1.8 }}>耳部撥筋・羽式采耳・草本膚泥・放鬆足浴・休憩茶席</div>
-                </div>
+            <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
+              {formulas120.map((f, i) => (
+                <FormulaCard
+                  key={i}
+                  stamp={f.stamp}
+                  title={f.title}
+                  steps={f.steps}
+                  isOpen={openFormula === `120-${i}`}
+                  onEnter={() => enterFormula(`120-${i}`)}
+                  onLeave={() => leaveFormula(`120-${i}`)}
+                  onToggle={() => toggleFormula(`120-${i}`)}
+                />
               ))}
             </div>
           </div>
@@ -1018,7 +1136,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                     marginBottom: "50px",
                     flexWrap: "nowrap"
                   }}>
-                    {["45分方子", "90分方子", "120分全息"].map((name, i) => (
+                    {["45分方子", "90分方子", "120分方子"].map((name, i) => (
                       <div key={i} 
                         className={`service-card booking-option-card ${selectedService === i ? "selected" : ""}`}
                         onClick={() => setSelectedService(i)}
