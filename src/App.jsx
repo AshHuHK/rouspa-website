@@ -489,6 +489,45 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         .animate-in-delay-3 { animation: fadeInUp 0.8s ease-out 0.45s forwards; opacity: 0; }
         .animate-in-delay-4 { animation: fadeInUp 0.8s ease-out 0.6s forwards; opacity: 0; }
 
+        /* ===== Hero 主 logo 下移，避免與頂端漢堡選單重疊 ===== */
+        .hero-logo-wrap { margin-top: 7vh; }
+
+        /* ===== Hero 副標花字 + 金線繚繞整句 ===== */
+        @property --gold-ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        .hero-brand-block {
+          position: relative; display: flex; flex-direction: column;
+          align-items: center; gap: 8px; padding: 16px 32px;
+          border-radius: 46px; margin-bottom: 16px;
+        }
+        .hero-brand-block::before {
+          content: ''; position: absolute; inset: 0; border-radius: 46px; padding: 1.6px;
+          background: conic-gradient(from var(--gold-ang),
+            rgba(163,130,63,0) 0deg, rgba(163,130,63,0) 200deg,
+            #a3823f 258deg, #efd396 300deg, #a3823f 342deg, rgba(163,130,63,0) 360deg);
+          -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask-composite: exclude;
+          animation: goldThread 4.5s linear infinite; pointer-events: none;
+        }
+        @keyframes goldThread { to { --gold-ang: 360deg; } }
+        .hero-fancy {
+          font-family: 'Noto Serif TC', serif; font-weight: 500;
+          font-size: clamp(17px, 4.6vw, 22px);
+          letter-spacing: 6px; line-height: 1.55; white-space: nowrap;
+          background: linear-gradient(100deg, #7d6229 0%, #a3823f 24%, #f4dca6 50%, #a3823f 76%, #7d6229 100%);
+          background-size: 220% auto;
+          -webkit-background-clip: text; background-clip: text;
+          -webkit-text-fill-color: transparent; color: transparent;
+          animation: goldShimmer 6s linear infinite;
+        }
+        @keyframes goldShimmer { to { background-position: 220% center; } }
+        @media (max-width: 640px) {
+          .hero-logo-wrap { margin-top: 15vh !important; }
+          .hero-brand-block { padding: 13px 22px; gap: 6px; margin-bottom: 14px; }
+          .hero-fancy { letter-spacing: 4px; }
+        }
+
         .gold-btn {
           background: linear-gradient(135deg, #a3823f 0%, #8a6d35 100%);
           color: #f2ede4; border: none; cursor: pointer;
@@ -838,13 +877,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         transition: "all 0.3s"
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "14px" }} onClick={() => scrollTo("home")}>
-            <SealLogo size={46} />
-            <div>
-              <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "4px" }}>{t.brand}</div>
-              <div style={{ fontSize: "8px", letterSpacing: "3px", color: "rgba(163,130,63,0.6)", fontFamily: "'Cormorant Garamond', serif" }}>ROU SPA</div>
-            </div>
-          </div>
+          {/* 頁眉左上角 logo 與文字已移除 */}
+          <div />
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
             {Object.entries(t.nav).map(([key, label]) => (
               <span key={key} onClick={() => key === "shop" ? onNavigateShop?.() : key === "contact" ? onNavigateContact?.() : scrollTo(key)} style={{
@@ -922,7 +956,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         flexDirection: "column",
         position: "relative",
         overflow: "hidden",
-        padding: "13vh 20px 7vh",
+        padding: "5vh 20px 7vh",
         backgroundImage: "url('/hero-bg.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -961,28 +995,11 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <SealLogo variant="hero" size={200} />
           </div>
 
-          {/* 副標文字（兩段同字級・同顏色）：東方頭療・經絡養生 / 以柔養生 */}
-          <h1 className="animate-in-delay-1 hero-sub-title" style={{
-            fontSize: lang === "zh" ? "clamp(17px, 4.6vw, 22px)" : "clamp(15px, 3.6vw, 19px)",
-            fontWeight: 400,
-            lineHeight: 1.6,
-            letterSpacing: lang === "zh" ? "6px" : "3px",
-            color: "#a3823f",
-            margin: "0 0 8px 0",
-            fontFamily: "'Noto Serif TC', serif",
-            textShadow: "0 2px 20px rgba(242,237,228,0.7)"
-          }}>{t.brandSub}</h1>
-
-          <div className="animate-in-delay-2 hero-sub-title" style={{
-            fontSize: lang === "zh" ? "clamp(17px, 4.6vw, 22px)" : "clamp(15px, 3.6vw, 19px)",
-            fontWeight: 400,
-            lineHeight: 1.6,
-            letterSpacing: lang === "zh" ? "6px" : "3px",
-            color: "#a3823f",
-            marginBottom: "18px",
-            fontFamily: "'Noto Serif TC', serif",
-            textShadow: "0 2px 20px rgba(242,237,228,0.7)"
-          }}>{t.hero.title}</div>
+          {/* 副標花字 + 金線繚繞（東方頭療・經絡養生 / 以柔養生） */}
+          <div className="animate-in-delay-1 hero-brand-block">
+            <span className="hero-fancy">{t.brandSub}</span>
+            <span className="hero-fancy">{t.hero.title}</span>
+          </div>
 
           {/* 裝飾線 */}
           <div className="animate-in-delay-2" style={{ marginBottom: "24px" }}>
