@@ -225,7 +225,7 @@ async function fetchBookedSlots(date) {
 
 const SealLogo = ({ size = 44, variant = "mark" }) => (
   <img
-    src={variant === "hero" ? "/logo-hero.png" : "/logo-mark.png"}
+    src={variant === "hero" ? "/logo-hero-white.png" : "/logo-mark.png"}
     alt="柔療髮浴 ROU SPA"
     style={{
       height: size, width: "auto", maxWidth: "100%", objectFit: "contain",
@@ -915,29 +915,30 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
       {/* ========== HERO ========== */}
       <section ref={sectionRefs.home} className="hero-section" style={{
-        minHeight: "100vh", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center",
-        position: "relative", 
-        overflow: "hidden", 
-        padding: "0 20px",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        flexDirection: "column",
+        position: "relative",
+        overflow: "hidden",
+        padding: "13vh 20px 7vh",
         backgroundImage: "url('/hero-bg.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat"
       }}>
-        {/* 淺米白色遮罩層 */}
-        <div style={{ 
-          position: "absolute", 
-          inset: 0, 
-          background: "linear-gradient(135deg, rgba(242,237,228,0.82) 0%, rgba(248,244,238,0.75) 50%, rgba(242,237,228,0.82) 100%)"
+        {/* 米白色遮罩：上方淡（露出照片、襯托白字 logo），往下漸濃（內文清楚可讀） */}
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(180deg, rgba(242,237,228,0.22) 0%, rgba(242,237,228,0.34) 20%, rgba(243,238,230,0.62) 40%, rgba(243,238,230,0.82) 60%, rgba(242,237,228,0.88) 100%)"
         }} />
-        {/* 額外柔光遮罩 */}
-        <div style={{ 
-          position: "absolute", 
-          inset: 0, 
-          background: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.3) 0%, rgba(242,237,228,0.2) 60%, transparent 100%)"
+        {/* 內文區柔光，集中在中下段，避免洗掉上方照片 */}
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(ellipse at 50% 62%, rgba(248,244,238,0.35) 0%, rgba(242,237,228,0.12) 55%, transparent 100%)"
         }} />
         <div className="ink-bg" style={{ width: "800px", height: "800px", top: "-200px", right: "-200px" }} />
         <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
