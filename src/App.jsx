@@ -225,7 +225,7 @@ async function fetchBookedSlots(date) {
 
 const SealLogo = ({ size = 44, variant = "mark" }) => (
   <img
-    src={variant === "hero" ? "/logo-hero.png" : "/logo-mark.png"}
+    src={variant === "hero" ? "/logo-hero-white.png" : "/logo-mark.png"}
     alt="柔療髮浴 ROU SPA"
     style={{ height: size, width: "auto", maxWidth: "100%", objectFit: "contain", display: "block", userSelect: "none" }}
     draggable={false}
@@ -233,7 +233,7 @@ const SealLogo = ({ size = 44, variant = "mark" }) => (
 );
 
 // 圓圈章印（清・養・通）+ 展開式方子卡片
-function FormulaCard({ stamp, title, steps, isOpen, onEnter, onLeave, onToggle, variant = "v90", badge }) {
+function FormulaCard({ stamp, name, sub, title, steps, isOpen, onEnter, onLeave, onToggle, variant = "v90" }) {
   return (
     <div
       className={`service-card formula-card ${variant} ${isOpen ? "open" : ""}`}
@@ -242,10 +242,16 @@ function FormulaCard({ stamp, title, steps, isOpen, onEnter, onLeave, onToggle, 
       onClick={onToggle}
     >
       <div className="formula-head">
-        {stamp && <span className={`seal-stamp seal-${variant}`}>{stamp}</span>}
-        <div className={stamp ? "formula-title" : "formula-title formula-title-center"}>{title}</div>
-        {badge && <span className="formula-badge">{badge}</span>}
-        <span className="formula-toggle">⌄</span>
+        {stamp && <span className={`seal-stamp seal-${variant}`} aria-hidden="true">{stamp}</span>}
+        {name ? (
+          <div className="formula-title">
+            <span className="formula-name">{stamp ? `${stamp}。${name}` : name}</span>
+            {sub && <span className="formula-sub">{sub}</span>}
+          </div>
+        ) : (
+          <div className={stamp ? "formula-title" : "formula-title formula-title-center"}>{title}</div>
+        )}
+        <span className="formula-toggle" aria-hidden="true">⌄</span>
       </div>
       <div className="formula-body">
         <div className="formula-inner">
@@ -429,18 +435,21 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
   const isAnimated = (s) => animatedSections.has(s);
   const navOpacity = Math.min(scrollY / 300, 0.98);
+  const navLight = navOpacity < 0.55; // 頁首深色 Hero 上方時，導覽列使用亮色文字
+  const navLinkColor = navLight ? "rgba(247,242,232,0.9)" : "rgba(74, 68, 58, 0.7)";
+  const navBookingColor = navLight ? "#f0dca6" : "#a3823f";
 
   // ===== 養生方子資料 =====
   const steps45 = ["頭肩頸筋絡按摩", "頭皮洗淨", "水療眼部", "手技收尾"];
   const formulas90 = [
-    { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-    { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "木質萃湯浴養髮", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-    { stamp: "通", title: "薑暖陽　鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "清", name: "森呼吸", sub: "柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "養", name: "墨玉烏", sub: "60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "木質萃湯浴養髮", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "通", name: "薑暖陽", sub: "鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
   ];
   const formulas120 = [
-    { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-    { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "木質萃湯浴養髮", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-    { stamp: "通", title: "薑暖陽　鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "清", name: "森呼吸", sub: "柔禾角質調理", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "養", name: "墨玉烏", sub: "60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "木質萃湯浴養髮", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "通", name: "薑暖陽", sub: "鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
   ];
 
   return (
@@ -720,43 +729,41 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           display: flex; align-items: center; gap: 18px;
           padding: 22px 26px;
         }
+        /* 90分：淡雅描邊圓章 —— 單圈、留白、清爽 */
         .seal-stamp {
-          width: 46px; height: 46px; flex-shrink: 0;
+          width: 48px; height: 48px; flex-shrink: 0;
           border-radius: 50%;
           border: 1.5px solid #a3823f;
-          box-shadow: inset 0 0 0 3px rgba(163,130,63,0.14);
+          box-shadow: inset 0 0 0 3px rgba(163,130,63,0.12);
           display: flex; align-items: center; justify-content: center;
-          color: #8a6d35; font-size: 21px; font-weight: 500;
+          color: #8a6d35; font-size: 22px; font-weight: 500;
           font-family: 'Noto Serif TC', serif;
-          background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.7), rgba(163,130,63,0.06));
+          background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.75), rgba(163,130,63,0.05));
         }
-        /* 90分：淡雅描邊章（預設 .seal-stamp 即為此樣式） */
-        /* 120分：精緻實心金章 + 雙圈外框，明顯區別 */
+        /* 120分：精緻深色印章 —— 深底 + 金色細框 + 雙圈外框，一眼可辨 */
         .seal-stamp.seal-v120 {
-          width: 50px; height: 50px;
-          color: #f6efdd;
-          border: 1px solid #6f5628;
-          box-shadow: inset 0 0 0 3px rgba(246,239,221,0.55), 0 3px 12px rgba(110,86,40,0.4);
-          background:
-            radial-gradient(circle at 34% 28%, #c2a05a 0%, #9a7b3a 55%, #7a5f2a 100%);
-          font-size: 22px; font-weight: 600;
-          text-shadow: 0 1px 2px rgba(90,68,28,0.5);
+          width: 54px; height: 54px;
+          color: #f0d9a2;
+          border: 1.5px solid #c6a052;
+          box-shadow:
+            inset 0 0 0 2px rgba(26,18,10,0.92),
+            inset 0 0 0 3.5px rgba(198,160,82,0.9),
+            0 3px 12px rgba(38,26,13,0.5);
+          background: radial-gradient(circle at 36% 30%, #5a4326 0%, #3a2b18 58%, #241a0f 100%);
+          font-size: 23px; font-weight: 600; letter-spacing: 0;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.6);
         }
-        .formula-badge {
-          flex-shrink: 0;
-          font-size: 10px; letter-spacing: 1px; color: #8a6d35;
-          border: 1px solid rgba(163,130,63,0.45);
-          border-radius: 20px; padding: 3px 9px; margin-left: 8px;
-          font-family: 'Cormorant Garamond', serif; white-space: nowrap;
-          background: rgba(163,130,63,0.06);
-        }
-        /* 120分卡片整體略作區隔 */
+        /* 120分卡片整體略作區隔 —— 更暖、更沉的展開底色 */
+        .formula-card.v120 { border-color: rgba(163,130,63,0.22); }
         .formula-card.v120 .formula-inner {
-          background: linear-gradient(180deg, rgba(228,216,193,0.7) 0%, rgba(221,229,214,0.55) 100%);
-          border-top: 1px double rgba(163,130,63,0.4);
+          background: linear-gradient(180deg, rgba(233,220,197,0.94) 0%, rgba(224,207,178,0.9) 100%);
+          border-top: 1px dashed rgba(140,109,53,0.45);
         }
-        .formula-title { flex: 1; font-size: 16px; letter-spacing: 2px; color: #4a443a; font-weight: 500; }
-        .formula-title-center { text-align: center; }
+        .formula-card.v120 .formula-name { color: #3f2e1a; }
+        .formula-title { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .formula-name { font-size: 17px; letter-spacing: 2.5px; color: #4a443a; font-weight: 600; line-height: 1.3; }
+        .formula-sub { font-size: 12.5px; letter-spacing: 1.5px; color: rgba(138,109,53,0.9); font-weight: 400; line-height: 1.3; }
+        .formula-title-center { text-align: center; font-size: 16px; letter-spacing: 2px; color: #4a443a; font-weight: 500; display: block; }
         .formula-toggle {
           flex-shrink: 0; font-size: 18px; color: #a3823f; opacity: 0.7;
           transition: transform 0.4s ease; line-height: 1;
@@ -771,8 +778,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         .formula-card.open .formula-body { max-height: 680px; }
         .formula-inner {
           padding: 20px 28px 26px;
-          border-top: 1px dashed rgba(163,130,63,0.28);
-          background: linear-gradient(180deg, rgba(234,225,208,0.62) 0%, rgba(224,231,218,0.5) 100%);
+          border-top: 1px dashed rgba(163,130,63,0.32);
+          background: linear-gradient(180deg, rgba(243,233,215,0.96) 0%, rgba(235,222,199,0.92) 100%);
         }
         .formula-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 26px; }
         .formula-step {
@@ -787,14 +794,14 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
         @media (max-width: 640px) {
           .hero-logo-wrap img { height: 170px !important; }
-          .formula-head { padding: 18px 20px; gap: 14px; }
-          .seal-stamp { width: 42px; height: 42px; font-size: 19px; }
-          .seal-stamp.seal-v120 { width: 46px; height: 46px; font-size: 20px; }
-          .formula-badge { font-size: 9px; padding: 2px 7px; margin-left: 6px; }
-          .formula-title { font-size: 15px; letter-spacing: 1.5px; }
+          .formula-head { padding: 18px 18px; gap: 14px; }
+          .seal-stamp { width: 46px; height: 46px; font-size: 21px; }
+          .seal-stamp.seal-v120 { width: 50px; height: 50px; font-size: 22px; }
+          .formula-name { font-size: 16px; letter-spacing: 2px; }
+          .formula-sub { font-size: 12.5px; letter-spacing: 1px; }
           .formula-inner { padding: 18px 20px 22px; }
           .formula-steps { grid-template-columns: 1fr; gap: 11px; }
-          .formula-step { font-size: 14px; }
+          .formula-step { font-size: 14.5px; }
         }
       `}</style>
 
@@ -809,25 +816,26 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "14px" }} onClick={() => scrollTo("home")}>
             <SealLogo size={36} />
-            <div>
-              <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "4px" }}>{t.brand}</div>
-              <div style={{ fontSize: "8px", letterSpacing: "3px", color: "rgba(163,130,63,0.6)", fontFamily: "'Cormorant Garamond', serif" }}>ROU SPA</div>
+            <div style={{ textShadow: navLight ? "0 1px 10px rgba(0,0,0,0.4)" : "none" }}>
+              <div style={{ fontSize: "16px", fontWeight: 600, color: navLight ? "#ecd39a" : "#a3823f", letterSpacing: "4px", transition: "color 0.3s" }}>{t.brand}</div>
+              <div style={{ fontSize: "8px", letterSpacing: "3px", color: navLight ? "rgba(240,220,166,0.8)" : "rgba(163,130,63,0.6)", fontFamily: "'Cormorant Garamond', serif", transition: "color 0.3s" }}>ROU SPA</div>
             </div>
           </div>
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
             {Object.entries(t.nav).map(([key, label]) => (
               <span key={key} onClick={() => key === "shop" ? onNavigateShop?.() : key === "contact" ? onNavigateContact?.() : scrollTo(key)} style={{
                 cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
-                color: key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)",
-                transition: "color 0.3s", fontWeight: key === "booking" ? 600 : 400
+                color: key === "booking" ? navBookingColor : navLinkColor,
+                transition: "color 0.3s", fontWeight: key === "booking" ? 600 : 400,
+                textShadow: navLight ? "0 1px 10px rgba(0,0,0,0.4)" : "none"
               }}
-              onMouseEnter={e => e.target.style.color = "#a3823f"}
-              onMouseLeave={e => e.target.style.color = key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)"}
+              onMouseEnter={e => e.target.style.color = navLight ? "#ffffff" : "#a3823f"}
+              onMouseLeave={e => e.target.style.color = key === "booking" ? navBookingColor : navLinkColor}
               >{label}</span>
             ))}
             <span onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); }} style={{
               cursor: "pointer", fontSize: "12px", letterSpacing: "2px", padding: "5px 14px",
-              border: "1px solid rgba(163,130,63,0.3)", color: "#a3823f", borderRadius: "2px", transition: "all 0.3s"
+              border: navLight ? "1px solid rgba(240,220,166,0.5)" : "1px solid rgba(163,130,63,0.3)", color: navLight ? "#ecd39a" : "#a3823f", borderRadius: "2px", transition: "all 0.3s"
             }}
             onMouseEnter={e => e.target.style.background = "rgba(163,130,63,0.1)"}
             onMouseLeave={e => e.target.style.background = "transparent"}
@@ -896,17 +904,17 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat"
       }}>
-        {/* 淺米白色遮罩層 */}
-        <div style={{ 
-          position: "absolute", 
-          inset: 0, 
-          background: "linear-gradient(135deg, rgba(242,237,228,0.82) 0%, rgba(248,244,238,0.75) 50%, rgba(242,237,228,0.82) 100%)"
+        {/* 溫暖深色遮罩層 - 讓實心白字清晰浮現 */}
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(180deg, rgba(30,22,15,0.62) 0%, rgba(34,25,17,0.48) 42%, rgba(26,19,13,0.66) 100%)"
         }} />
-        {/* 額外柔光遮罩 */}
-        <div style={{ 
-          position: "absolute", 
-          inset: 0, 
-          background: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.3) 0%, rgba(242,237,228,0.2) 60%, transparent 100%)"
+        {/* 中央柔焦暗角 - 聚焦主視覺 */}
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(ellipse at 50% 42%, rgba(20,14,9,0.10) 0%, rgba(18,12,8,0.30) 55%, rgba(14,9,6,0.62) 100%)"
         }} />
         <div className="ink-bg" style={{ width: "800px", height: "800px", top: "-200px", right: "-200px" }} />
         <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
@@ -935,10 +943,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             fontWeight: 400,
             lineHeight: 1.6,
             letterSpacing: lang === "zh" ? "6px" : "3px",
-            color: "#a3823f",
+            color: "#ecdcb4",
             margin: "0 0 8px 0",
             fontFamily: "'Noto Serif TC', serif",
-            textShadow: "0 2px 20px rgba(242,237,228,0.7)"
+            textShadow: "0 2px 16px rgba(0,0,0,0.55)"
           }}>{t.brandSub}</h1>
 
           <div className="animate-in-delay-2 hero-sub-title" style={{
@@ -946,10 +954,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             fontWeight: 400,
             lineHeight: 1.6,
             letterSpacing: lang === "zh" ? "6px" : "3px",
-            color: "#a3823f",
+            color: "#fbf6ec",
             marginBottom: "18px",
             fontFamily: "'Noto Serif TC', serif",
-            textShadow: "0 2px 20px rgba(242,237,228,0.7)"
+            textShadow: "0 2px 16px rgba(0,0,0,0.6)"
           }}>{t.hero.title}</div>
 
           {/* 裝飾線 */}
@@ -959,13 +967,14 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           
           {/* 第一段內文 - 控制斷行 */}
           <p className="animate-in-delay-3 hero-intro-1" style={{
-            fontSize: "15px", 
-            lineHeight: 2, 
-            color: "rgba(74, 68, 58, 0.85)", 
-            margin: "0 0 28px 0", 
-            letterSpacing: "2px", 
+            fontSize: "15px",
+            lineHeight: 2,
+            color: "rgba(246, 240, 228, 0.92)",
+            margin: "0 0 28px 0",
+            letterSpacing: "2px",
             fontWeight: 400,
-            textAlign: "center"
+            textAlign: "center",
+            textShadow: "0 1px 12px rgba(0,0,0,0.55)"
           }}>
             取東方養護之意，循舒緩調理之法<span className="mobile-break"><br /></span>
             由頭開始，漸入身心。
@@ -980,37 +989,39 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             marginBottom: "24px",
             width: "100%"
           }}>
-            <div className="hero-subtitle-line" style={{ 
-              width: "40px", 
-              height: "1px", 
-              background: "rgba(163,130,63,0.4)",
-              flexShrink: 0 
+            <div className="hero-subtitle-line" style={{
+              width: "40px",
+              height: "1px",
+              background: "rgba(217,189,130,0.55)",
+              flexShrink: 0
             }} />
             <h2 style={{
-              fontSize: "16px", 
-              fontWeight: 500, 
+              fontSize: "16px",
+              fontWeight: 500,
               letterSpacing: "6px",
-              color: "#a3823f", 
+              color: "#e2c88f",
               fontFamily: "'Noto Serif TC', serif",
-              whiteSpace: "nowrap"
+              whiteSpace: "nowrap",
+              textShadow: "0 1px 12px rgba(0,0,0,0.5)"
             }}>五感療癒</h2>
-            <div className="hero-subtitle-line" style={{ 
-              width: "40px", 
-              height: "1px", 
-              background: "rgba(163,130,63,0.4)",
-              flexShrink: 0 
+            <div className="hero-subtitle-line" style={{
+              width: "40px",
+              height: "1px",
+              background: "rgba(217,189,130,0.55)",
+              flexShrink: 0
             }} />
           </div>
           
           {/* 第二段內文 - 控制斷行 */}
           <p className="animate-in-delay-4 hero-intro-2" style={{
-            fontSize: "14px", 
-            lineHeight: 2, 
-            color: "rgba(74, 68, 58, 0.8)", 
-            margin: "0 0 36px 0", 
-            letterSpacing: "2px", 
+            fontSize: "14px",
+            lineHeight: 2,
+            color: "rgba(240, 233, 220, 0.85)",
+            margin: "0 0 36px 0",
+            letterSpacing: "2px",
             fontWeight: 400,
-            textAlign: "center"
+            textAlign: "center",
+            textShadow: "0 1px 12px rgba(0,0,0,0.5)"
           }}>
             香和其息，音靜其神，觸柔其體，<span className="mobile-break"><br /></span>
             境緩其意，養歸於心。
@@ -1072,7 +1083,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 <FormulaCard
                   key={i}
                   stamp={f.stamp}
-                  title={f.title}
+                  name={f.name}
+                  sub={f.sub}
                   steps={f.steps}
                   isOpen={openFormula === `90-${i}`}
                   onEnter={() => enterFormula(`90-${i}`)}
@@ -1094,10 +1106,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 <FormulaCard
                   key={i}
                   stamp={f.stamp}
-                  title={f.title}
+                  name={f.name}
+                  sub={f.sub}
                   steps={f.steps}
                   variant="v120"
-                  badge="120min"
                   isOpen={openFormula === `120-${i}`}
                   onEnter={() => enterFormula(`120-${i}`)}
                   onLeave={() => leaveFormula(`120-${i}`)}
