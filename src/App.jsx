@@ -223,28 +223,52 @@ async function fetchBookedSlots(date) {
   }
 }
 
-const SealLogo = ({ size = 44, variant = "mark" }) => (
-  <img
-    src={variant === "hero" ? "/logo-hero.png" : "/logo-mark.png"}
-    alt="柔療髮浴 ROU SPA"
-    style={{ height: size, width: "auto", maxWidth: "100%", objectFit: "contain", display: "block", userSelect: "none" }}
-    draggable={false}
-  />
-);
+const SealLogo = ({ size = 44, variant = "mark" }) => {
+  const src =
+    variant === "hero" ? "/logo-hero.png" :
+    variant === "banner" ? "/logo-banner.png" :
+    variant === "markWhite" ? "/logo-mark-white.png" :
+    "/logo-mark.png";
+  return (
+    <img
+      src={src}
+      alt="柔療髮浴 ROU SPA"
+      style={{ height: size, width: "auto", maxWidth: "100%", objectFit: "contain", display: "block", userSelect: "none" }}
+      draggable={false}
+    />
+  );
+};
 
-// 圓圈章印（清・養・通）+ 展開式方子卡片
-function FormulaCard({ stamp, title, steps, isOpen, onEnter, onLeave, onToggle, variant = "v90", badge }) {
+// 圓圈章印（清・養・通）+ 展開式方子卡片（名稱兩行）
+function FormulaCard({ stamp, name, sub, steps, isOpen, onEnter, onLeave, onToggle, variant = "v90" }) {
+  // 偵測裝置是否支援滑鼠 hover：
+  // 桌面（可 hover）→ 用滑鼠移入展開；手機（無 hover）→ 用點擊展開。
+  // 若兩者都綁定，觸控時 mouseenter 會先展開、click 再收合，導致手機永遠打不開。
+  const [canHover, setCanHover] = useState(true);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setCanHover(mq.matches);
+    update();
+    mq.addEventListener ? mq.addEventListener("change", update) : mq.addListener(update);
+    return () => { mq.removeEventListener ? mq.removeEventListener("change", update) : mq.removeListener(update); };
+  }, []);
+
+  const hoverProps = canHover ? { onMouseEnter: onEnter, onMouseLeave: onLeave } : {};
+  const clickProps = canHover ? {} : { onClick: onToggle };
+
   return (
     <div
       className={`service-card formula-card ${variant} ${isOpen ? "open" : ""}`}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      onClick={onToggle}
+      {...hoverProps}
+      {...clickProps}
     >
       <div className="formula-head">
         {stamp && <span className={`seal-stamp seal-${variant}`}>{stamp}</span>}
-        <div className={stamp ? "formula-title" : "formula-title formula-title-center"}>{title}</div>
-        {badge && <span className="formula-badge">{badge}</span>}
+        <div className={stamp ? "formula-title" : "formula-title formula-title-center"}>
+          <span className="formula-name">{name}</span>
+          {sub && <span className="formula-sub">{sub}</span>}
+        </div>
         <span className="formula-toggle">⌄</span>
       </div>
       <div className="formula-body">
@@ -429,18 +453,25 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
   const isAnimated = (s) => animatedSections.has(s);
   const navOpacity = Math.min(scrollY / 300, 0.98);
+  // 頁面頂端時導覽列浮在棕色橫幅上（淺色文字）；下滑或展開手機選單後轉為米色列（金色文字）
+  const scrolled = scrollY > 200;
+  const navSolid = scrolled || menuOpen;
+  const navText = navSolid ? "rgba(74, 68, 58, 0.7)" : "rgba(247, 240, 228, 0.9)";
+  const navAccent = navSolid ? "#a3823f" : "#ffffff";
+  const navBrand = navSolid ? "#a3823f" : "#f7f0e4";
+  const navSub = navSolid ? "rgba(163,130,63,0.6)" : "rgba(247,240,228,0.72)";
 
-  // ===== 養生方子資料 =====
+  // ===== 養生方子資料（名稱兩行：主名 / 內容） =====
   const steps45 = ["頭肩頸筋絡按摩", "頭皮洗淨", "水療眼部", "手技收尾"];
   const formulas90 = [
-    { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-    { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "木質萃湯浴養髮", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-    { stamp: "通", title: "薑暖陽　鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "清", name: "森呼吸", sub: "柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "養", name: "墨玉烏", sub: "60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "木質萃湯浴養髮", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "通", name: "薑暖陽", sub: "鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
   ];
   const formulas120 = [
-    { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-    { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "木質萃湯浴養髮", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-    { stamp: "通", title: "薑暖陽　鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "清", name: "森呼吸", sub: "柔禾角質調理", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "養", name: "墨玉烏", sub: "60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "木質萃湯浴養髮", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "通", name: "薑暖陽", sub: "鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
   ];
 
   return (
@@ -475,6 +506,42 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         .animate-in-delay-2 { animation: fadeInUp 0.8s ease-out 0.3s forwards; opacity: 0; }
         .animate-in-delay-3 { animation: fadeInUp 0.8s ease-out 0.45s forwards; opacity: 0; }
         .animate-in-delay-4 { animation: fadeInUp 0.8s ease-out 0.6s forwards; opacity: 0; }
+
+        /* ===== 頂部棕色橫幅（與選單融合） ===== */
+        .hero-banner {
+          position: relative;
+          width: 100%;
+          min-height: clamp(300px, 46vh, 460px);
+          display: flex; align-items: center; justify-content: center;
+          padding: 92px 24px 44px;
+          overflow: hidden;
+          background:
+            radial-gradient(ellipse at 50% 40%, rgba(190,178,159,0.55) 0%, rgba(154,140,121,0) 62%),
+            linear-gradient(165deg, #9d8f7a 0%, #8f8170 52%, #82755f 100%);
+        }
+        .hero-banner-glow {
+          position: absolute; inset: 0;
+          background: radial-gradient(circle at 50% 46%, rgba(255,252,246,0.16), transparent 55%);
+          pointer-events: none;
+        }
+        .hero-banner-logo {
+          position: relative; z-index: 1;
+          height: clamp(190px, 30vh, 300px);
+          width: auto; max-width: 82%;
+          object-fit: contain;
+          filter: drop-shadow(0 6px 22px rgba(60,50,35,0.28));
+        }
+        .hero-content-area {
+          position: relative;
+          padding: 46px 20px 84px;
+          display: flex; justify-content: center;
+          overflow: hidden;
+        }
+        @media (max-width: 640px) {
+          .hero-banner { min-height: clamp(240px, 40vh, 340px); padding: 84px 18px 34px; }
+          .hero-banner-logo { height: clamp(160px, 34vh, 240px); max-width: 78%; }
+          .hero-content-area { padding: 36px 20px 64px; }
+        }
 
         .gold-btn {
           background: linear-gradient(135deg, #a3823f 0%, #8a6d35 100%);
@@ -735,28 +802,26 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         .seal-stamp.seal-v120 {
           width: 50px; height: 50px;
           color: #f6efdd;
-          border: 1px solid #6f5628;
-          box-shadow: inset 0 0 0 3px rgba(246,239,221,0.55), 0 3px 12px rgba(110,86,40,0.4);
+          border: 1.5px solid #6f5628;
+          /* 內圈奶白細框 + 外圈金色細框 = 雙圈精緻章印 */
+          box-shadow:
+            inset 0 0 0 3px rgba(246,239,221,0.6),
+            0 0 0 2px rgba(122,95,42,0.55),
+            0 3px 12px rgba(110,86,40,0.42);
           background:
-            radial-gradient(circle at 34% 28%, #c2a05a 0%, #9a7b3a 55%, #7a5f2a 100%);
+            radial-gradient(circle at 34% 28%, #c2a05a 0%, #9a7b3a 55%, #765a28 100%);
           font-size: 22px; font-weight: 600;
-          text-shadow: 0 1px 2px rgba(90,68,28,0.5);
+          text-shadow: 0 1px 2px rgba(90,68,28,0.55);
         }
-        .formula-badge {
-          flex-shrink: 0;
-          font-size: 10px; letter-spacing: 1px; color: #8a6d35;
-          border: 1px solid rgba(163,130,63,0.45);
-          border-radius: 20px; padding: 3px 9px; margin-left: 8px;
-          font-family: 'Cormorant Garamond', serif; white-space: nowrap;
-          background: rgba(163,130,63,0.06);
-        }
-        /* 120分卡片整體略作區隔 */
+        /* 120分卡片整體略作區隔（暖棕色，較 90 分深一階） */
         .formula-card.v120 .formula-inner {
-          background: linear-gradient(180deg, rgba(228,216,193,0.7) 0%, rgba(221,229,214,0.55) 100%);
-          border-top: 1px double rgba(163,130,63,0.4);
+          background: linear-gradient(180deg, rgba(226,211,187,0.82) 0%, rgba(214,197,169,0.7) 100%);
+          border-top: 1px double rgba(163,130,63,0.42);
         }
-        .formula-title { flex: 1; font-size: 16px; letter-spacing: 2px; color: #4a443a; font-weight: 500; }
-        .formula-title-center { text-align: center; }
+        .formula-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+        .formula-name { font-size: 16px; letter-spacing: 2px; color: #4a443a; font-weight: 600; line-height: 1.35; }
+        .formula-sub { font-size: 13px; letter-spacing: 1.5px; color: rgba(74,68,58,0.6); font-weight: 400; line-height: 1.4; }
+        .formula-title-center { align-items: center; text-align: center; }
         .formula-toggle {
           flex-shrink: 0; font-size: 18px; color: #a3823f; opacity: 0.7;
           transition: transform 0.4s ease; line-height: 1;
@@ -772,7 +837,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         .formula-inner {
           padding: 20px 28px 26px;
           border-top: 1px dashed rgba(163,130,63,0.28);
-          background: linear-gradient(180deg, rgba(234,225,208,0.62) 0%, rgba(224,231,218,0.5) 100%);
+          background: linear-gradient(180deg, rgba(238,229,213,0.72) 0%, rgba(230,219,199,0.62) 100%);
         }
         .formula-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 26px; }
         .formula-step {
@@ -790,8 +855,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           .formula-head { padding: 18px 20px; gap: 14px; }
           .seal-stamp { width: 42px; height: 42px; font-size: 19px; }
           .seal-stamp.seal-v120 { width: 46px; height: 46px; font-size: 20px; }
-          .formula-badge { font-size: 9px; padding: 2px 7px; margin-left: 6px; }
-          .formula-title { font-size: 15px; letter-spacing: 1.5px; }
+          .formula-name { font-size: 15px; letter-spacing: 1.5px; }
+          .formula-sub { font-size: 12.5px; letter-spacing: 1px; }
           .formula-inner { padding: 18px 20px 22px; }
           .formula-steps { grid-template-columns: 1fr; gap: 11px; }
           .formula-step { font-size: 14px; }
@@ -801,44 +866,44 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
       {/* ========== NAV ========== */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: `rgba(242, 237, 228, ${navOpacity})`,
-        backdropFilter: navOpacity > 0.1 ? "blur(20px)" : "none",
-        borderBottom: navOpacity > 0.3 ? "1px solid rgba(163,130,63,0.1)" : "none",
-        transition: "all 0.3s"
+        background: navSolid ? `rgba(242, 237, 228, ${scrolled ? navOpacity : 0.98})` : "transparent",
+        backdropFilter: navSolid ? "blur(20px)" : "none",
+        borderBottom: navSolid ? "1px solid rgba(163,130,63,0.12)" : "none",
+        transition: "all 0.4s ease"
       }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "14px" }} onClick={() => scrollTo("home")}>
-            <SealLogo size={36} />
+            <SealLogo size={36} variant={navSolid ? "mark" : "markWhite"} />
             <div>
-              <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "4px" }}>{t.brand}</div>
-              <div style={{ fontSize: "8px", letterSpacing: "3px", color: "rgba(163,130,63,0.6)", fontFamily: "'Cormorant Garamond', serif" }}>ROU SPA</div>
+              <div style={{ fontSize: "16px", fontWeight: 600, color: navBrand, letterSpacing: "4px", transition: "color 0.4s" }}>{t.brand}</div>
+              <div style={{ fontSize: "8px", letterSpacing: "3px", color: navSub, fontFamily: "'Cormorant Garamond', serif", transition: "color 0.4s" }}>ROU SPA</div>
             </div>
           </div>
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
             {Object.entries(t.nav).map(([key, label]) => (
               <span key={key} onClick={() => key === "shop" ? onNavigateShop?.() : key === "contact" ? onNavigateContact?.() : scrollTo(key)} style={{
                 cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
-                color: key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)",
+                color: key === "booking" ? navAccent : navText,
                 transition: "color 0.3s", fontWeight: key === "booking" ? 600 : 400
               }}
-              onMouseEnter={e => e.target.style.color = "#a3823f"}
-              onMouseLeave={e => e.target.style.color = key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)"}
+              onMouseEnter={e => e.target.style.color = navAccent}
+              onMouseLeave={e => e.target.style.color = key === "booking" ? navAccent : navText}
               >{label}</span>
             ))}
             <span onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); }} style={{
               cursor: "pointer", fontSize: "12px", letterSpacing: "2px", padding: "5px 14px",
-              border: "1px solid rgba(163,130,63,0.3)", color: "#a3823f", borderRadius: "2px", transition: "all 0.3s"
+              border: `1px solid ${navSolid ? "rgba(163,130,63,0.3)" : "rgba(247,240,228,0.5)"}`, color: navAccent, borderRadius: "2px", transition: "all 0.3s"
             }}
-            onMouseEnter={e => e.target.style.background = "rgba(163,130,63,0.1)"}
+            onMouseEnter={e => e.target.style.background = navSolid ? "rgba(163,130,63,0.1)" : "rgba(247,240,228,0.15)"}
             onMouseLeave={e => e.target.style.background = "transparent"}
             >{t.langSwitch}</span>
           </div>
           <div className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{
             cursor: "pointer", display: "none", flexDirection: "column", gap: "5px", padding: "4px"
           }}>
-            <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(6px)" : "none" }} />
-            <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
-            <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : "none" }} />
+            <div style={{ width: "24px", height: "1px", background: navBrand, transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(6px)" : "none" }} />
+            <div style={{ width: "24px", height: "1px", background: navBrand, transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
+            <div style={{ width: "24px", height: "1px", background: navBrand, transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : "none" }} />
           </div>
         </div>
         {menuOpen && (
@@ -884,38 +949,22 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
       {/* ========== HERO ========== */}
       <section ref={sectionRefs.home} className="hero-section" style={{
-        minHeight: "100vh", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center",
-        position: "relative", 
-        overflow: "hidden", 
-        padding: "0 20px",
-        backgroundImage: "url('/hero-bg.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat"
+        position: "relative",
+        overflow: "hidden",
+        background: "#f2ede4"
       }}>
-        {/* 淺米白色遮罩層 */}
-        <div style={{ 
-          position: "absolute", 
-          inset: 0, 
-          background: "linear-gradient(135deg, rgba(242,237,228,0.82) 0%, rgba(248,244,238,0.75) 50%, rgba(242,237,228,0.82) 100%)"
-        }} />
-        {/* 額外柔光遮罩 */}
-        <div style={{ 
-          position: "absolute", 
-          inset: 0, 
-          background: "radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.3) 0%, rgba(242,237,228,0.2) 60%, transparent 100%)"
-        }} />
-        <div className="ink-bg" style={{ width: "800px", height: "800px", top: "-200px", right: "-200px" }} />
-        <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
+        {/* 頂部滿版棕色橫幅 — 延伸至頁寬，與上方選單融合；書法為實心白色 */}
+        <div className="hero-banner">
+          <div className="hero-banner-glow" />
+          <img className="hero-banner-logo animate-in" src="/logo-banner.png" alt="柔療髮浴 ROU SPA" draggable={false} />
+        </div>
+
+        {/* 文字內容區（整體往上移，米色底） */}
+        <div className="hero-content-area">
         {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}
-        
-        {/* 主內容容器 - 統一中軸 */}
-        <div className="hero-main-container" style={{ 
-          position: "relative", 
-          zIndex: 1, 
+        <div className="hero-main-container" style={{
+          position: "relative",
+          zIndex: 1,
           width: "min(100%, 400px)",
           margin: "0 auto",
           display: "flex",
@@ -924,10 +973,6 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           textAlign: "center",
           boxSizing: "border-box"
         }}>
-          {/* Logo */}
-          <div className="animate-in hero-logo-wrap" style={{ marginBottom: "22px", display: "flex", justifyContent: "center" }}>
-            <SealLogo variant="hero" size={200} />
-          </div>
 
           {/* 副標文字（兩段同字級・同顏色）：東方頭療・經絡養生 / 以柔養生 */}
           <h1 className="animate-in-delay-1 hero-sub-title" style={{
@@ -1019,12 +1064,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           {/* CTA 按鈕 */}
           <div className="animate-in-delay-4" style={{ width: "100%" }}>
             <button className="gold-btn" onClick={() => scrollTo("booking")} style={{
-              padding: "16px 48px", 
-              fontSize: "14px", 
-              letterSpacing: "4px", 
+              padding: "16px 48px",
+              fontSize: "14px",
+              letterSpacing: "4px",
               borderRadius: "2px"
             }}>{t.hero.cta}</button>
           </div>
+        </div>
         </div>
       </section>
 
@@ -1051,7 +1097,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               <FormulaCard
-                title="苦茶籽潔淨髮浴"
+                name="苦茶籽潔淨髮浴"
                 steps={steps45}
                 isOpen={openFormula === "45-0"}
                 onEnter={() => enterFormula("45-0")}
@@ -1072,7 +1118,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 <FormulaCard
                   key={i}
                   stamp={f.stamp}
-                  title={f.title}
+                  name={f.name}
+                  sub={f.sub}
                   steps={f.steps}
                   isOpen={openFormula === `90-${i}`}
                   onEnter={() => enterFormula(`90-${i}`)}
@@ -1094,10 +1141,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 <FormulaCard
                   key={i}
                   stamp={f.stamp}
-                  title={f.title}
+                  name={f.name}
+                  sub={f.sub}
                   steps={f.steps}
                   variant="v120"
-                  badge="120min"
                   isOpen={openFormula === `120-${i}`}
                   onEnter={() => enterFormula(`120-${i}`)}
                   onLeave={() => leaveFormula(`120-${i}`)}
