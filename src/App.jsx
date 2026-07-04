@@ -227,13 +227,20 @@ const SealLogo = ({ size = 44, variant = "mark" }) => (
   <img
     src={variant === "hero" ? "/logo-hero.png" : "/logo-mark.png"}
     alt="柔療髮浴 ROU SPA"
-    style={{ height: size, width: "auto", maxWidth: "100%", objectFit: "contain", display: "block", userSelect: "none" }}
+    style={{
+      height: size, width: "auto", maxWidth: "100%", objectFit: "contain",
+      display: "block", userSelect: "none",
+      // 米白色實心字在淺色 hero 背景上，用雙層暗影提升可讀性（不更動背景）
+      filter: variant === "hero"
+        ? "drop-shadow(0 1px 2px rgba(58,44,18,0.55)) drop-shadow(0 3px 14px rgba(70,56,28,0.45))"
+        : "none"
+    }}
     draggable={false}
   />
 );
 
 // 圓圈章印（清・養・通）+ 展開式方子卡片
-function FormulaCard({ stamp, title, steps, isOpen, onEnter, onLeave, onToggle, variant = "v90", badge }) {
+function FormulaCard({ stamp, name, sub, steps, isOpen, onEnter, onLeave, onToggle, variant = "v90" }) {
   return (
     <div
       className={`service-card formula-card ${variant} ${isOpen ? "open" : ""}`}
@@ -242,9 +249,15 @@ function FormulaCard({ stamp, title, steps, isOpen, onEnter, onLeave, onToggle, 
       onClick={onToggle}
     >
       <div className="formula-head">
-        {stamp && <span className={`seal-stamp seal-${variant}`}>{stamp}</span>}
-        <div className={stamp ? "formula-title" : "formula-title formula-title-center"}>{title}</div>
-        {badge && <span className="formula-badge">{badge}</span>}
+        {stamp && (
+          <span className={`seal-stamp seal-${variant}`}>
+            <span className="seal-char">{stamp}</span>
+          </span>
+        )}
+        <div className={stamp ? "formula-title" : "formula-title formula-title-center"}>
+          <span className="formula-name">{name}</span>
+          {sub && <span className="formula-sub">{sub}</span>}
+        </div>
         <span className="formula-toggle">⌄</span>
       </div>
       <div className="formula-body">
@@ -433,14 +446,14 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   // ===== 養生方子資料 =====
   const steps45 = ["頭肩頸筋絡按摩", "頭皮洗淨", "水療眼部", "手技收尾"];
   const formulas90 = [
-    { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-    { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "木質萃湯浴養髮", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-    { stamp: "通", title: "薑暖陽　鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "清", name: "森呼吸", sub: "柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "養", name: "墨玉烏", sub: "60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "木質萃湯浴養髮", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
+    { stamp: "通", name: "薑暖陽", sub: "鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
   ];
   const formulas120 = [
-    { stamp: "清", title: "森呼吸　柔禾角質調理", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-    { stamp: "養", title: "墨玉烏　60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "木質萃湯浴養髮", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-    { stamp: "通", title: "薑暖陽　鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "清", name: "森呼吸", sub: "柔禾角質調理", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "養", name: "墨玉烏", sub: "60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "木質萃湯浴養髮", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
+    { stamp: "通", name: "薑暖陽", sub: "鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
   ];
 
   return (
@@ -720,43 +733,60 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           display: flex; align-items: center; gap: 18px;
           padding: 22px 26px;
         }
+        /* 圓圈章印：清・養・通 */
         .seal-stamp {
-          width: 46px; height: 46px; flex-shrink: 0;
+          position: relative;
+          width: 48px; height: 48px; flex-shrink: 0;
           border-radius: 50%;
-          border: 1.5px solid #a3823f;
-          box-shadow: inset 0 0 0 3px rgba(163,130,63,0.14);
           display: flex; align-items: center; justify-content: center;
-          color: #8a6d35; font-size: 21px; font-weight: 500;
           font-family: 'Noto Serif TC', serif;
-          background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.7), rgba(163,130,63,0.06));
         }
-        /* 90分：淡雅描邊章（預設 .seal-stamp 即為此樣式） */
-        /* 120分：精緻實心金章 + 雙圈外框，明顯區別 */
+        .seal-char { line-height: 1; display: block; transform: translateY(0.5px); }
+        /* 90分：淡雅描邊章（單圈細框、色淡、通透） */
+        .seal-stamp.seal-v90 {
+          border: 1.5px solid rgba(163,130,63,0.7);
+          box-shadow: inset 0 0 0 3px rgba(163,130,63,0.08);
+          color: #8a6d35; font-size: 22px; font-weight: 500;
+          background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.75), rgba(163,130,63,0.05));
+        }
+        /* 120分：精緻實心金章 + 雙圈金框，明顯區別於 90 分 */
         .seal-stamp.seal-v120 {
-          width: 50px; height: 50px;
-          color: #f6efdd;
-          border: 1px solid #6f5628;
-          box-shadow: inset 0 0 0 3px rgba(246,239,221,0.55), 0 3px 12px rgba(110,86,40,0.4);
-          background:
-            radial-gradient(circle at 34% 28%, #c2a05a 0%, #9a7b3a 55%, #7a5f2a 100%);
-          font-size: 22px; font-weight: 600;
-          text-shadow: 0 1px 2px rgba(90,68,28,0.5);
+          width: 54px; height: 54px;
+          color: #fbf4e2;
+          border: 1px solid #6a5124;
+          box-shadow:
+            inset 0 0 0 3px rgba(251,244,226,0.5),
+            0 4px 14px rgba(110,86,40,0.45);
+          background: radial-gradient(circle at 34% 26%, #cdaa5f 0%, #a5813c 52%, #7c5f2b 100%);
+          font-size: 24px; font-weight: 600;
+          text-shadow: 0 1px 2px rgba(80,60,24,0.55);
         }
-        .formula-badge {
-          flex-shrink: 0;
-          font-size: 10px; letter-spacing: 1px; color: #8a6d35;
-          border: 1px solid rgba(163,130,63,0.45);
-          border-radius: 20px; padding: 3px 9px; margin-left: 8px;
-          font-family: 'Cormorant Garamond', serif; white-space: nowrap;
-          background: rgba(163,130,63,0.06);
+        /* 雙圈外框（金色細框） */
+        .seal-stamp.seal-v120::after {
+          content: '';
+          position: absolute; inset: -5px;
+          border-radius: 50%;
+          border: 1px solid rgba(163,130,63,0.6);
+          pointer-events: none;
         }
-        /* 120分卡片整體略作區隔 */
+        /* 120分卡片整體略作區隔（較精緻的章印感 + 微暖底色） */
+        .formula-card.v120 {
+          background: rgba(250,245,236,0.62);
+          border-color: rgba(163,130,63,0.22);
+        }
+        .formula-card.v120.open {
+          background: rgba(252,248,240,0.85);
+          box-shadow: 0 12px 38px rgba(163,130,63,0.16);
+          border-color: rgba(163,130,63,0.42);
+        }
         .formula-card.v120 .formula-inner {
           background: linear-gradient(180deg, rgba(228,216,193,0.7) 0%, rgba(221,229,214,0.55) 100%);
           border-top: 1px double rgba(163,130,63,0.4);
         }
-        .formula-title { flex: 1; font-size: 16px; letter-spacing: 2px; color: #4a443a; font-weight: 500; }
-        .formula-title-center { text-align: center; }
+        .formula-title { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+        .formula-title-center { align-items: center; text-align: center; }
+        .formula-name { font-size: 17px; letter-spacing: 2.5px; color: #3d382f; font-weight: 600; line-height: 1.25; }
+        .formula-sub { font-size: 12.5px; letter-spacing: 1.5px; color: rgba(74,68,58,0.6); font-weight: 400; line-height: 1.25; }
         .formula-toggle {
           flex-shrink: 0; font-size: 18px; color: #a3823f; opacity: 0.7;
           transition: transform 0.4s ease; line-height: 1;
@@ -787,11 +817,12 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
         @media (max-width: 640px) {
           .hero-logo-wrap img { height: 170px !important; }
-          .formula-head { padding: 18px 20px; gap: 14px; }
-          .seal-stamp { width: 42px; height: 42px; font-size: 19px; }
-          .seal-stamp.seal-v120 { width: 46px; height: 46px; font-size: 20px; }
-          .formula-badge { font-size: 9px; padding: 2px 7px; margin-left: 6px; }
-          .formula-title { font-size: 15px; letter-spacing: 1.5px; }
+          .formula-head { padding: 18px 18px; gap: 13px; }
+          .seal-stamp { width: 44px; height: 44px; }
+          .seal-stamp.seal-v90 { font-size: 20px; }
+          .seal-stamp.seal-v120 { width: 48px; height: 48px; font-size: 21px; }
+          .formula-name { font-size: 16px; letter-spacing: 2px; }
+          .formula-sub { font-size: 12px; letter-spacing: 1px; }
           .formula-inner { padding: 18px 20px 22px; }
           .formula-steps { grid-template-columns: 1fr; gap: 11px; }
           .formula-step { font-size: 14px; }
@@ -1051,7 +1082,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               <FormulaCard
-                title="苦茶籽潔淨髮浴"
+                name="苦茶籽潔淨髮浴"
                 steps={steps45}
                 isOpen={openFormula === "45-0"}
                 onEnter={() => enterFormula("45-0")}
@@ -1072,7 +1103,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 <FormulaCard
                   key={i}
                   stamp={f.stamp}
-                  title={f.title}
+                  name={f.name}
+                  sub={f.sub}
                   steps={f.steps}
                   isOpen={openFormula === `90-${i}`}
                   onEnter={() => enterFormula(`90-${i}`)}
@@ -1094,10 +1126,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 <FormulaCard
                   key={i}
                   stamp={f.stamp}
-                  title={f.title}
+                  name={f.name}
+                  sub={f.sub}
                   steps={f.steps}
                   variant="v120"
-                  badge="120min"
                   isOpen={openFormula === `120-${i}`}
                   onEnter={() => enterFormula(`120-${i}`)}
                   onLeave={() => leaveFormula(`120-${i}`)}
