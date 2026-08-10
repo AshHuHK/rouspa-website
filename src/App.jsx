@@ -764,19 +764,11 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         input:focus, textarea:focus { border-color: #a3823f; background: #fff; box-shadow: 0 0 20px rgba(163,130,63,0.05); }
         input::placeholder, textarea::placeholder { color: rgba(163,130,63,0.35); }
 
-        /* 精品茶席識別標籤：字級與重量都低於主標題，只作輔助識別 */
+        /* 精品茶席：與「120分方子」同字級並列，以卡其金與較輕字重區隔主從 */
         .tea-tag {
-          display: inline-block; white-space: nowrap; position: relative; top: 1px;
-          font-size: 11px; font-weight: 400; line-height: 1; letter-spacing: 3px;
+          display: inline-block; white-space: nowrap;
+          font-size: 18px; font-weight: 500; letter-spacing: 3px;
           color: #a3823f;
-          padding: 5px 7px 5px 10px;
-          border: 1px solid rgba(163,130,63,0.28);
-          background: rgba(163,130,63,0.05);
-          border-radius: 2px;
-        }
-        .tea-tag-ghost { visibility: hidden; pointer-events: none; }
-        @media (max-width: 640px) {
-          .tea-tag { font-size: 10px; letter-spacing: 2.5px; padding: 4px 6px 4px 9px; }
         }
 
         /* ===== 匿名意見回饋 · 捲軸視覺 ===== */
@@ -1417,9 +1409,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           {/* 120分全息區塊 */}
           <div style={{ marginBottom: "40px" }} className={isAnimated("services") ? "animate-in-delay-3" : ""}>
             <div style={{ textAlign: "center", marginBottom: "28px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px" }}>
-                {/* 等寬隱形佔位，讓主標題維持在與「原價3200」相同的中軸線上 */}
-                <span className="tea-tag tea-tag-ghost" aria-hidden="true">精品茶席</span>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: "14px" }}>
                 <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>120分方子</span>
                 <span className="tea-tag">精品茶席</span>
               </div>
