@@ -1239,7 +1239,26 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         <div className="ink-bg" style={{ width: "800px", height: "800px", top: "-200px", right: "-200px" }} />
         <div className="ink-bg" style={{ width: "600px", height: "600px", bottom: "-100px", left: "-100px", animationDelay: "4s" }} />
         {[15, 30, 50, 65, 80].map((x, i) => <Particle key={i} x={x} delay={i * 2.5} duration={12 + i * 2} />)}
-        
+
+        {/* 首屏底部消融層：整幅寬度由透明漸濃，最底部落在 rgb(245,241,233)，
+            即下方 SERVICES 的 rgba(255,255,255,0.2) 疊在 #f2ede4 上的實際色，
+            兩區因此完全同色接合、看不出分界。多階停點避免色帶。
+            置於粒子與墨暈之後、主內容（zIndex 1）之前，故「預約體驗」按鈕不受影響。 */}
+        <div className="hero-fade-out" style={{
+          position: "absolute", left: 0, right: 0, bottom: 0,
+          height: "clamp(150px, 26vh, 220px)",
+          pointerEvents: "none",
+          background: "linear-gradient(180deg," +
+            " rgba(245,241,233,0) 0%," +
+            " rgba(245,241,233,0.10) 20%," +
+            " rgba(245,241,233,0.28) 40%," +
+            " rgba(245,241,233,0.52) 58%," +
+            " rgba(245,241,233,0.72) 72%," +
+            " rgba(245,241,233,0.88) 84%," +
+            " rgba(245,241,233,0.97) 93%," +
+            " rgb(245,241,233) 100%)"
+        }} />
+
         {/* 主內容容器 - 統一中軸 */}
         <div className="hero-main-container" style={{ 
           position: "relative", 
