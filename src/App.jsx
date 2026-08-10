@@ -85,7 +85,6 @@ const i18n = {
     feedback: {
       eyebrow: "FEEDBACK",
       title: "您的反饋，能讓我們更好",
-      note: "此留言為完全私密的後台意見回饋。",
       placeholder: "柔療需要改進的地方",
       submit: "送出",
       sending: "傳送中...",
@@ -174,7 +173,6 @@ const i18n = {
       feedback: {
         eyebrow: "FEEDBACK",
         title: "Your Feedback Helps Us Grow",
-        note: "This note is completely private and reaches only our team.",
         placeholder: "What could Rou Spa do better?",
         submit: "Send",
         sending: "Sending...",
@@ -414,9 +412,7 @@ const FeedbackSection = ({ t }) => {
     }}>
       <div style={{ maxWidth: "560px", margin: "0 auto", textAlign: "center" }}>
         <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "14px" }}>{fb.eyebrow}</div>
-        <h2 className="fb-title" style={{ fontSize: "clamp(20px, 2.6vw, 28px)", fontWeight: 500, letterSpacing: "3px", color: "#4a443a" }}>{fb.title}</h2>
-        <GoldDivider />
-        <p className="fb-note" style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1.5px", marginBottom: "18px" }}>{fb.note}</p>
+        <h2 className="fb-title" style={{ fontSize: "clamp(20px, 2.6vw, 28px)", fontWeight: 500, letterSpacing: "3px", color: "#4a443a", marginBottom: "30px" }}>{fb.title}</h2>
 
         <div className="fb-body">
           <div className="fb-scroll">
@@ -836,7 +832,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           .fb-paper textarea { height: 74px; line-height: 1.9; font-size: 16px; }
           .fb-paper-done { min-height: 112px; }
           .fb-body { gap: 14px; min-height: 212px; }
-          .fb-note { margin-bottom: 14px !important; }
+          .fb-title { margin-bottom: 24px !important; }
         }
 
         .ink-bg { position: absolute; border-radius: 50%; opacity: 0.1; background: radial-gradient(circle, #a3823f, transparent 70%); animation: gentlePulse 8s ease-in-out infinite; }
