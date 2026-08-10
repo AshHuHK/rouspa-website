@@ -1197,7 +1197,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             transition: "transform 0.3s", transform: lineHover ? "scale(1.1)" : "scale(1)",
             textDecoration: "none"
           }}>
-          <LineIcon />
+          {/* 實心綠圓中央只放白色 LINE 字樣；textIndent 補掉字距在尾字後的空隙，文字才真正置中 */}
+          <span style={{
+            color: "#fff",
+            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+            fontSize: "15px", fontWeight: 700, lineHeight: 1,
+            letterSpacing: "1.5px", textIndent: "1.5px"
+          }}>LINE</span>
         </a>
       </div>
 
@@ -1706,10 +1712,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
       </section>
 
       {/* ========== FOOTER ========== */}
-      <footer style={{ padding: "60px 30px 40px", borderTop: "1px solid rgba(163,130,63,0.1)", textAlign: "center" }}>
-        <div style={{ marginBottom: "20px" }}><SealLogo size={150} /></div>
-        <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "6px", marginBottom: "24px" }}>{t.brand}</div>
-        <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1px" }}>{t.footer.copyright}</div>
+      <footer style={{ padding: "44px 30px 38px", borderTop: "1px solid rgba(163,130,63,0.1)", textAlign: "center" }}>
+        {/* textIndent 補掉字距在尾字後的空隙，字串才會真正對齊中軸 */}
+        <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "6px", textIndent: "6px" }}>{t.brand}</div>
+        <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1px", textIndent: "1px", marginTop: "18px" }}>{t.footer.copyright}</div>
       </footer>
     </div>
   );
