@@ -82,6 +82,19 @@ const i18n = {
         { name: "養顏美肌茶", price: "+NT$180", priceNum: 180, desc: "雪耳、桃膠、紅棗、玫瑰，膠質滿滿，養顏潤膚。", icon: "🌸", tag: "人氣" }
       ]
     },
+    feedback: {
+      eyebrow: "FEEDBACK",
+      title: "您的反饋，能讓我們更好",
+      note: "此留言為完全私密的後台意見回饋。",
+      placeholder: "柔療需要改進的地方",
+      submit: "送出",
+      sending: "傳送中...",
+      thanks: "謝謝您的寶貴意見，我們會持續改善。",
+      tooShort: "請再多寫幾個字，讓我們更清楚。",
+      tooFast: "請稍候片刻再送出。",
+      limit: "今日的意見我們已收到，感謝您的用心。",
+      failed: "送出失敗，請稍後再試。"
+    },
     footer: {
       address: CONFIG.ADDRESS_ZH,
       hours: "營業時間：10:00 - 02:00（全年無休）",
@@ -158,6 +171,19 @@ const i18n = {
           { name: "Beauty Glow Tea", price: "+NT$180", priceNum: 180, desc: "Snow fungus, peach gum, rose & red date. Collagen-rich skin nourishment.", icon: "🌸", tag: "Popular" }
         ]
       },
+      feedback: {
+        eyebrow: "FEEDBACK",
+        title: "Your Feedback Helps Us Grow",
+        note: "This note is completely private and reaches only our team.",
+        placeholder: "What could Rou Spa do better?",
+        submit: "Send",
+        sending: "Sending...",
+        thanks: "Thank you for your thoughts — we will keep improving.",
+        tooShort: "Please write a little more so we understand.",
+        tooFast: "Please wait a moment before sending.",
+        limit: "We have received your notes for today. Thank you.",
+        failed: "Could not send. Please try again later."
+      },
       footer: {
         address: CONFIG.ADDRESS_EN,
         hours: "Hours: 10:00 AM - 2:00 AM (Open Daily)",
@@ -192,6 +218,60 @@ async function submitBooking(data) {
   } catch (err) {
     console.error("Booking submission failed:", err);
     return { success: false, error: err.message };
+  }
+}
+
+// ============================================================
+// 匿名意見回饋：只寫入、不讀取，前台永遠不顯示任何留言
+// ============================================================
+const FEEDBACK_MIN_LEN = 5;
+const FEEDBACK_MAX_LEN = 500;
+const FEEDBACK_MIN_DWELL_MS = 3000;   // 進入區塊後至少停留 3 秒才可送出
+const FEEDBACK_COOLDOWN_MS = 60000;   // 兩則留言間隔至少 60 秒
+const FEEDBACK_DAILY_LIMIT = 5;       // 同一裝置每日上限
+const FEEDBACK_GUARD_KEY = "rouspa_fb_guard";
+
+// 頻率限制只記在本機，不帶任何身分資訊，維持完全匿名
+function readFeedbackGuard() {
+  try {
+    const g = JSON.parse(localStorage.getItem(FEEDBACK_GUARD_KEY) || "{}");
+    return { day: g.day || "", count: g.count || 0, last: g.last || 0 };
+  } catch {
+    return { day: "", count: 0, last: 0 };
+  }
+}
+
+function writeFeedbackGuard(guard) {
+  try {
+    localStorage.setItem(FEEDBACK_GUARD_KEY, JSON.stringify(guard));
+  } catch {
+    /* 無痕模式下略過 */
+  }
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+async function submitFeedback(message) {
+  try {
+    const base = CONFIG.SUPABASE_URL.replace(/\/+$/, "");
+    const res = await fetch(`${base}/rest/v1/feedback`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: CONFIG.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+        Prefer: "return=minimal", // 不回傳資料，前台無從讀取任何留言
+      },
+      body: JSON.stringify({ message }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { success: true };
+  } catch (err) {
+    console.error("Feedback submission failed:", err);
+    return { success: false };
   }
 }
 
@@ -286,6 +366,106 @@ const GoldDivider = () => (
     <div style={{ width: "60px", height: "1px", background: "linear-gradient(to left, transparent, #a3823f)" }} />
   </div>
 );
+
+const FeedbackSection = ({ t }) => {
+  const fb = t.feedback;
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | sending | done
+  const [hint, setHint] = useState("");
+  const [trap, setTrap] = useState("");         // 蜜罐欄位，真人看不到
+  const openedAt = useRef(Date.now());
+
+  const handleSubmit = async () => {
+    if (status === "sending") return;
+    const text = message.trim();
+
+    // 機器人填了隱藏欄位：假裝成功，不寫入資料庫
+    if (trap) {
+      setMessage("");
+      setStatus("done");
+      return;
+    }
+    if (Date.now() - openedAt.current < FEEDBACK_MIN_DWELL_MS) return setHint(fb.tooFast);
+    if (text.length < FEEDBACK_MIN_LEN) return setHint(fb.tooShort);
+
+    const guard = readFeedbackGuard();
+    const today = todayKey();
+    const count = guard.day === today ? guard.count : 0;
+    if (count >= FEEDBACK_DAILY_LIMIT) return setHint(fb.limit);
+    if (Date.now() - guard.last < FEEDBACK_COOLDOWN_MS) return setHint(fb.tooFast);
+
+    setHint("");
+    setStatus("sending");
+    const res = await submitFeedback(text.slice(0, FEEDBACK_MAX_LEN));
+    if (!res.success) {
+      setStatus("idle");
+      setHint(fb.failed);
+      return;
+    }
+    writeFeedbackGuard({ day: today, count: count + 1, last: Date.now() });
+    setMessage("");
+    setStatus("done");
+  };
+
+  return (
+    <section className="fb-section" style={{
+      padding: "clamp(56px, 7vw, 96px) 30px",
+      background: "linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.7) 55%, #fff 100%)"
+    }}>
+      <div style={{ maxWidth: "560px", margin: "0 auto", textAlign: "center" }}>
+        <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "14px" }}>{fb.eyebrow}</div>
+        <h2 className="fb-title" style={{ fontSize: "clamp(20px, 2.6vw, 28px)", fontWeight: 500, letterSpacing: "3px", color: "#4a443a" }}>{fb.title}</h2>
+        <GoldDivider />
+        <p className="fb-note" style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1.5px", marginBottom: "18px" }}>{fb.note}</p>
+
+        <div className="fb-body">
+          <div className="fb-scroll">
+            <div className="fb-rod" />
+            {status === "done" ? (
+              <div className="fb-paper fb-paper-done">
+                <p className="fb-thanks">
+                  <span className="fb-thanks-mark">◆</span>
+                  {fb.thanks}
+                </p>
+              </div>
+            ) : (
+              <div className="fb-paper">
+                <textarea
+                  value={message}
+                  onChange={e => { setMessage(e.target.value); if (hint) setHint(""); }}
+                  maxLength={FEEDBACK_MAX_LEN}
+                  placeholder={fb.placeholder}
+                  aria-label={fb.title}
+                />
+                <span className="fb-count">{message.length}/{FEEDBACK_MAX_LEN}</span>
+              </div>
+            )}
+            <div className="fb-rod" />
+          </div>
+
+          {status !== "done" && (
+            <>
+              <div className="fb-hint">{hint}</div>
+              <input
+                className="fb-trap"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                value={trap}
+                onChange={e => setTrap(e.target.value)}
+              />
+              <button className="gold-btn" onClick={handleSubmit} disabled={status === "sending"}
+                style={{ padding: "13px 46px", fontSize: "13px", letterSpacing: "4px", borderRadius: "2px" }}>
+                {status === "sending" ? fb.sending : fb.submit}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const Particle = ({ delay, x, duration }) => (
   <div style={{
@@ -587,6 +767,77 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         }
         input:focus, textarea:focus { border-color: #a3823f; background: #fff; box-shadow: 0 0 20px rgba(163,130,63,0.05); }
         input::placeholder, textarea::placeholder { color: rgba(163,130,63,0.35); }
+
+        /* ===== 匿名意見回饋 · 捲軸視覺 ===== */
+        @keyframes fbFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+        /* min-height 讓送出前後高度一致，感謝訊息才會在「原位置」淡入而不跳版 */
+        .fb-body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; min-height: 238px; }
+        .fb-scroll { width: 100%; max-width: 460px; margin: 0 auto; }
+
+        .fb-rod {
+          height: 6px; border-radius: 3px; position: relative;
+          background: linear-gradient(180deg, rgba(232,217,180,0.95) 0%, #b89a5c 45%, #937a3c 100%);
+          box-shadow: 0 2px 8px rgba(163,130,63,0.14);
+        }
+        .fb-rod::before, .fb-rod::after {
+          content: ''; position: absolute; top: 50%; width: 6px; height: 6px;
+          border-radius: 50%; transform: translateY(-50%);
+          background: radial-gradient(circle at 35% 30%, #f1e6c9, #a3823f 78%);
+        }
+        .fb-rod::before { left: -4px; }
+        .fb-rod::after { right: -4px; }
+
+        .fb-paper {
+          position: relative; padding: 18px 20px 20px;
+          background: linear-gradient(180deg, #fdfbf5 0%, #faf6ec 55%, #f6f0e2 100%);
+          border-left: 1px solid rgba(163,130,63,0.16);
+          border-right: 1px solid rgba(163,130,63,0.16);
+          box-shadow: inset 0 9px 14px -12px rgba(138,109,53,0.32),
+                      inset 0 -9px 14px -12px rgba(138,109,53,0.32),
+                      0 8px 26px rgba(163,130,63,0.06);
+          transition: box-shadow 0.4s ease;
+        }
+        .fb-paper:focus-within {
+          box-shadow: inset 0 9px 14px -12px rgba(138,109,53,0.32),
+                      inset 0 -9px 14px -12px rgba(138,109,53,0.32),
+                      0 12px 34px rgba(163,130,63,0.13);
+        }
+
+        .fb-paper textarea {
+          display: block; background: transparent; border: none; border-radius: 0;
+          padding: 0; height: 92px; resize: none; text-align: left;
+          font-size: 14px; line-height: 2.1; letter-spacing: 1px; color: #4a443a;
+        }
+        .fb-paper textarea:focus { background: transparent; border: none; box-shadow: none; }
+        .fb-paper textarea::placeholder { color: rgba(163,130,63,0.4); letter-spacing: 2px; }
+        .fb-paper textarea::-webkit-scrollbar { width: 3px; }
+        .fb-paper textarea::-webkit-scrollbar-track { background: transparent; }
+        .fb-paper textarea::-webkit-scrollbar-thumb { background: rgba(163,130,63,0.28); border-radius: 3px; }
+
+        .fb-count {
+          position: absolute; right: 18px; bottom: 6px; font-size: 10px; letter-spacing: 1px;
+          color: rgba(163,130,63,0.4); font-family: 'Cormorant Garamond', serif;
+        }
+
+        .fb-paper-done { display: flex; align-items: center; justify-content: center; min-height: 130px; }
+        .fb-thanks {
+          animation: fbFadeIn 0.9s ease-out both;
+          font-size: 14px; line-height: 2; letter-spacing: 2px; color: #a3823f;
+        }
+        .fb-thanks-mark { display: block; font-size: 10px; letter-spacing: 4px; color: rgba(163,130,63,0.5); margin-bottom: 10px; }
+
+        .fb-hint { min-height: 15px; font-size: 11px; letter-spacing: 1.5px; color: rgba(163,130,63,0.85); animation: fbFadeIn 0.4s ease-out; }
+        .fb-trap { position: absolute !important; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+        @media (max-width: 640px) {
+          .fb-section { padding: 36px 24px 40px !important; }
+          /* 16px 可避免 iOS 點擊輸入框時自動放大頁面 */
+          .fb-paper textarea { height: 74px; line-height: 1.9; font-size: 16px; }
+          .fb-paper-done { min-height: 112px; }
+          .fb-body { gap: 14px; min-height: 212px; }
+          .fb-note { margin-bottom: 14px !important; }
+        }
 
         .ink-bg { position: absolute; border-radius: 50%; opacity: 0.1; background: radial-gradient(circle, #a3823f, transparent 70%); animation: gentlePulse 8s ease-in-out infinite; }
 
@@ -1395,6 +1646,9 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           )}
         </div>
       </section>
+
+      {/* ========== FEEDBACK（匿名意見回饋） ========== */}
+      <FeedbackSection t={t} />
 
       {/* ========== LOCATION ========== */}
       <section ref={sectionRefs.location} style={{ padding: "100px 30px 80px", background: "white" }}>
