@@ -40,6 +40,15 @@ check(first.status==='pending','pending default');
 const duplicate=await booking(request,'0911111111');check(duplicate.manage_token===first.manage_token,'idempotent booking');
 await rejected(()=>booking(request,'0911111112'),/REQUEST_CONFLICT/);
 const a=(await db.query('select * from spa_appointments where request_id=$1',[request])).rows[0];
+// Regression: successful public booking is hidden by a today-only filter, visible in seven days.
+const todayOnly=await admin('spa_admin_bookings',[today,today]);
+check(!todayOnly.some(row=>row.reference===first.reference),'today-only filter excludes future public booking');
+const [{week_end:weekEnd}]=(await db.query("select ((now() at time zone 'Asia/Taipei')::date+6)::text week_end")).rows;
+const weekBookings=await admin('spa_admin_bookings',[today,weekEnd]);
+check(weekBookings.some(row=>row.reference===first.reference),'seven-day admin range includes future public booking');
+const publicDetail=await anon('spa_manage_booking',[first.manage_token]);
+check(publicDetail.reference===first.reference,'public receipt and admin read same stored appointment');
+
 await rejected(()=>booking(randomUUID(),'0911111112',`${day}T10:30:00+08:00`,a.staff_id),/SLOT_TAKEN/);
 check((await anon('spa_availability',[service,day,a.staff_id])).find(s=>new Date(s.starts_at).getTime()===new Date(`${day}T11:00:00+08:00`).getTime()).available,'buffer boundary permits next booking');
 for(const tel of ['0922222222','0933333333','0944444444'])await booking(randomUUID(),tel);
