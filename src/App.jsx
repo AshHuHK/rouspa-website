@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 
 // ============================================================
 // 🔧 CONFIGURATION
 // ============================================================
 const CONFIG = {
-  SUPABASE_URL: "https://etiggwqxacnlrgokfsjt.supabase.co/",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0aWdnd3F4YWNubHJnb2tmc2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNjk0ODgsImV4cCI6MjA4Nzk0NTQ4OH0.Wqjn6rZJfwCAfTr7L0XdPh1U1hNzJYjjYSt1YASH5uw",
   LINE_URL: "https://line.me/R/ti/p/@258llual",
   DOMAIN: "https://rouspa.tw",
   PHONE: "0978-918-737",
@@ -193,32 +192,6 @@ const i18n = {
   }
 };
 
-async function submitBooking(data) {
-  try {
-    const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/bookings`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: CONFIG.SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-        Prefer: "return=representation",
-      },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const errBody = await res.text();
-      if (errBody.includes("duplicate") || errBody.includes("unique")) {
-        return { success: false, error: "slot_taken" };
-      }
-      throw new Error(`HTTP ${res.status}`);
-    }
-    return { success: true };
-  } catch (err) {
-    console.error("Booking submission failed:", err);
-    return { success: false, error: err.message };
-  }
-}
-
 // ============================================================
 // 匿名意見回饋：只寫入、不讀取，前台永遠不顯示任何留言
 // ============================================================
@@ -248,57 +221,12 @@ function writeFeedbackGuard(guard) {
 }
 
 function todayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  return taipeiDate();
 }
 
 async function submitFeedback(message) {
-  try {
-    const base = CONFIG.SUPABASE_URL.replace(/\/+$/, "");
-    const res = await fetch(`${base}/rest/v1/feedback`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: CONFIG.SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-        Prefer: "return=minimal", // 不回傳資料，前台無從讀取任何留言
-      },
-      body: JSON.stringify({ message }),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return { success: true };
-  } catch (err) {
-    console.error("Feedback submission failed:", err);
-    return { success: false };
-  }
-}
-
-async function fetchBookedSlots(date) {
-  try {
-    const res = await fetch(
-      `${CONFIG.SUPABASE_URL}/rest/v1/rpc/get_all_booked_slots`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: CONFIG.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ p_date: date }),
-      }
-    );
-    if (!res.ok) return {};
-    const rows = await res.json();
-    const map = {};
-    rows.forEach((r) => {
-      if (!map[r.therapist_index]) map[r.therapist_index] = new Set();
-      map[r.therapist_index].add(r.booking_time);
-    });
-    return map;
-  } catch (err) {
-    console.error("Failed to fetch booked slots:", err);
-    return {};
-  }
+  try { await rpc("spa_submit_feedback", { p_message: message }); return { success: true }; }
+  catch { return { success: false }; }
 }
 
 const SealLogo = ({ size = 44, variant = "mark" }) => (
@@ -463,6 +391,13 @@ const FeedbackSection = ({ t }) => {
   );
 };
 
+function PublishedReviews({lang}) {
+ const [reviews,setReviews]=useState([]);
+ useEffect(()=>{let live=true;rpc('spa_public_reviews').then(rows=>{if(live)setReviews(rows);}).catch(()=>{});return()=>{live=false;};},[]);
+ if(!reviews.length)return null;
+ return <section style={{padding:"30px 30px 80px",maxWidth:900,margin:"0 auto"}}><h2 style={{fontWeight:500,textAlign:"center",color:"#a3823f",marginBottom:28}}>{lang==='zh'?'顧客療程評價':'Verified guest reviews'}</h2><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:20}}>{reviews.map((r,i)=><article key={i} style={{padding:24,border:"1px solid rgba(163,130,63,.2)",borderRadius:4}}><p aria-label={`${r.rating} / 5`} style={{color:"#a3823f"}}>{'★'.repeat(r.rating)}{'☆'.repeat(5-r.rating)}</p><p style={{marginTop:12,lineHeight:1.8,whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{r.comment}</p><p style={{fontSize:12,opacity:.7,marginTop:12}}>{r.therapist} · {taipeiDate(new Date(r.created_at))}</p>{r.reply&&<p style={{marginTop:16,lineHeight:1.8,fontSize:13,whiteSpace:"pre-wrap"}}>{lang==='zh'?'門店回覆：':'Our reply: '}{r.reply}</p>}</article>)}</div></section>;
+}
+
 const Particle = ({ delay, x, duration }) => (
   <div style={{
     position: "absolute", left: `${x}%`, bottom: "-10px", width: "4px", height: "4px",
@@ -484,7 +419,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   const [formNote, setFormNote] = useState("");
   const [bookingComplete, setBookingComplete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [bookedSlots, setBookedSlots] = useState({});
+  const [catalog, setCatalog] = useState(null);
+  const [catalogError, setCatalogError] = useState("");
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [receipt, setReceipt] = useState(null);
+  const bookingRequest = useRef(null);
+  const services = catalog?.services || [];
+  const therapists = (catalog?.staff || []).filter(st => selectedService === null || catalog.skills.some(sk => sk.staff_id === st.id && sk.service_id === services[selectedService]?.id));
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotError, setSlotError] = useState("");
   const [scrollY, setScrollY] = useState(0);
@@ -530,90 +471,51 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   };
 
   useEffect(() => {
-    if (!selectedDate) return;
-    setLoadingSlots(true);
-    fetchBookedSlots(selectedDate).then((map) => {
-      setBookedSlots(map);
-      setLoadingSlots(false);
-    });
-  }, [selectedDate]);
+    rpc("spa_catalog").then(setCatalog).catch(err => setCatalogError(errorText(err)));
+  }, []);
 
-  const isSlotBooked = (time) => {
-    if (selectedTherapist === -1) {
-      const totalTherapists = i18n.zh.team.members.length;
-      let bookedCount = 0;
-      for (let i = 0; i < totalTherapists; i++) {
-        if (bookedSlots[i] && bookedSlots[i].has(time)) bookedCount++;
-      }
-      return bookedCount >= totalTherapists;
-    } else {
-      return bookedSlots[selectedTherapist]?.has(time) || false;
-    }
-  };
+  useEffect(() => {
+    setSelectedTime(""); setBookedSlots([]);
+    if (!selectedDate || selectedService === null || !services[selectedService]) return;
+    let current = true;
+    setLoadingSlots(true); setSlotError("");
+    rpc("spa_availability", { p_service: services[selectedService].id, p_date: selectedDate, p_staff: selectedTherapist === -1 ? null : selectedTherapist })
+      .then(slots => { if (current) setBookedSlots(slots); })
+      .catch(err => { if (current) setSlotError(errorText(err)); })
+      .finally(() => { if (current) setLoadingSlots(false); });
+    return () => { current = false; };
+  }, [selectedDate, selectedService, selectedTherapist, catalog]);
 
-  const getNext7Days = () => {
-    const days = [];
-    const today = new Date();
-    for (let i = 1; i <= 7; i++) {
-      const d = new Date(today); d.setDate(today.getDate() + i);
-      if (d.getDay() !== 1) days.push(d.toISOString().split("T")[0]);
-    }
-    return days;
-  };
-
+  const getNext7Days = () => Array.from({ length: Math.min(7, catalog?.settings.booking_days || 7) }, (_, i) => dateAfter(i + 1));
   const timeSlots = {
-    morning: ["10:00", "10:30", "11:00", "11:30"],
-    afternoon: ["13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"],
-    evening: ["17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"]
+    morning: bookedSlots.filter(s => !s.time_label.startsWith("翌日") && Number(s.time_label.slice(0,2)) < 12),
+    afternoon: bookedSlots.filter(s => !s.time_label.startsWith("翌日") && Number(s.time_label.slice(0,2)) >= 12 && Number(s.time_label.slice(0,2)) < 17),
+    evening: bookedSlots.filter(s => s.time_label.startsWith("翌日") || Number(s.time_label.slice(0,2)) >= 17)
   };
-
   const handleSubmitBooking = async () => {
-    setSubmitting(true);
-    setSlotError("");
-    const teamNames = i18n.zh.team.members;
-    let finalTherapistIndex = selectedTherapist;
-    let finalTherapistName = "不指定";
-    if (selectedTherapist === -1) {
-      for (let i = 0; i < teamNames.length; i++) {
-        if (!bookedSlots[i] || !bookedSlots[i].has(selectedTime)) {
-          finalTherapistIndex = i;
-          finalTherapistName = teamNames[i].name;
-          break;
-        }
+    if (submitting) return;
+    setSubmitting(true); setSlotError("");
+    const payload = { p_service: services[selectedService]?.id, p_date: selectedDate, p_start: selectedTime,
+      p_staff: selectedTherapist === -1 ? null : selectedTherapist, p_name: formName.trim(), p_phone: formPhone.trim(), p_tea: selectedTea, p_note: formNote };
+    const fingerprint = JSON.stringify(payload);
+    if (bookingRequest.current?.fingerprint !== fingerprint) bookingRequest.current = { fingerprint, id: crypto.randomUUID() };
+    try {
+      const result = await rpc("spa_create_booking", { p_request: bookingRequest.current.id, ...payload });
+      setReceipt(result); setBookingComplete(true);
+    } catch (err) {
+      setSlotError(errorText(err));
+      if (err.message?.includes("SLOT_TAKEN")) {
+        setSelectedTime(""); setBookingStep(2);
+        try { setBookedSlots(await rpc("spa_availability", { p_service: payload.p_service, p_date: selectedDate, p_staff: payload.p_staff })); }
+        catch { setBookedSlots([]); }
       }
-    } else {
-      finalTherapistName = teamNames[selectedTherapist]?.name || "";
-    }
-
-    const data = {
-      service: i18n.zh.services.items[selectedService]?.name || "",
-      therapist: finalTherapistName,
-      therapist_index: finalTherapistIndex,
-      booking_date: selectedDate,
-      booking_time: selectedTime,
-      tea: i18n.zh.tea.items[selectedTea]?.name || "",
-      customer_name: formName,
-      phone: formPhone,
-      note: formNote || null,
-      status: "confirmed",
-      created_at: new Date().toISOString(),
-    };
-    const result = await submitBooking(data);
-    setSubmitting(false);
-    if (result.success) {
-      setBookingComplete(true);
-    } else if (result.error === "slot_taken") {
-      setSlotError(lang === "zh" ? "該時段剛被其他客人預約了，請選擇其他時間。" : "This slot was just booked. Please choose another time.");
-      fetchBookedSlots(selectedDate).then(setBookedSlots);
-    } else {
-      setBookingComplete(true);
-    }
+    } finally { setSubmitting(false); }
   };
 
   const resetBooking = () => {
     setBookingStep(0); setSelectedService(null); setSelectedTherapist(null);
     setSelectedDate(""); setSelectedTime(""); setSelectedTea(null); setFormName(""); setFormPhone("");
-    setFormNote(""); setBookingComplete(false); setSubmitting(false); setBookedSlots({}); setSlotError("");
+    setFormNote(""); setBookingComplete(false); setSubmitting(false); setBookedSlots([]); setSlotError(""); setReceipt(null); bookingRequest.current = null;
   };
 
   const isAnimated = (s) => animatedSections.has(s);
@@ -1375,7 +1277,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-1" : ""}>
             <div style={{ textAlign: "center", marginBottom: "28px" }}>
               <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>45分方子</span>
-              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價1100</span>
+              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價{services.find(s=>s.code==='formula45') ? Number(services.find(s=>s.code==='formula45').price_cents)/100 : 1100}</span>
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               <FormulaCard
@@ -1393,7 +1295,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-2" : ""}>
             <div style={{ textAlign: "center", marginBottom: "28px" }}>
               <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>90分方子</span>
-              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價2360</span>
+              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價{services.find(s=>s.code==='formula90') ? Number(services.find(s=>s.code==='formula90').price_cents)/100 : 2360}</span>
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               {formulas90.map((f, i) => (
@@ -1419,7 +1321,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>120分方子</span>
                 <span className="tea-tag">精品茶席</span>
               </div>
-              <div style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginTop: "10px" }}>原價3200</div>
+              <div style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginTop: "10px" }}>原價{services.find(s=>s.code==='formula120') ? Number(services.find(s=>s.code==='formula120').price_cents)/100 : 3200}</div>
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               {formulas120.map((f, i) => (
@@ -1454,6 +1356,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px" }}>{t.booking.subtitle}</p>
           </div>
 
+          {(catalogError || slotError) && <p role="alert" style={{ color: "#b5523b", textAlign: "center", marginBottom: 20 }}>{catalogError || slotError}</p>}
+          {!catalog && !catalogError && <p style={{ textAlign: "center" }}>正在載入預約服務…</p>}
           {!bookingComplete && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "50px" }}>
               {t.booking.steps.map((step, i) => (
@@ -1476,8 +1380,9 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "36px", color: "#a3823f", animation: "checkmark 0.6s ease-out"
               }}>✓</div>
-              <p style={{ fontSize: "22px", color: "#a3823f", letterSpacing: "3px", marginBottom: "12px", fontWeight: 600 }}>{t.booking.success}</p>
-              <p style={{ fontSize: "14px", color: "rgba(74, 68, 58, 0.7)", letterSpacing: "1px", marginBottom: "40px", lineHeight: 1.8 }}>{t.booking.successSub}</p>
+              <p style={{ fontSize: "22px", color: "#a3823f", letterSpacing: "3px", marginBottom: "12px", fontWeight: 600 }}>{receipt?.status === "pending" ? (lang === "zh" ? "預約已送出，等待門店確認" : "Booking received, awaiting confirmation") : t.booking.success}</p>
+              <p style={{ fontSize: "14px", color: "rgba(74, 68, 58, 0.7)", marginBottom: "20px", lineHeight: 1.8 }}>{receipt?.reference}<br />{t.booking.successSub}</p>
+              <a href={`#manage/${receipt?.manage_token}`} style={{ color: "#a3823f", display: "block", marginBottom: 24 }}>{lang === "zh" ? "查看或取消預約（請保存此私人連結）" : "Manage booking — save this private link"}</a>
               <div style={{ background: "white", borderRadius: "8px", padding: "28px", marginBottom: "36px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
                 <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.7)", letterSpacing: "1px", marginBottom: "18px", lineHeight: 1.8 }}>{t.booking.successLine}</p>
                 <a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
@@ -1499,10 +1404,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                     marginBottom: "50px",
                     flexWrap: "nowrap"
                   }}>
-                    {["45分方子", "90分方子", "120分方子"].map((name, i) => (
+                    {services.map((service, i) => (
                       <div key={i} 
                         className={`service-card booking-option-card ${selectedService === i ? "selected" : ""}`}
-                        onClick={() => setSelectedService(i)}
+                        onClick={() => { setSelectedService(i); setSelectedTherapist(null); }}
                         style={{ 
                           padding: "18px 36px", 
                           borderRadius: "40px", 
@@ -1519,7 +1424,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                           letterSpacing: "2px", 
                           color: selectedService === i ? "#a3823f" : "#4a443a",
                           whiteSpace: "nowrap"
-                        }}>{name}</div>
+                        }}>{lang === "en" ? service.name_en || service.name : service.name}</div>
                       </div>
                     ))}
                   </div>
@@ -1539,8 +1444,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                       <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: "rgba(163,130,63,0.08)", border: "1px solid rgba(163,130,63,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", color: "#a3823f" }}>✦</div>
                       <div style={{ fontSize: "14px", letterSpacing: "2px", color: "#a3823f", fontWeight: 500 }}>{t.booking.anyTherapist}</div>
                     </div>
-                    {t.team.members.map((m, i) => (
-                      <div key={i} className={`therapist-card ${selectedTherapist === i ? "selected" : ""}`} onClick={() => setSelectedTherapist(i)}
+                    {therapists.map((m) => (
+                      <div key={m.id} className={`therapist-card ${selectedTherapist === m.id ? "selected" : ""}`} onClick={() => setSelectedTherapist(m.id)}
                         style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
                         <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: `linear-gradient(135deg, rgba(163,130,63,0.15), rgba(255,255,255,0.5))`, border: "1px solid rgba(163,130,63,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "#a3823f", fontWeight: 600 }}>{m.name.charAt(0)}</div>
                         <div style={{ fontSize: "14px", fontWeight: 600, letterSpacing: "2px", marginBottom: "4px", color: "#4a443a" }}>{m.name}</div>
@@ -1562,18 +1467,19 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                     <label style={{ display: "block", fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "12px", fontWeight: 600 }}>{t.booking.selectDate}</label>
                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                       {getNext7Days().map(date => {
-                        const d = new Date(date);
-                        const wd = lang === "zh" ? ["日","一","二","三","四","五","六"][d.getDay()] : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
+                        const d = new Date(`${date}T12:00:00Z`);
+                        const wd = lang === "zh" ? ["日","一","二","三","四","五","六"][d.getUTCDay()] : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getUTCDay()];
                         return (
-                          <div key={date} className={`time-chip ${selectedDate === date ? "selected" : ""}`} onClick={() => setSelectedDate(date)}
+                          <div key={date} role="button" tabIndex={0} aria-label={date} onKeyDown={e=>{if(e.key === "Enter" || e.key === " "){e.preventDefault();setSelectedDate(date);}}} className={`time-chip ${selectedDate === date ? "selected" : ""}`} onClick={() => setSelectedDate(date)}
                             style={{ padding: "12px 16px", borderRadius: "4px", textAlign: "center", minWidth: "70px" }}>
                             <div style={{ fontSize: "11px", marginBottom: "4px", opacity: 0.8 }}>{wd}</div>
-                            <div style={{ fontSize: "15px", fontWeight: 600 }}>{d.getDate()}</div>
+                            <div style={{ fontSize: "15px", fontWeight: 600 }}>{d.getUTCDate()}</div>
                           </div>
                         );
                       })}
                     </div>
                   </div>
+                  <label style={{display:"block",fontSize:12,color:"#a3823f",marginBottom:24}}>{lang === "zh" ? "其他日期（含今日）" : "Another date (including today)"}<input aria-label={lang === "zh" ? "其他預約日期" : "Another booking date"} type="date" value={selectedDate} min={taipeiDate()} max={dateAfter(catalog?.settings.booking_days || 30)} onChange={e=>setSelectedDate(e.target.value)} style={{marginTop:10,maxWidth:260}} /></label>
                   {selectedDate && (
                     <div style={{ animation: "fadeInUp 0.4s ease-out" }}>
                       <label style={{ display: "block", fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "16px", fontWeight: 600 }}>{t.booking.selectTime}</label>
@@ -1586,12 +1492,12 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                           <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>{t.booking[period]}</div>
                           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                             {slots.map(time => {
-                              const booked = isSlotBooked(time);
+                              const booked = !time.available;
                               return (
-                                <div key={time} className={`time-chip ${selectedTime === time ? "selected" : ""} ${booked ? "booked" : ""}`}
-                                  onClick={() => !booked && setSelectedTime(time)}
+                                <div key={time.starts_at} className={`time-chip ${selectedTime === time.starts_at ? "selected" : ""} ${booked ? "booked" : ""}`}
+                                  onClick={() => !booked && setSelectedTime(time.starts_at)}
                                   style={{ padding: "10px 18px", borderRadius: "3px", opacity: booked ? 0.4 : 1, cursor: booked ? "not-allowed" : "pointer" }}>
-                                  {time}
+                                  {time.time_label}
                                 </div>
                               );
                             })}
@@ -1604,7 +1510,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                   )}
                   <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "40px" }}>
                     <button className="outline-btn" onClick={() => setBookingStep(1)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
-                    <button className="gold-btn" disabled={!selectedDate || !selectedTime} onClick={() => selectedDate && selectedTime && setBookingStep(3)}
+                    <button className="gold-btn" disabled={!selectedDate || !selectedTime || loadingSlots || !!slotError} onClick={() => selectedDate && selectedTime && setBookingStep(3)}
                       style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.next}</button>
                   </div>
                 </div>
@@ -1645,12 +1551,12 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                     <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "16px", fontWeight: 600 }}>預約摘要</div>
                     <div style={{ display: "grid", gap: "12px" }}>
                       {[
-                        [lang === "zh" ? "服務" : "Service", t.services.items[selectedService]?.name],
-                        [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : t.team.members[selectedTherapist]?.name],
+                        [lang === "zh" ? "服務" : "Service", services[selectedService]?.name],
+                        [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : therapists.find(m => m.id === selectedTherapist)?.name],
                         [lang === "zh" ? "日期" : "Date", selectedDate],
-                        [lang === "zh" ? "時間" : "Time", selectedTime],
+                        [lang === "zh" ? "時間" : "Time", bookedSlots.find(s => s.starts_at === selectedTime)?.time_label],
                         [lang === "zh" ? "茶飲" : "Tea", t.tea.items[selectedTea]?.name],
-                        [lang === "zh" ? "費用" : "Price", t.services.items[selectedService]?.price],
+                        [lang === "zh" ? "費用" : "Price", money(Number(services[selectedService]?.price_cents || 0) + Number(t.tea.items[selectedTea]?.priceNum || 0) * 100)],
                       ].map(([label, val], i) => (
                         <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
                           <span style={{ color: "rgba(74, 68, 58, 0.6)" }}>{label}</span>
@@ -1660,13 +1566,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "40px" }}>
-                    <input value={formName} onChange={e => setFormName(e.target.value)} placeholder="您的姓名" />
-                    <input value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="您的手機號碼" />
-                    <textarea value={formNote} onChange={e => setFormNote(e.target.value)} rows={3} placeholder="備註（選填）" />
+                    <input value={formName} onChange={e => setFormName(e.target.value)} maxLength={80} placeholder="您的姓名" />
+                    <input value={formPhone} onChange={e => setFormPhone(e.target.value)} type="tel" maxLength={25} placeholder="您的手機號碼" />
+                    <textarea value={formNote} onChange={e => setFormNote(e.target.value)} maxLength={1000} rows={3} placeholder="備註（選填）" />
                   </div>
                   <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
                     <button className="outline-btn" onClick={() => setBookingStep(3)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>上一步</button>
-                    <button className="gold-btn" disabled={!formName || !formPhone || submitting} onClick={handleSubmitBooking}
+                    <button className="gold-btn" disabled={!formName.trim() || !formPhone.trim() || submitting || !selectedTime} onClick={handleSubmitBooking}
                       style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>
                       {submitting ? "提交中..." : "確認預約"}
                     </button>
@@ -1678,8 +1584,11 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         </div>
       </section>
 
+      <div style={{ textAlign: "center", padding: 20, background: "#f2ede4" }}><a href="#member" style={{ color: "#a3823f", fontSize: 13 }}>會員中心 · 查看 credits 與療程記錄</a></div>
+
       {/* ========== FEEDBACK（匿名意見回饋） ========== */}
       <FeedbackSection t={t} />
+      <PublishedReviews lang={lang} />
 
       {/* ========== LOCATION ========== */}
       <section ref={sectionRefs.location} style={{ padding: "100px 30px 80px", background: "white" }}>
