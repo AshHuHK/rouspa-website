@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import BookingLookup from "./BookingLookup.jsx";
 import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 
 // ============================================================
@@ -17,7 +18,7 @@ const i18n = {
     brand: "柔療髮浴",
     brandEn: "ROU SPA",
     brandSub: "東方頭療・經絡養生",
-    nav: { home: "首頁", services: "服務項目", booking: "立即預約", shop: "特色產品", contact: "聯繫我們" },
+    nav: { home: "首頁", services: "服務項目", booking: "立即預約", lookup: "查詢預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",
       subtitle: "源自千年中醫智慧的頭部經絡調理",
@@ -47,7 +48,7 @@ const i18n = {
     booking: {
       title: "預約調理",
       subtitle: "開啟您的養生之旅",
-      steps: ["選擇服務", "選擇技師", "選擇時段", "選擇茶飲", "確認預約"],
+      steps: ["選擇服務", "選擇技師", "選擇時段", "確認預約"],
       selectService: "請選擇服務項目",
       selectTherapist: "請選擇技師",
       anyTherapist: "不指定技師",
@@ -66,20 +67,7 @@ const i18n = {
       morning: "上午",
       afternoon: "下午",
       evening: "晚間",
-      submitting: "預約中...",
-      selectTea: "療程搭配養生茶飲",
-      teaIncluded: "基礎茶飲（免費）",
-      teaUpgrade: "升級精選茶飲",
-      teaNote: "每位貴賓皆享一杯養生茶飲，可免費選擇基礎款或加價升級"
-    },
-    tea: {
-      items: [
-        { name: "養生暖身茶", price: "免費", priceNum: 0, desc: "紅棗枸杞桂圓茶，溫補氣血，療程基本搭配。", icon: "🍵", tag: "基礎" },
-        { name: "漢方安神茶", price: "+NT$120", priceNum: 120, desc: "酸棗仁、茯苓、百合，寧心安神，適合失眠困擾者。", icon: "🌙", tag: "升級" },
-        { name: "活血通絡茶", price: "+NT$150", priceNum: 150, desc: "丹參、川芎、玫瑰花，活血化瘀，促進循環。", icon: "🌺", tag: "升級" },
-        { name: "清肝明目茶", price: "+NT$120", priceNum: 120, desc: "菊花、決明子、枸杞，清肝火、護眼明目。", icon: "🌼", tag: "升級" },
-        { name: "養顏美肌茶", price: "+NT$180", priceNum: 180, desc: "雪耳、桃膠、紅棗、玫瑰，膠質滿滿，養顏潤膚。", icon: "🌸", tag: "人氣" }
-      ]
+      submitting: "預約中..."
     },
     feedback: {
       eyebrow: "FEEDBACK",
@@ -107,7 +95,7 @@ const i18n = {
       brand: "ROU SPA",
       brandEn: "ROU SPA",
       brandSub: "Oriental Head Therapy · Meridian Wellness",
-      nav: { home: "Home", services: "Services", booking: "Book Now", shop: "Products", contact: "Contact" },
+      nav: { home: "Home", services: "Services", booking: "Book Now", lookup: "Find Booking", shop: "Products", contact: "Contact" },
       hero: {
         title: "Gentle\nWellness",
         subtitle: "Ancient Chinese Medicine Wisdom for Modern Healing",
@@ -135,7 +123,7 @@ const i18n = {
       booking: {
         title: "Book Appointment",
         subtitle: "Begin Your Wellness Journey",
-        steps: ["Select Service", "Select Therapist", "Select Time", "Select Tea", "Confirm"],
+        steps: ["Select Service", "Select Therapist", "Select Time", "Confirm"],
         selectService: "Choose a service",
         selectTherapist: "Choose a therapist",
         anyTherapist: "No Preference",
@@ -154,20 +142,7 @@ const i18n = {
         morning: "Morning",
         afternoon: "Afternoon",
         evening: "Evening",
-        submitting: "Submitting...",
-        selectTea: "Pair Your Therapy with Herbal Tea",
-        teaIncluded: "Complimentary Tea",
-        teaUpgrade: "Premium Tea Upgrade",
-        teaNote: "Every guest enjoys one herbal tea — choose complimentary or upgrade"
-      },
-      tea: {
-        items: [
-          { name: "Warming Qi Tea", price: "Free", priceNum: 0, desc: "Red date, goji & longan blend. Warms and nourishes Qi.", icon: "🍵", tag: "Basic" },
-          { name: "Calming Sleep Tea", price: "+NT$120", priceNum: 120, desc: "Jujube seed, poria & lily. Soothes the mind for better sleep.", icon: "🌙", tag: "Upgrade" },
-          { name: "Circulation Boost Tea", price: "+NT$150", priceNum: 150, desc: "Salvia, ligusticum & rose. Promotes blood flow and vitality.", icon: "🌺", tag: "Upgrade" },
-          { name: "Liver Cleanse Tea", price: "+NT$120", priceNum: 120, desc: "Chrysanthemum, cassia seed & goji. Clears liver heat, protects eyes.", icon: "🌼", tag: "Upgrade" },
-          { name: "Beauty Glow Tea", price: "+NT$180", priceNum: 180, desc: "Snow fungus, peach gum, rose & red date. Collagen-rich skin nourishment.", icon: "🌸", tag: "Popular" }
-        ]
+        submitting: "Submitting..."
       },
       feedback: {
         eyebrow: "FEEDBACK",
@@ -395,7 +370,7 @@ function PublishedReviews({lang}) {
  const [reviews,setReviews]=useState([]);
  useEffect(()=>{let live=true;rpc('spa_public_reviews').then(rows=>{if(live)setReviews(rows);}).catch(()=>{});return()=>{live=false;};},[]);
  if(!reviews.length)return null;
- return <section style={{padding:"30px 30px 80px",maxWidth:900,margin:"0 auto"}}><h2 style={{fontWeight:500,textAlign:"center",color:"#a3823f",marginBottom:28}}>{lang==='zh'?'顧客療程評價':'Verified guest reviews'}</h2><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:20}}>{reviews.map((r,i)=><article key={i} style={{padding:24,border:"1px solid rgba(163,130,63,.2)",borderRadius:4}}><p aria-label={`${r.rating} / 5`} style={{color:"#a3823f"}}>{'★'.repeat(r.rating)}{'☆'.repeat(5-r.rating)}</p><p style={{marginTop:12,lineHeight:1.8,whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{r.comment}</p><p style={{fontSize:12,opacity:.7,marginTop:12}}>{r.therapist} · {taipeiDate(new Date(r.created_at))}</p>{r.reply&&<p style={{marginTop:16,lineHeight:1.8,fontSize:13,whiteSpace:"pre-wrap"}}>{lang==='zh'?'門店回覆：':'Our reply: '}{r.reply}</p>}</article>)}</div></section>;
+ return <section className="public-reviews" style={{padding:"30px 30px 80px",maxWidth:900,margin:"0 auto"}}><h2 style={{fontWeight:500,textAlign:"center",color:"#a3823f",marginBottom:28}}>{lang==='zh'?'顧客療程評價':'Verified guest reviews'}</h2><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:20}}>{reviews.map((r,i)=><article key={i} style={{padding:24,border:"1px solid rgba(163,130,63,.2)",borderRadius:4}}><p aria-label={`${r.rating} / 5`} style={{color:"#a3823f"}}>{'★'.repeat(r.rating)}{'☆'.repeat(5-r.rating)}</p><p style={{marginTop:12,lineHeight:1.8,whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{r.comment}</p><p style={{fontSize:12,opacity:.7,marginTop:12}}>{r.therapist} · {taipeiDate(new Date(r.created_at))}</p>{r.reply&&<p style={{marginTop:16,lineHeight:1.8,fontSize:13,whiteSpace:"pre-wrap"}}>{lang==='zh'?'門店回覆：':'Our reply: '}{r.reply}</p>}</article>)}</div></section>;
 }
 
 const Particle = ({ delay, x, duration }) => (
@@ -409,11 +384,12 @@ const Particle = ({ delay, x, duration }) => (
 export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange }) {
   const [lang, setLang] = useState("zh");
   const [bookingStep, setBookingStep] = useState(0);
+  const [bookingMode, setBookingMode] = useState("new");
+  const bookingAnchor = useRef(null), navRef = useRef(null), bookingMounted = useRef(false);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedTherapist, setSelectedTherapist] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-  const [selectedTea, setSelectedTea] = useState(null);
   const [formName, setFormName] = useState("");
   const [formPhone, setFormPhone] = useState("");
   const [formNote, setFormNote] = useState("");
@@ -465,10 +441,29 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
     return () => { clearTimeout(timer); clearTimeout(hide); };
   }, []);
 
-  const scrollTo = (section) => {
-    sectionRefs[section]?.current?.scrollIntoView({ behavior: "smooth" });
-    setMenuOpen(false);
+  const alignBooking = (behavior = "instant") => {
+    const target = bookingAnchor.current;
+    if (!target) return;
+    const offset = (navRef.current?.getBoundingClientRect().height || 64) + 16;
+    window.scrollTo({ top: Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset), left: 0, behavior });
   };
+  const scrollTo = (section) => {
+    setMenuOpen(false);
+    if (section === "booking" || section === "lookup") {
+      setBookingMode(section === "lookup" ? "lookup" : "new");
+      requestAnimationFrame(() => alignBooking(window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'));
+    } else {
+      requestAnimationFrame(() => {
+        const target = sectionRefs[section]?.current;
+        if (target) window.scrollTo({ top: Math.max(0, target.getBoundingClientRect().top + window.scrollY - (navRef.current?.getBoundingClientRect().height || 64)), behavior: 'smooth' });
+      });
+    }
+  };
+  useLayoutEffect(() => {
+    if (!bookingMounted.current) { bookingMounted.current = true;return; }
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    alignBooking();
+  }, [bookingStep, bookingComplete, bookingMode]);
 
   useEffect(() => {
     rpc("spa_catalog").then(setCatalog).catch(err => setCatalogError(errorText(err)));
@@ -496,7 +491,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
     if (submitting) return;
     setSubmitting(true); setSlotError("");
     const payload = { p_service: services[selectedService]?.id, p_date: selectedDate, p_start: selectedTime,
-      p_staff: selectedTherapist === -1 ? null : selectedTherapist, p_name: formName.trim(), p_phone: formPhone.trim(), p_tea: selectedTea, p_note: formNote };
+      p_staff: selectedTherapist === -1 ? null : selectedTherapist, p_name: formName.trim(), p_phone: formPhone.trim(), p_tea: 0, p_note: formNote };
     const fingerprint = JSON.stringify(payload);
     if (bookingRequest.current?.fingerprint !== fingerprint) bookingRequest.current = { fingerprint, id: crypto.randomUUID() };
     try {
@@ -514,7 +509,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
   const resetBooking = () => {
     setBookingStep(0); setSelectedService(null); setSelectedTherapist(null);
-    setSelectedDate(""); setSelectedTime(""); setSelectedTea(null); setFormName(""); setFormPhone("");
+    setSelectedDate(""); setSelectedTime(""); setFormName(""); setFormPhone("");
     setFormNote(""); setBookingComplete(false); setSubmitting(false); setBookedSlots([]); setSlotError(""); setReceipt(null); bookingRequest.current = null;
   };
 
@@ -535,11 +530,11 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   ];
 
   return (
-    <div style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "hidden" }}>
+    <div className="public-home" style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "clip" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: auto; }
 
         @keyframes floatUp {
           0% { transform: translateY(0) scale(1); opacity: 0; }
@@ -1025,7 +1020,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
       `}</style>
 
       {/* ========== NAV ========== */}
-      <nav style={{
+      <nav ref={navRef} className="public-nav" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         background: `rgba(242, 237, 228, ${navOpacity})`,
         backdropFilter: navOpacity > 0.1 ? "blur(20px)" : "none",
@@ -1077,13 +1072,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
       </nav>
 
       {/* ========== LINE FLOATING BUTTON ========== */}
-      <div style={{ position: "fixed", bottom: "30px", right: "30px", zIndex: 99, display: "flex", alignItems: "center", gap: "12px" }}>
+      <div className="line-floating" style={{ position: "fixed", bottom: "30px", right: "30px", zIndex: 99, display: "flex", alignItems: "center", gap: "12px" }}>
         {showLineTooltip && (
           <div style={{
             background: "white", border: "1px solid rgba(6,199,85,0.2)",
             padding: "10px 16px", borderRadius: "8px", fontSize: "13px", color: "#4a443a",
             boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
-            letterSpacing: "1px", whiteSpace: "nowrap", animation: "tooltipSlide 0.4s ease-out",
+            letterSpacing: "1px", whiteSpace: "normal", maxWidth: "min(220px, calc(100vw - 110px))", animation: "tooltipSlide 0.4s ease-out",
             backdropFilter: "blur(10px)"
           }}>
             {t.line.tooltip}
@@ -1247,13 +1242,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           </p>
           
           {/* CTA 按鈕 */}
-          <div className="animate-in-delay-4" style={{ width: "100%" }}>
+          <div className="animate-in-delay-4 hero-actions" style={{ width: "100%" }}>
             <button className="gold-btn" onClick={() => scrollTo("booking")} style={{
               padding: "16px 48px", 
               fontSize: "14px", 
               letterSpacing: "4px", 
               borderRadius: "2px"
-            }}>{t.hero.cta}</button>
+            }}>{t.hero.cta}</button><button className="outline-btn" onClick={() => scrollTo('lookup')} style={{padding:'16px 32px',fontSize:14,borderRadius:2}}>{lang === 'zh' ? '查詢預約' : 'Find booking'}</button>
           </div>
         </div>
       </section>
@@ -1344,11 +1339,12 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
       </section>
 
       {/* ========== BOOKING ========== */}
-      <section ref={sectionRefs.booking} style={{
+      <section id="booking" className="booking-section" ref={sectionRefs.booking} style={{
         padding: "120px 30px", position: "relative", overflow: "hidden",
         background: "rgba(255,255,255,0.3)"
       }}>
-        <div style={{ maxWidth: "700px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+        <div className="booking-content" style={{ maxWidth: "700px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div ref={bookingAnchor} className="booking-anchor" />
           <div style={{ textAlign: "center", marginBottom: "50px" }} className={isAnimated("booking") ? "animate-in" : ""}>
             <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>RESERVATION</div>
             <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.booking.title}</h2>
@@ -1356,17 +1352,19 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px" }}>{t.booking.subtitle}</p>
           </div>
 
+          <div className="booking-mode" role="tablist" aria-label={lang === 'zh' ? '預約功能' : 'Booking options'}><button role="tab" aria-selected={bookingMode === 'new'} onClick={() => setBookingMode('new')}>{lang === 'zh' ? '新增預約' : 'New booking'}</button><button role="tab" aria-selected={bookingMode === 'lookup'} onClick={() => setBookingMode('lookup')}>{lang === 'zh' ? '查詢預約' : 'Find booking'}</button></div>
+          {bookingMode === 'lookup' ? <BookingLookup lang={lang}/> : <>
           {(catalogError || slotError) && <p role="alert" style={{ color: "#b5523b", textAlign: "center", marginBottom: 20 }}>{catalogError || slotError}</p>}
           {!catalog && !catalogError && <p style={{ textAlign: "center" }}>正在載入預約服務…</p>}
           {!bookingComplete && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "50px" }}>
+            <div className="booking-progress" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "50px" }}>
               {t.booking.steps.map((step, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div key={i} className="booking-progress-item" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
                     <div className={`step-dot ${i < bookingStep ? "completed" : ""} ${i === bookingStep ? "active" : ""}`} />
                     <span style={{ fontSize: "10px", letterSpacing: "1px", color: i <= bookingStep ? "#a3823f" : "rgba(0,0,0,0.2)", whiteSpace: "nowrap", fontWeight: 500 }}>{step}</span>
                   </div>
-                  {i < 4 && <div style={{ width: "30px", height: "1px", background: i < bookingStep ? "rgba(163,130,63,0.3)" : "rgba(0,0,0,0.1)", marginBottom: "20px" }} />}
+                  {i < t.booking.steps.length - 1 && <div className="booking-progress-connector" style={{ width: "30px", height: "1px", background: i < bookingStep ? "rgba(163,130,63,0.3)" : "rgba(0,0,0,0.1)", marginBottom: "20px" }} />}
                 </div>
               ))}
             </div>
@@ -1382,7 +1380,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
               }}>✓</div>
               <p style={{ fontSize: "22px", color: "#a3823f", letterSpacing: "3px", marginBottom: "12px", fontWeight: 600 }}>{receipt?.status === "pending" ? (lang === "zh" ? "預約已送出，等待門店確認" : "Booking received, awaiting confirmation") : t.booking.success}</p>
               <p style={{ fontSize: "14px", color: "rgba(74, 68, 58, 0.7)", marginBottom: "20px", lineHeight: 1.8 }}>{receipt?.reference}<br />{t.booking.successSub}</p>
-              <a href={`#manage/${receipt?.manage_token}`} style={{ color: "#a3823f", display: "block", marginBottom: 24 }}>{lang === "zh" ? "查看或取消預約（請保存此私人連結）" : "Manage booking — save this private link"}</a>
+              <a href={`#manage/${receipt?.manage_token}`} style={{ color: "#a3823f", display: "block", marginBottom: 24 }}>{lang === "zh" ? "查看、取消或改期（請保存此私人連結）" : "Manage booking — save this private link"}</a>
               <div style={{ background: "white", borderRadius: "8px", padding: "28px", marginBottom: "36px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
                 <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.7)", letterSpacing: "1px", marginBottom: "18px", lineHeight: 1.8 }}>{t.booking.successLine}</p>
                 <a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
@@ -1515,37 +1513,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                   </div>
                 </div>
               )}
-              {/* (其餘步驟 3, 4 同理，皆使用定義好的卡其配色變數) */}
               {bookingStep === 3 && (
-                <div>
-                  <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "8px", letterSpacing: "1px", fontWeight: 500 }}>{t.booking.selectTea}</p>
-                  <p style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", textAlign: "center", marginBottom: "30px", letterSpacing: "1px" }}>{t.booking.teaNote}</p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                    {t.tea.items.map((tea, i) => (
-                      <div key={i} className={`service-card ${selectedTea === i ? "selected" : ""}`}
-                        onClick={() => setSelectedTea(i)}
-                        style={{ padding: "20px 24px", borderRadius: "4px", display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-                        <div style={{ fontSize: "28px", flexShrink: 0 }}>{tea.icon}</div>
-                        <div style={{ flex: 1, minWidth: "180px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-                            <span style={{ fontSize: "15px", fontWeight: 600, letterSpacing: "1px", color: "#4a443a" }}>{tea.name}</span>
-                            <span style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(163,130,63,0.1)", color: "#a3823f", borderRadius: "2px" }}>{tea.tag}</span>
-                          </div>
-                          <p style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.6)", lineHeight: 1.6 }}>{tea.desc}</p>
-                        </div>
-                        <div style={{ fontSize: "14px", color: "#a3823f", fontWeight: 600 }}>{tea.price}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "40px" }}>
-                    <button className="outline-btn" onClick={() => setBookingStep(2)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
-                    <button className="gold-btn" disabled={selectedTea === null} onClick={() => selectedTea !== null && setBookingStep(4)}
-                      style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.next}</button>
-                  </div>
-                </div>
-              )}
-
-              {bookingStep === 4 && (
                 <div>
                   <div style={{ background: "rgba(255,255,255,0.5)", border: "1px solid rgba(163,130,63,0.1)", borderRadius: "4px", padding: "28px", marginBottom: "36px" }}>
                     <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "16px", fontWeight: 600 }}>預約摘要</div>
@@ -1555,8 +1523,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                         [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : therapists.find(m => m.id === selectedTherapist)?.name],
                         [lang === "zh" ? "日期" : "Date", selectedDate],
                         [lang === "zh" ? "時間" : "Time", bookedSlots.find(s => s.starts_at === selectedTime)?.time_label],
-                        [lang === "zh" ? "茶飲" : "Tea", t.tea.items[selectedTea]?.name],
-                        [lang === "zh" ? "費用" : "Price", money(Number(services[selectedService]?.price_cents || 0) + Number(t.tea.items[selectedTea]?.priceNum || 0) * 100)],
+                        [lang === "zh" ? "費用" : "Price", money(services[selectedService]?.price_cents || 0)],
                       ].map(([label, val], i) => (
                         <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
                           <span style={{ color: "rgba(74, 68, 58, 0.6)" }}>{label}</span>
@@ -1566,21 +1533,22 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "40px" }}>
-                    <input value={formName} onChange={e => setFormName(e.target.value)} maxLength={80} placeholder="您的姓名" />
-                    <input value={formPhone} onChange={e => setFormPhone(e.target.value)} type="tel" maxLength={25} placeholder="您的手機號碼" />
-                    <textarea value={formNote} onChange={e => setFormNote(e.target.value)} maxLength={1000} rows={3} placeholder="備註（選填）" />
+                    <input value={formName} onChange={e => setFormName(e.target.value)} maxLength={80} placeholder={lang === "zh" ? "您的姓名" : t.booking.name} />
+                    <input value={formPhone} onChange={e => setFormPhone(e.target.value)} type="tel" maxLength={25} placeholder={lang === "zh" ? "您的手機號碼" : t.booking.phone} />
+                    <textarea value={formNote} onChange={e => setFormNote(e.target.value)} maxLength={1000} rows={3} placeholder={t.booking.note} />
                   </div>
                   <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
-                    <button className="outline-btn" onClick={() => setBookingStep(3)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>上一步</button>
+                    <button className="outline-btn" onClick={() => setBookingStep(2)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
                     <button className="gold-btn" disabled={!formName.trim() || !formPhone.trim() || submitting || !selectedTime} onClick={handleSubmitBooking}
                       style={{ padding: "14px 48px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>
-                      {submitting ? "提交中..." : "確認預約"}
+                      {submitting ? t.booking.submitting : t.booking.confirm}
                     </button>
                   </div>
                 </div>
               )}
             </div>
           )}
+          </>}
         </div>
       </section>
 

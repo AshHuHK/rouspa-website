@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
+import BookingLookup from './BookingLookup.jsx';
+import './responsive.css';
 const Admin = React.lazy(() => import('./Admin.jsx'));
 const Shop = React.lazy(() => import('./Shop.jsx'));
 const Contact = React.lazy(() => import('./Contact.jsx'));
@@ -19,7 +21,7 @@ function Router() {
   useEffect(() => {
     const handleHash = () => {
       setRoute(window.location.hash);
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     };
     window.addEventListener("hashchange", handleHash);
     return () => window.removeEventListener("hashchange", handleHash);
@@ -29,6 +31,7 @@ function Router() {
     window.location.hash = hash;
   };
 
+  if (route === "#lookup") return <BookingLookup standalone lang={lang} />;
   if (route === "#member") return <Member />;
   if (route.startsWith("#manage/")) return <BookingPortal token={route.slice(8)} />;
   if (route.startsWith("#review/")) return <BookingPortal token={route.slice(8)} review />;

@@ -145,7 +145,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
       `}</style>
 
       {/* ===== NAV BAR ===== */}
-      <nav style={{
+      <nav className="public-page-nav" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         background: "rgba(242, 237, 228, 0.95)", backdropFilter: "blur(20px)",
         borderBottom: "1px solid rgba(163,130,63,0.1)",
@@ -224,7 +224,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
         {/* ===== PRODUCT GRID ===== */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))",
           gap: "30px", paddingBottom: "100px"
         }}>
           {filteredItems.map((item, i) => (

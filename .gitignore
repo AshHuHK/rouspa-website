@@ -8,3 +8,6 @@ dist/
 .env.*
 !.env.example
 work/
+
+qa-mobile/
+verification/
