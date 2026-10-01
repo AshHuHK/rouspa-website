@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { taipeiDate, dateAfter, sevenDayRange, rangeDays, validRange, shiftRange } from '../src/lib/date-range.js';
+assert.equal(taipeiDate(new Date('2026-10-01T16:01:00Z')), '2026-10-02', 'Taiwan midnight independent of browser timezone');
+const week = sevenDayRange('2026-10-01');
+assert.deepEqual(week, { from: '2026-10-01', to: '2026-10-07' });
+assert.equal(rangeDays(week), 7);
+assert.equal(dateAfter(6, '2026-12-29'), '2027-01-04');
+assert.deepEqual(shiftRange(week, 1), { from: '2026-10-08', to: '2026-10-14' });
+assert.deepEqual(shiftRange(shiftRange(week, 1), -1), week);
+assert.equal(validRange({ from: '', to: '2026-10-07' }), false);
+assert.equal(validRange({ from: '2026-10-07', to: '2026-10-01' }), false);
+assert.equal(validRange({ from: '2026-02-30', to: '2026-03-03' }), false);
+assert.equal(validRange({ from: '2026-10-01', to: '2026-10-01' }), true);
+assert.equal(validRange({ from: '2026-01-01', to: '2027-01-03' }), false);
+console.log('PASS: 11 date-range assertions (Taiwan midnight, inclusive days, year boundary and invalid inputs).');

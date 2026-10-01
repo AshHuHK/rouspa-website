@@ -486,7 +486,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
     return () => { current = false; };
   }, [selectedDate, selectedService, selectedTherapist, catalog]);
 
-  const getNext7Days = () => Array.from({ length: Math.min(7, catalog?.settings.booking_days || 7) }, (_, i) => dateAfter(i + 1));
+  const getNext7Days = () => Array.from({ length: Math.min(7, catalog?.settings.booking_days || 7) }, (_, i) => dateAfter(i));
   const timeSlots = {
     morning: bookedSlots.filter(s => !s.time_label.startsWith("翌日") && Number(s.time_label.slice(0,2)) < 12),
     afternoon: bookedSlots.filter(s => !s.time_label.startsWith("翌日") && Number(s.time_label.slice(0,2)) >= 12 && Number(s.time_label.slice(0,2)) < 17),

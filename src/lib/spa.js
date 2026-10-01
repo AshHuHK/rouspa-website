@@ -41,14 +41,7 @@ export function cents(value) {
   if (!Number.isSafeInteger(n)) throw new Error('INVALID_INPUT');
   return text.startsWith('-') ? -n : n;
 }
-export function taipeiDate(date = new Date()) {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
-}
-export function dateAfter(days, base = taipeiDate()) {
-  const d = new Date(`${base}T12:00:00+08:00`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return taipeiDate(d);
-}
+export { taipeiDate, dateAfter } from './date-range.js';
 export function dateTime(iso) {
   return new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', dateStyle: 'short', timeStyle: 'short', hour12: false }).format(new Date(iso));
 }
