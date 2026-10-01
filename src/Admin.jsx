@@ -1,289 +1,147 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from 'react';
+import { supabase, rpc, money, cents, taipeiDate, dateTime, errorText, statusNames, exportCSV } from './lib/spa.js';
+import { useSession, Login, Field, Modal, Empty, Method, MutationForm, PrivateLink } from './OperationsShared.jsx';
 
-// ⚠️ 确保这里的值和 App.jsx 里的 CONFIG 一致
-const CONFIG = {
-  SUPABASE_URL: "https://etiggwqxacnlrgokfsjt.supabase.co/",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0aWdnd3F4YWNubHJnb2tmc2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNjk0ODgsImV4cCI6MjA4Nzk0NTQ4OH0.Wqjn6rZJfwCAfTr7L0XdPh1U1hNzJYjjYSt1YASH5uw",
-};
-
-const THERAPISTS = ["林雅芳", "陳柏翰", "王詩涵", "張家豪"];
-const THERAPIST_COLORS = ["#e8935a", "#5a9ee8", "#9ee85a", "#e85aab"];
-
-export default function AdminDashboard() {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() + 1);
-    return d.toISOString().split("T")[0];
-  });
-  const [filterTherapist, setFilterTherapist] = useState("all");
-  const [view, setView] = useState("schedule"); // schedule | list
-
-  // 简单密码保护（你可以改成你自己的密码）
-  const ADMIN_PASSWORD = "rouhe2026";
-
-  const handleLogin = () => {
-    if (password === ADMIN_PASSWORD) {
-      setAuthenticated(true);
-    } else {
-      alert("密碼錯誤");
-    }
-  };
-
-  // 加载预约数据
-  const fetchBookings = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `${CONFIG.SUPABASE_URL}/rest/v1/bookings?booking_date=eq.${selectedDate}&order=booking_time.asc`,
-        {
-          headers: {
-            apikey: CONFIG.SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-          },
-        }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setBookings(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch bookings:", err);
-    }
-    setLoading(false);
-  };
-
-  // 取消预约
-  const cancelBooking = async (id) => {
-    if (!confirm("確定要取消這筆預約嗎？")) return;
-    try {
-      await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: CONFIG.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ status: "cancelled" }),
-      });
-      fetchBookings();
-    } catch (err) {
-      console.error("Failed to cancel:", err);
-    }
-  };
-
-  useEffect(() => {
-    if (authenticated) fetchBookings();
-  }, [authenticated, selectedDate]);
-
-  // 生成接下来14天
-  const getDateOptions = () => {
-    const days = [];
-    const today = new Date();
-    for (let i = 0; i <= 14; i++) {
-      const d = new Date(today); d.setDate(today.getDate() + i);
-      days.push(d.toISOString().split("T")[0]);
-    }
-    return days;
-  };
-
-  const timeSlots = [
-    "10:00","10:30","11:00","11:30",
-    "13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30",
-    "17:00","17:30","18:00","18:30","19:00","19:30","20:00"
-  ];
-
-  const getBookingAt = (therapistIdx, time) => {
-    return bookings.find(
-      b => b.therapist_index === therapistIdx && b.booking_time === time && b.status === "confirmed"
-    );
-  };
-
-  const filteredBookings = bookings.filter(b => {
-    if (filterTherapist === "all") return true;
-    return b.therapist_index === parseInt(filterTherapist);
-  });
-
-  const confirmedCount = bookings.filter(b => b.status === "confirmed").length;
-  const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
-
-  // Login screen
-  if (!authenticated) {
-    return (
-      <div style={{ fontFamily: "'Noto Serif TC', Georgia, serif", background: "#0a0a08", color: "#e8e0d0", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap');`}</style>
-        <div style={{ textAlign: "center", maxWidth: "360px", padding: "40px" }}>
-          <div style={{ fontSize: "28px", color: "#c9a96e", letterSpacing: "6px", marginBottom: "8px" }}>柔療髮浴</div>
-          <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.4)", letterSpacing: "3px", marginBottom: "40px" }}>管理後台</div>
-          <input
-            type="password" value={password} onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleLogin()}
-            placeholder="請輸入管理密碼"
-            style={{
-              width: "100%", padding: "14px 18px", background: "rgba(201,169,110,0.04)",
-              border: "1px solid rgba(201,169,110,0.15)", color: "#e8e0d0", borderRadius: "4px",
-              fontSize: "15px", outline: "none", marginBottom: "20px", fontFamily: "inherit"
-            }}
-          />
-          <button onClick={handleLogin} style={{
-            width: "100%", padding: "14px", background: "linear-gradient(135deg, #c9a96e, #a3823f)",
-            color: "#0a0a08", border: "none", borderRadius: "4px", fontSize: "14px",
-            fontWeight: 500, letterSpacing: "3px", cursor: "pointer", fontFamily: "inherit"
-          }}>登入</button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ fontFamily: "'Noto Serif TC', Georgia, serif", background: "#0a0a08", color: "#e8e0d0", minHeight: "100vh", padding: "20px" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        .admin-btn { padding: 8px 16px; border: 1px solid rgba(201,169,110,0.2); background: transparent; color: #c9a96e; cursor: pointer; border-radius: 3px; font-family: inherit; font-size: 12px; letter-spacing: 1px; transition: all 0.3s; }
-        .admin-btn:hover { background: rgba(201,169,110,0.1); }
-        .admin-btn.active { background: rgba(201,169,110,0.15); border-color: #c9a96e; }
-        .admin-btn.danger { border-color: rgba(255,100,100,0.3); color: #ff6b6b; }
-        .admin-btn.danger:hover { background: rgba(255,100,100,0.1); }
-      `}</style>
-
-      {/* Header */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", marginBottom: "30px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-          <div>
-            <span style={{ fontSize: "20px", color: "#c9a96e", letterSpacing: "4px" }}>柔療髮浴</span>
-            <span style={{ fontSize: "12px", color: "rgba(201,169,110,0.4)", marginLeft: "16px", letterSpacing: "2px" }}>管理後台</span>
-          </div>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-            <button className={`admin-btn ${view === "schedule" ? "active" : ""}`} onClick={() => setView("schedule")}>排班表</button>
-            <button className={`admin-btn ${view === "list" ? "active" : ""}`} onClick={() => setView("list")}>預約列表</button>
-            <button className="admin-btn" onClick={() => setAuthenticated(false)}>登出</button>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Date selector & stats */}
-        <div style={{ display: "flex", gap: "20px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
-          <div>
-            <label style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "1px", marginRight: "10px" }}>日期</label>
-            <select value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-              style={{ padding: "8px 12px", background: "rgba(201,169,110,0.06)", border: "1px solid rgba(201,169,110,0.15)", color: "#e8e0d0", borderRadius: "3px", fontSize: "14px", fontFamily: "inherit" }}>
-              {getDateOptions().map(d => {
-                const dt = new Date(d);
-                const wd = ["日","一","二","三","四","五","六"][dt.getDay()];
-                return <option key={d} value={d}>{d} (週{wd})</option>;
-              })}
-            </select>
-          </div>
-          <div style={{ display: "flex", gap: "16px", fontSize: "13px" }}>
-            <span style={{ color: "rgba(201,169,110,0.6)" }}>已確認: <span style={{ color: "#c9a96e", fontWeight: 500 }}>{confirmedCount}</span></span>
-            <span style={{ color: "rgba(150,150,150,0.5)" }}>已取消: {cancelledCount}</span>
-          </div>
-          {loading && <span style={{ fontSize: "12px", color: "rgba(201,169,110,0.3)" }}>載入中...</span>}
-        </div>
-
-        {/* ===== SCHEDULE VIEW ===== */}
-        {view === "schedule" && (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: "12px 16px", textAlign: "left", fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "1px", borderBottom: "1px solid rgba(201,169,110,0.1)", width: "80px" }}>時段</th>
-                  {THERAPISTS.map((name, i) => (
-                    <th key={i} style={{ padding: "12px 16px", textAlign: "center", fontSize: "13px", color: THERAPIST_COLORS[i], letterSpacing: "1px", borderBottom: "1px solid rgba(201,169,110,0.1)" }}>
-                      {name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {timeSlots.map(time => (
-                  <tr key={time} style={{ borderBottom: "1px solid rgba(201,169,110,0.04)" }}>
-                    <td style={{ padding: "10px 16px", fontSize: "13px", color: "rgba(201,169,110,0.6)", fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}>{time}</td>
-                    {THERAPISTS.map((_, ti) => {
-                      const booking = getBookingAt(ti, time);
-                      return (
-                        <td key={ti} style={{ padding: "6px 10px", textAlign: "center" }}>
-                          {booking ? (
-                            <div style={{
-                              background: `rgba(${THERAPIST_COLORS[ti] === "#e8935a" ? "232,147,90" : THERAPIST_COLORS[ti] === "#5a9ee8" ? "90,158,232" : THERAPIST_COLORS[ti] === "#9ee85a" ? "158,232,90" : "232,90,171"},0.12)`,
-                              border: `1px solid rgba(${THERAPIST_COLORS[ti] === "#e8935a" ? "232,147,90" : THERAPIST_COLORS[ti] === "#5a9ee8" ? "90,158,232" : THERAPIST_COLORS[ti] === "#9ee85a" ? "158,232,90" : "232,90,171"},0.25)`,
-                              borderRadius: "4px", padding: "8px", position: "relative"
-                            }}>
-                              <div style={{ fontSize: "12px", fontWeight: 500, marginBottom: "2px" }}>{booking.customer_name}</div>
-                              <div style={{ fontSize: "10px", color: "rgba(232,224,208,0.4)" }}>{booking.service}</div>
-                              <div style={{ fontSize: "10px", color: "rgba(232,224,208,0.3)", marginTop: "2px" }}>{booking.phone}</div>
-                              <button className="admin-btn danger" onClick={() => cancelBooking(booking.id)}
-                                style={{ position: "absolute", top: "4px", right: "4px", padding: "2px 6px", fontSize: "10px" }}>✕</button>
-                            </div>
-                          ) : (
-                            <div style={{ fontSize: "11px", color: "rgba(201,169,110,0.08)" }}>—</div>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* ===== LIST VIEW ===== */}
-        {view === "list" && (
-          <div>
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", letterSpacing: "1px", marginRight: "10px" }}>技師篩選</label>
-              <select value={filterTherapist} onChange={e => setFilterTherapist(e.target.value)}
-                style={{ padding: "8px 12px", background: "rgba(201,169,110,0.06)", border: "1px solid rgba(201,169,110,0.15)", color: "#e8e0d0", borderRadius: "3px", fontSize: "13px", fontFamily: "inherit" }}>
-                <option value="all">全部技師</option>
-                {THERAPISTS.map((name, i) => <option key={i} value={i}>{name}</option>)}
-              </select>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {filteredBookings.length === 0 && (
-                <div style={{ textAlign: "center", padding: "40px", color: "rgba(201,169,110,0.2)", fontSize: "14px" }}>該日期暫無預約</div>
-              )}
-              {filteredBookings.map(b => (
-                <div key={b.id} style={{
-                  background: b.status === "cancelled" ? "rgba(80,80,80,0.05)" : "rgba(201,169,110,0.03)",
-                  border: `1px solid ${b.status === "cancelled" ? "rgba(80,80,80,0.1)" : "rgba(201,169,110,0.1)"}`,
-                  borderRadius: "6px", padding: "18px 22px",
-                  opacity: b.status === "cancelled" ? 0.5 : 1,
-                  display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px"
-                }}>
-                  <div style={{ flex: 1, minWidth: "200px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
-                      <span style={{ fontSize: "15px", fontWeight: 500 }}>{b.customer_name}</span>
-                      <span style={{
-                        fontSize: "10px", padding: "2px 8px", borderRadius: "2px",
-                        background: b.status === "confirmed" ? "rgba(107,142,35,0.12)" : "rgba(255,100,100,0.1)",
-                        color: b.status === "confirmed" ? "#8fac50" : "#ff6b6b",
-                        border: `1px solid ${b.status === "confirmed" ? "rgba(107,142,35,0.2)" : "rgba(255,100,100,0.2)"}`
-                      }}>{b.status === "confirmed" ? "已確認" : "已取消"}</span>
-                    </div>
-                    <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.5)", display: "flex", gap: "16px", flexWrap: "wrap" }}>
-                      <span>⏰ {b.booking_time}</span>
-                      <span>💆 {b.therapist}</span>
-                      <span>📋 {b.service}</span>
-                      {b.tea && <span>🍵 {b.tea}</span>}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "rgba(201,169,110,0.3)", marginTop: "4px" }}>
-                      📱 {b.phone} {b.note && `· 📝 ${b.note}`}
-                    </div>
-                  </div>
-                  {b.status === "confirmed" && (
-                    <button className="admin-btn danger" onClick={() => cancelBooking(b.id)}>取消預約</button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+export default function Admin() {
+ const session=useSession(),[access,setAccess]=useState(null),[tab,setTab]=useState('bookings'),[from,setFrom]=useState(taipeiDate),[to,setTo]=useState(taipeiDate);
+ const [data,setData]=useState(null),[catalog,setCatalog]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[modal,setModal]=useState(null),[notice,setNotice]=useState('');
+ const loadSequence=useRef(0);
+ const activeData=data?.tab===tab?data.value:null;
+ const role=access?.role, manager=['owner','manager'].includes(role),front=manager||role==='receptionist';
+ useEffect(()=>{let live=true;loadSequence.current++;setAccess(null);setData(null);if(session)rpc('spa_session').then(next=>{if(live)setAccess(next);}).catch(e=>{if(live)setError(errorText(e));});return()=>{live=false;};},[session?.user?.id]);
+ async function load(){
+  if(!role)return;const sequence=++loadSequence.current;setBusy(true);setError('');
+  try{
+   const [cat,result]=await Promise.all([rpc('spa_catalog'),tab==='bookings'?rpc('spa_admin_bookings',{p_from:from,p_to:to}):tab==='customers'?rpc('spa_customers_list'):tab==='team'?rpc('spa_team_admin'):tab==='reviews'?rpc('spa_reviews_admin'):tab==='settings'?Promise.all([rpc('spa_team_admin'),rpc('spa_legacy_report')]).then(([team,legacy])=>({...team,legacy})):rpc('spa_report',{p_from:from,p_to:to})]);
+   if(sequence===loadSequence.current){setCatalog(cat);setData({tab,value:result});}
+  }catch(e){if(sequence===loadSequence.current){setError(errorText(e));setData(null);}}finally{if(sequence===loadSequence.current)setBusy(false);}
+ }
+ useEffect(()=>{setData(null);load();return()=>{loadSequence.current++;};},[role,tab,from,to]);
+ async function saved(){setModal(null);setNotice('已儲存');await load();}
+ if(session===undefined)return <div className="ops"><Empty>正在確認帳號…</Empty></div>;
+ if(!session)return <Login/>;
+ if(!access)return <div className="ops"><p>正在確認權限…</p>{error&&<p role="alert">{error}</p>}<button onClick={()=>supabase.auth.signOut()}>登出</button></div>;
+ if(!role)return <div className="ops"><div className="login card"><h1>尚未開通管理權限</h1><p>此帳號尚未加入門店團隊，請由店主配置權限。</p><a href="#member">前往會員中心</a><div className="actions"><button onClick={()=>supabase.auth.signOut()}>登出</button></div></div></div>;
+ const tabs=[['bookings','預約工作台'],...(front?[['customers','會員與 credits']]:[]),['team','員工與排班'],...(front?[['reviews','評價與反饋']]:[]),...(manager?[['reports','經營與收支'],['settings','門店設定']]:[])];
+ return <div className="ops"><main><header><div><h1>柔療髮浴</h1><p className="muted">營運管理 · {role} · {session.user.email}</p></div><div className="row"><a href="#">查看網站</a><button onClick={()=>supabase.auth.signOut()}>登出</button></div></header><nav>{tabs.map(([id,label])=><button key={id} className={tab===id?'active':''} onClick={()=>{setTab(id);setNotice('');}}>{label}</button>)}</nav>
+ {['bookings','reports'].includes(tab)&&<div className="toolbar"><label>開始日期<input type="date" value={from} onChange={e=>{setFrom(e.target.value);if(e.target.value>to)setTo(e.target.value);}}/></label><label>結束日期<input type="date" min={from} value={to} onChange={e=>setTo(e.target.value)}/></label></div>}
+ <div className="row"><button disabled={busy} onClick={load}>{busy?'載入中…':'重新整理'}</button>{notice&&<span className="success" role="status">{notice}</span>}</div>{error&&<p className="alert" role="alert">{error}</p>}
+ {activeData&&catalog&&<>
+ {tab==='bookings'&&<Bookings rows={activeData} catalog={catalog} front={front} manager={manager} open={setModal}/>}
+ {tab==='customers'&&<Customers rows={activeData} open={setModal}/>}
+ {tab==='team'&&<Team data={activeData} catalog={catalog} manager={manager} open={setModal}/>}
+ {tab==='reviews'&&<Reviews data={activeData} open={setModal}/>}
+ {tab==='reports'&&<Reports data={activeData} open={setModal}/>}
+ {tab==='settings'&&<Settings catalog={catalog} data={activeData} owner={role==='owner'} open={setModal}/>}
+ </>}
+ {modal&&<Modal title={modal.title} onClose={()=>setModal(null)}>
+ {modal.kind==='status'&&<ReasonAction modal={modal} saved={saved} action={(_id,reason)=>rpc('spa_set_status',{p_id:modal.row.id,p_status:modal.status,p_reason:reason})}/>}
+ {modal.kind==='refund'&&<ReasonAction modal={modal} saved={saved} action={(id,reason)=>rpc('spa_refund',{p_request:id,p_appointment:modal.row.id,p_reason:reason})}/>}
+ {modal.kind==='checkout'&&<Checkout row={modal.row} manager={manager} saved={saved}/>}
+ {modal.kind==='new-booking'&&<NewBooking catalog={catalog} saved={saved}/>}
+ {modal.kind==='reschedule'&&<Reschedule row={modal.row} catalog={catalog} saved={saved}/>}
+ {modal.kind==='customer'&&<CustomerForm row={modal.row} manager={manager} saved={saved}/>}
+ {modal.kind==='detail'&&<CustomerDetail row={modal.row} catalog={catalog} manager={manager} saved={saved}/>}
+ {modal.kind==='staff'&&<StaffForm row={modal.row} catalog={catalog} saved={saved}/>}
+ {modal.kind==='shift'&&<ShiftForm row={modal.row} saved={saved}/>}
+ {modal.kind==='off'&&<TimeOffForm row={modal.row} saved={saved}/>}
+ {modal.kind==='off-delete'&&<MutationForm action={()=>rpc('spa_time_off_delete',{p_id:modal.row.id})} onSaved={saved}><p>刪除休假：{modal.row.reason}</p></MutationForm>}
+ {modal.kind==='review'&&<Moderate row={modal.row} kind="review" saved={saved}/>}
+ {modal.kind==='feedback'&&<Moderate row={modal.row} kind="feedback" saved={saved}/>}
+ {modal.kind==='expense'&&<MoneyAction kind="expense" saved={saved}/>}
+ {modal.kind==='settings'&&<SettingsForm row={catalog.settings} saved={saved}/>}
+ {modal.kind==='service'&&<ServiceForm row={modal.row} saved={saved}/>}
+ {modal.kind==='room'&&<RoomForm row={modal.row} saved={saved}/>}
+ {modal.kind==='role'&&<RoleForm row={modal.row} staff={activeData?.staff||[]} saved={saved}/>}
+ </Modal>}
+ </main></div>;
 }
+function Bookings({rows,catalog,front,manager,open}){
+ const [filter,setFilter]=useState('all'),[staff,setStaff]=useState('all'),[view,setView]=useState('list'),[search,setSearch]=useState('');
+ const filtered=rows.filter(r=>(filter==='all'||r.status===filter)&&(staff==='all'||r.staff_id===staff)&&`${r.customer_name} ${r.phone} ${r.reference}`.includes(search));
+ return <><div className="grid">{[['總預約',rows.length],['待確認',rows.filter(r=>r.status==='pending').length],['待結帳',rows.filter(r=>r.status==='completed'&&!r.checkout).length]].map(([k,n])=><div className="card" key={k}><span className="muted">{k}</span><div className="metric">{n}</div></div>)}</div><div className="toolbar">{front&&<button className="primary" onClick={()=>open({kind:'new-booking',title:'新增門店預約'})}>新增預約</button>}<input aria-label="搜尋預約" placeholder="姓名、手機或預約編號" value={search} onChange={e=>setSearch(e.target.value)}/><select aria-label="預約狀態" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">全部狀態</option>{Object.entries(statusNames).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select><select aria-label="技師篩選" value={staff} onChange={e=>setStaff(e.target.value)}><option value="all">全部技師</option>{catalog.staff.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select><button onClick={()=>setView(view==='list'?'schedule':'list')}>{view==='list'?'查看排程':'查看列表'}</button>{front&&<button onClick={()=>exportCSV('預約.csv',filtered.map(r=>({編號:r.reference,顧客:r.customer_name,手機:r.phone,療程:r.service_name,技師:r.therapist,床位:r.room,開始:dateTime(r.starts_at),結束:dateTime(r.ends_at),狀態:statusNames[r.status]})))}>匯出 CSV</button>}</div>
+ {view==='schedule'?<div className="table-wrap"><table className="schedule"><thead><tr><th>技師</th><th>療程排程（含緩衝時間）</th></tr></thead><tbody>{catalog.staff.map(s=><tr key={s.id}><th>{s.name}</th><td><div className="row">{filtered.filter(r=>r.staff_id===s.id).map(r=><div key={r.id} className="card occupied"><strong>{dateTime(r.starts_at)} → {dateTime(r.blocked_until)}</strong><p>{r.customer_name} · {r.service_name}</p><span className="badge">{r.room} · {statusNames[r.status]}</span></div>)}</div></td></tr>)}</tbody></table></div>:<>{!filtered.length&&<Empty/>}{filtered.map(r=><article className="card" key={r.id} style={{marginTop:16}}><div className="row" style={{justifyContent:'space-between'}}><h3>{r.customer_name} <span className="badge">{statusNames[r.status]}</span></h3><span className="muted">{r.reference}</span></div><p>{dateTime(r.starts_at)} → {dateTime(r.ends_at)} · {r.therapist} · {r.room}</p><p>{r.service_name} · {money(Number(r.price_cents)+Number(r.tea_cents))} · {r.phone}</p>{r.note&&<p className="muted">{r.note}</p>}{r.checkout&&<p className="badge">{r.checkout.refunded_at?'已全額退款':`已結帳 ${money(r.checkout.revenue_cents)}`}</p>}
+ <div className="actions">{(front?({pending:['confirmed','cancelled'],confirmed:['checked_in','cancelled','no_show'],checked_in:['completed']}[r.status]||[]):r.status==='checked_in'?['completed']:[]).map(status=><button key={status} onClick={()=>open({kind:'status',title:statusNames[status],row:r,status})}>{statusNames[status]}</button>)}{front&&['pending','confirmed'].includes(r.status)&&<button onClick={()=>open({kind:'reschedule',title:'預約改期／更換技師',row:r})}>改期</button>}{front&&r.status==='completed'&&!r.checkout&&<button className="primary" onClick={()=>open({kind:'checkout',title:'療程結帳',row:r})}>收款／扣 credits</button>}{manager&&r.checkout&&!r.checkout.refunded_at&&<button className="danger" onClick={()=>open({kind:'refund',title:'全額退款並恢復 credits',row:r,required:true})}>全額退款</button>}</div>
+ {front&&<PrivateLink path={`manage/${r.manage_token}`} label="顧客預約連結"/>}{r.status==='completed'&&<PrivateLink path={`review/${r.review_token}`} label="顧客評價連結"/>}
+ </article>)}</>}
+ </>;
+}
+function NewBooking({catalog,saved}){
+ const [service,setService]=useState(catalog.services[0]?.id||''),[staff,setStaff]=useState(''),[date,setDate]=useState(taipeiDate),[start,setStart]=useState(''),[slots,setSlots]=useState([]),[name,setName]=useState(''),[phone,setPhone]=useState(''),[note,setNote]=useState(''),[error,setError]=useState('');
+ useEffect(()=>{let live=true;setStart('');setSlots([]);setError('');rpc('spa_availability',{p_service:service,p_date:date,p_staff:staff||null}).then(s=>{if(live)setSlots(s);}).catch(e=>{if(live)setError(errorText(e));});return()=>{live=false;};},[date,staff,service]);
+ return <MutationForm action={id=>rpc('spa_create_booking',{p_request:id,p_service:service,p_date:date,p_start:start,p_staff:staff||null,p_name:name,p_phone:phone,p_tea:0,p_note:note})} onSaved={saved}><div className="form-grid"><Field label="顧客姓名"><input required maxLength={80} value={name} onChange={e=>setName(e.target.value)}/></Field><Field label="手機"><input required type="tel" value={phone} onChange={e=>setPhone(e.target.value)}/></Field><Field label="療程"><select value={service} onChange={e=>{setService(e.target.value);setStaff('');}}>{catalog.services.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></Field><Field label="技師"><select value={staff} onChange={e=>setStaff(e.target.value)}><option value="">自動安排</option>{catalog.staff.filter(s=>catalog.skills.some(sk=>sk.staff_id===s.id&&sk.service_id===service)).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></Field><Field label="日期"><input required type="date" value={date} min={taipeiDate()} onChange={e=>setDate(e.target.value)}/></Field><Field label="可用時段"><select required value={start} onChange={e=>setStart(e.target.value)}><option value="">請選擇</option>{slots.filter(s=>s.available).map(s=><option key={s.starts_at} value={s.starts_at}>{s.time_label}</option>)}</select></Field><Field wide label="備註"><textarea maxLength={1000} value={note} onChange={e=>setNote(e.target.value)}/></Field></div>{error&&<p className="alert">{error}</p>}<p className="muted">依門店確認規則建立，可在預約列表確認。手機相同會連結既有會員。</p></MutationForm>;
+}
+function ReasonAction({modal,saved,action}){
+ const [reason,setReason]=useState(''); const required=modal.required||['cancelled','no_show'].includes(modal.status);
+ return <MutationForm action={id=>action(id,reason)} onSaved={saved}><p>{modal.row.reference} · {modal.row.customer_name}</p><Field label={required?'原因（必填）':'備註'}><textarea maxLength={1000} required={required} value={reason} onChange={e=>setReason(e.target.value)}/></Field></MutationForm>;
+}
+function Checkout({row,manager,saved}){
+ const [detail,setDetail]=useState(null),[error,setError]=useState(''),[discount,setDiscount]=useState('0'),[wallet,setWallet]=useState('0'),[pkg,setPkg]=useState(''),[tip,setTip]=useState('0'),[method,setMethod]=useState('cash');
+ useEffect(()=>{rpc('spa_customer_detail',{p_customer:row.customer_id}).then(setDetail).catch(e=>setError(errorText(e)));},[]);
+ const balance=detail?.wallet.reduce((n,w)=>n+Number(w.amount_cents),0)||0;
+ const packages=detail?.packages.filter(p=>p.service_id===row.service_id&&p.remaining>0&&new Date(p.expires_at)>new Date())||[];
+ const gross=Number(row.price_cents)+Number(row.tea_cents);
+ return <MutationForm action={id=>rpc('spa_checkout',{p_request:id,p_appointment:row.id,p_discount:pkg?0:cents(discount),p_wallet:cents(wallet),p_package:pkg||null,p_tip:cents(tip),p_method:method})} onSaved={saved} submit="確認已收款並結帳"><p>{row.customer_name} · {row.service_name} · 原價 {money(gross)}</p><p>可用儲值 {money(balance)}</p>{error&&<p className="alert">{error}</p>}<div className="form-grid"><Field label="使用療程套票"><select value={pkg} onChange={e=>{setPkg(e.target.value);setDiscount('0');}}><option value="">不使用</option>{packages.map(p=><option value={p.id} key={p.id}>{p.name} · 剩 {p.remaining} 次</option>)}</select></Field><Field label="折扣金額 NT$（主管權限）"><input type="number" min="0" step="0.01" disabled={!manager||!!pkg} value={discount} onChange={e=>setDiscount(e.target.value)}/></Field><Field label="使用儲值 NT$"><input type="number" min="0" step="0.01" max={balance/100} value={wallet} onChange={e=>setWallet(e.target.value)}/></Field><Field label="另收小費 NT$"><input type="number" min="0" step="0.01" value={tip} onChange={e=>setTip(e.target.value)}/></Field><Field label="剩餘款項支付方式"><Method value={method} onChange={setMethod}/></Field></div><p className="metric">待收款 {money((pkg?Number(row.tea_cents):gross)-Number(discount||0)*100-Number(wallet||0)*100+Number(tip||0)*100)}</p><p className="muted">請先核對現金、刷卡或轉帳入帳。套票只兌換療程，茶飲另計；同一療程只允許一次結帳。</p></MutationForm>;
+}
+function Reschedule({row,catalog,saved}){
+ const [date,setDate]=useState(row.business_date),[staff,setStaff]=useState(row.staff_id),[start,setStart]=useState(''),[slots,setSlots]=useState([]),[reason,setReason]=useState(''),[error,setError]=useState('');
+ useEffect(()=>{setStart('');setSlots([]);setError('');let live=true;rpc('spa_availability',{p_service:row.service_id,p_date:date,p_staff:staff||null}).then(s=>{if(live)setSlots(s);}).catch(e=>{if(live)setError(errorText(e));});return()=>{live=false;};},[date,staff]);
+ return <MutationForm action={()=>rpc('spa_reschedule',{p_id:row.id,p_date:date,p_start:start,p_staff:staff||null,p_reason:reason})} onSaved={saved}><div className="form-grid"><Field label="日期"><input type="date" required value={date} onChange={e=>setDate(e.target.value)}/></Field><Field label="技師"><select value={staff} onChange={e=>setStaff(e.target.value)}><option value="">自動安排</option>{catalog.staff.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></Field><Field label="可用時段"><select required value={start} onChange={e=>setStart(e.target.value)}><option value="">請選擇</option>{slots.filter(s=>s.available).map(s=><option key={s.starts_at} value={s.starts_at}>{s.time_label}</option>)}</select></Field><Field label="改期原因"><input required maxLength={1000} value={reason} onChange={e=>setReason(e.target.value)}/></Field></div>{error&&<p className="alert">{error}</p>}<p className="muted">原本預約佔用的時段仍會顯示不可用；請選擇新時段。系統將重新檢查床位。</p></MutationForm>;
+}
+function Customers({rows,open}){
+ const [search,setSearch]=useState(''); const selected=rows.filter(r=>`${r.name} ${r.phone} ${r.tier}`.includes(search));
+ return <><div className="toolbar"><input aria-label="搜尋會員" value={search} onChange={e=>setSearch(e.target.value)} placeholder="姓名、手機或會員等級"/><button className="primary" onClick={()=>open({kind:'customer',title:'新增會員',row:null})}>新增會員</button><button onClick={()=>exportCSV('會員.csv',selected.map(r=>({姓名:r.name,手機:r.phone,等級:r.tier,儲值餘額:Number(r.balance_cents)/100,完成次數:r.visits,最近到店:r.last_visit?dateTime(r.last_visit):''})))}>匯出 CSV</button></div><div className="table-wrap"><table><thead><tr><th>會員</th><th>手機</th><th>等級</th><th>儲值餘額</th><th>已完成療程</th><th>操作</th></tr></thead><tbody>{selected.map(r=><tr key={r.id}><td>{r.name}</td><td>{r.phone}</td><td>{r.tier}</td><td>{money(r.balance_cents)}</td><td>{r.visits}</td><td><div className="row"><button onClick={()=>open({kind:'detail',title:`${r.name} · 會員帳戶`,row:r})}>帳戶／儲值／套票</button><button onClick={()=>open({kind:'customer',title:'修改會員資料',row:r})}>編輯</button></div></td></tr>)}</tbody></table></div>{!selected.length&&<Empty/>}</>;
+}
+function CustomerForm({row,manager,saved}){
+ const [form,setForm]=useState(row||{name:'',phone:'',email:'',tier:'一般會員',notes:'',auth_user_id:''});const set=(key,value)=>setForm({...form,[key]:value});
+ return <MutationForm action={()=>rpc('spa_customer_save',{p_id:row?.id||null,p_name:form.name,p_phone:form.phone,p_email:form.email,p_tier:form.tier,p_notes:form.notes,p_user:manager?(form.auth_user_id||null):null})} onSaved={saved}><div className="form-grid">{[['name','姓名'],['phone','手機'],['email','電子郵件'],['tier','會員等級']].map(([key,label])=><Field key={key} label={label}><input required={key==='name'||key==='phone'} maxLength={key==='email'?254:80} value={form[key]||''} onChange={e=>set(key,e.target.value)}/></Field>)}{manager&&<Field wide label="會員登入 User UUID（Supabase Authentication）"><input value={form.auth_user_id||''} onChange={e=>set('auth_user_id',e.target.value)}/></Field>}<Field wide label="內部服務偏好與備註"><textarea maxLength={4000} value={form.notes||''} onChange={e=>set('notes',e.target.value)}/></Field></div><p className="muted">會員中心只顯示已由主管綁定帳號的資料；手機相同不會自動開放會員資訊。</p></MutationForm>;
+}
+function CustomerDetail({row,catalog,manager,saved}){
+ const [detail,setDetail]=useState(null),[error,setError]=useState(''),[mode,setMode]=useState('topup');
+ useEffect(()=>{rpc('spa_customer_detail',{p_customer:row.id}).then(setDetail).catch(e=>setError(errorText(e)));},[]);
+ return <><p>{row.phone} · {row.tier} · 可用 {money(row.balance_cents)}</p><nav>{[['topup','充值'],['package','購買套票'],...(manager?[['adjust','調整餘額']]:[]),['history','完整記錄']].map(([id,label])=><button key={id} className={mode===id?'active':''} onClick={()=>setMode(id)}>{label}</button>)}</nav>{error&&<p role="alert" className="alert">{error}</p>}{mode==='package'?<PackageSale key={mode} customer={row.id} catalog={catalog} saved={saved}/>:mode!=='history'?<MoneyAction key={mode} kind={mode} customer={row.id} saved={saved}/>:detail?<><h3>療程套票</h3>{detail.packages.map(p=><p key={p.id}>{p.name} · {p.service_name} · 剩 {p.remaining}/{p.sessions} 次 · 到期 {dateTime(p.expires_at)}</p>)}<h3>儲值流水</h3>{detail.wallet.map(w=><p key={w.id}>{dateTime(w.created_at)} · {money(w.amount_cents)} · {w.note}</p>)}<h3>歷史預約</h3>{detail.appointments.map(a=><p key={a.id}>{dateTime(a.starts_at)} · {a.service_name} · {statusNames[a.status]}</p>)}</>:<Empty>載入中…</Empty>}</>;
+}
+function MoneyAction({kind,customer,saved}){
+ const [amount,setAmount]=useState(''),[method,setMethod]=useState('cash'),[note,setNote]=useState('');
+ return <MutationForm action={id=>rpc(kind==='expense'?'spa_expense':kind==='adjust'?'spa_wallet_adjust':'spa_topup',{p_request:id,...(customer?{p_customer:customer}:{}),p_cents:cents(amount),...(kind==='adjust'?{}:{p_method:method}),p_note:note})} onSaved={saved}><div className="form-grid"><Field label={kind==='adjust'?'調整金額 NT$（可填負數）':'金額 NT$'}><input type="number" step="0.01" min={kind==='adjust'?undefined:'0.01'} required value={amount} onChange={e=>setAmount(e.target.value)}/></Field>{kind!=='adjust'&&<Field label="付款方式"><Method value={method} onChange={setMethod}/></Field>}<Field wide label={kind==='expense'?'支出項目／憑證編號':'記錄原因／收款憑證'}><input required maxLength={1000} value={note} onChange={e=>setNote(e.target.value)}/></Field></div>{kind==='adjust'&&<p className="muted">調整會記錄操作人與原因，不計為現金收款。</p>}</MutationForm>;
+}
+function PackageSale({customer,catalog,saved}){
+ const [name,setName]=useState(''),[service,setService]=useState(catalog.services[0]?.id||''),[sessions,setSessions]=useState(5),[amount,setAmount]=useState(''),[expires,setExpires]=useState(''),[method,setMethod]=useState('cash');
+ return <MutationForm action={id=>rpc('spa_package_sell',{p_request:id,p_customer:customer,p_service:service,p_name:name,p_sessions:Number(sessions),p_cents:cents(amount),p_expires:`${expires}T23:59:59+08:00`,p_method:method})} onSaved={saved}><div className="form-grid"><Field label="套票名稱"><input required value={name} onChange={e=>setName(e.target.value)}/></Field><Field label="適用療程"><select value={service} onChange={e=>setService(e.target.value)}>{catalog.services.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></Field><Field label="療程次數"><input required type="number" min="1" max="200" value={sessions} onChange={e=>setSessions(e.target.value)}/></Field><Field label="實收金額 NT$"><input required type="number" min="0.01" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)}/></Field><Field label="有效期限（台灣日期）"><input required type="date" min={taipeiDate()} value={expires} onChange={e=>setExpires(e.target.value)}/></Field><Field label="收款方式"><Method value={method} onChange={setMethod}/></Field></div></MutationForm>;
+}
+function Team({data,catalog,manager,open}){
+ return <><div className="toolbar">{manager&&<button className="primary" onClick={()=>open({kind:'staff',title:'新增員工',row:null})}>新增員工</button>}</div><div className="grid">{data.staff.map(s=><div className="card" key={s.id}><h3>{s.name} · {s.title}</h3><p>{s.specialty}</p><p className="muted">{s.bio}</p><p>{s.active?'接單中':'已停用'} · 提成 {(s.commission_bps/100).toFixed(2)}%</p><p>可服務：{catalog.services.filter(v=>catalog.skills.some(sk=>sk.staff_id===s.id&&sk.service_id===v.id)).map(v=>v.name).join('、')}</p><div className="muted">{data.shifts.filter(sh=>sh.staff_id===s.id).map(sh=><p key={sh.id}>週{'日一二三四五六'[sh.weekday]}：{minuteLabel(sh.start_minute)}–{minuteLabel(sh.end_minute)}</p>)}</div>{manager&&<div className="actions"><button onClick={()=>open({kind:'staff',title:'員工資料與提成',row:s})}>編輯</button><button onClick={()=>open({kind:'shift',title:'設定每週排班',row:s})}>排班</button><button onClick={()=>open({kind:'off',title:'休假／不可預約時段',row:s})}>新增休假</button></div>}</div>)}</div><h2>休假與封鎖時段</h2>{!data.time_off.length&&<Empty/>}{data.time_off.map(t=><div className="card" key={t.id}><p>{data.staff.find(s=>s.id===t.staff_id)?.name} · {dateTime(t.starts_at)}–{dateTime(t.ends_at)}</p><p>{t.reason}</p>{manager&&<button onClick={()=>open({kind:'off-delete',title:'刪除休假',row:t})}>刪除休假</button>}</div>)}<p className="muted">員工完成數、收入、服務時數、提成及評分請見「經營與收支」的員工績效表。提成是估算，薪資實際發放需記錄支出。</p></>;
+}
+function minuteLabel(n){return `${n>=1440?'翌日 ':''}${String(Math.floor(n/60)%24).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;}
+function StaffForm({row,catalog,saved}){
+ const [f,setF]=useState(row||{name:'',name_en:'',title:'調理師',specialty:'',bio:'',active:true,commission_bps:0}),[services,setServices]=useState(row?catalog.skills.filter(s=>s.staff_id===row.id).map(s=>s.service_id):catalog.services.map(s=>s.id));const set=(key,value)=>setF({...f,[key]:value});
+ return <MutationForm action={()=>rpc('spa_staff_save',{p_id:row?.id||null,p_name:f.name,p_name_en:f.name_en,p_title:f.title,p_specialty:f.specialty,p_bio:f.bio,p_commission:Number(f.commission_bps),p_active:f.active,p_services:services})} onSaved={saved}><div className="form-grid">{[['name','姓名'],['name_en','英文姓名'],['title','職稱'],['specialty','專長']].map(([key,label])=><Field key={key} label={label}><input required={key==='name'} maxLength={80} value={f[key]} onChange={e=>set(key,e.target.value)}/></Field>)}<Field label="療程提成 %"><input type="number" min="0" max="100" step="0.01" value={Number(f.commission_bps)/100} onChange={e=>set('commission_bps',Math.round(Number(e.target.value)*100))}/></Field><Field label="接單狀態"><select value={String(f.active)} onChange={e=>set('active',e.target.value==='true')}><option value="true">可接單</option><option value="false">停用</option></select></Field><Field wide label="員工介紹"><textarea value={f.bio} maxLength={2000} onChange={e=>set('bio',e.target.value)}/></Field><Field wide label="可提供的療程"><div className="row">{catalog.services.map(s=><label className="row" key={s.id}><input type="checkbox" checked={services.includes(s.id)} onChange={e=>setServices(e.target.checked?[...services,s.id]:services.filter(id=>id!==s.id))}/>{s.name}</label>)}</div></Field></div><p className="muted">新員工儲存後，請設定每週排班才會出現在可預約時段。</p></MutationForm>;
+}
+function ShiftForm({row,saved}){
+ const [day,setDay]=useState('1'),[start,setStart]=useState(600),[end,setEnd]=useState(1560);
+ return <MutationForm action={()=>rpc('spa_shift_save',{p_staff:row.id,p_weekday:Number(day),p_start:Number(start),p_end:Number(end)})} onSaved={saved}><div className="form-grid"><Field label="星期"><select value={day} onChange={e=>setDay(e.target.value)}>{[0,1,2,3,4,5,6].map(d=><option key={d} value={d}>週{'日一二三四五六'[d]}</option>)}</select></Field><MinuteField label="開始" value={start} change={setStart}/><MinuteField label="結束（可選翌日）" value={end} change={setEnd}/></div><p className="muted">排班調整不會自動取消既有預約，請另行處理。</p></MutationForm>;
+}
+function MinuteField({label,value,change}) {return <Field label={label}><select value={value} onChange={e=>change(Number(e.target.value))}>{Array.from({length:97},(_,i)=>i*30).map(n=><option key={n} value={n}>{n===2880?'第三日 00:00':minuteLabel(n)}</option>)}</select></Field>;}
+function TimeOffForm({row,saved}){
+ const [start,setStart]=useState(''),[end,setEnd]=useState(''),[reason,setReason]=useState('');
+ return <MutationForm action={()=>rpc('spa_time_off_save',{p_staff:row.id,p_start:`${start}:00+08:00`,p_end:`${end}:00+08:00`,p_reason:reason})} onSaved={saved}><div className="form-grid"><Field label="開始（台灣時間）"><input type="datetime-local" required value={start} onChange={e=>setStart(e.target.value)}/></Field><Field label="結束（台灣時間）"><input type="datetime-local" required value={end} onChange={e=>setEnd(e.target.value)}/></Field><Field wide label="原因"><input required value={reason} onChange={e=>setReason(e.target.value)}/></Field></div></MutationForm>;
+}
+function Reviews({data,open}){return <><h2>完成療程評價</h2>{!data.reviews.length&&<Empty/>}{data.reviews.map(r=><div className="card" key={r.id} style={{marginTop:14}}><h3>{'★'.repeat(r.rating)} · {r.therapist}</h3><p>{r.customer_name} · {r.reference} · {dateTime(r.created_at)} · {r.status}</p><p style={{whiteSpace:'pre-wrap'}}>{r.comment}</p>{r.reply&&<p>店家回覆：{r.reply}</p>}<button onClick={()=>open({kind:'review',title:'評價審核與回覆',row:r})}>處理評價</button></div>)}<h2 style={{marginTop:32}}>匿名改善建議</h2>{!data.feedback.length&&<Empty/>}{data.feedback.map(f=><div className="card" key={f.id} style={{marginTop:14}}><p>{dateTime(f.created_at)} · {f.status}</p><p style={{whiteSpace:'pre-wrap'}}>{f.message}</p><button onClick={()=>open({kind:'feedback',title:'處理匿名建議',row:f})}>更新狀態</button></div>)}</>;}
+function Moderate({row,kind,saved}){
+ const [status,setStatus]=useState(row.status),[reply,setReply]=useState(row.reply||'');const choices=kind==='review'?[['pending','待審核'],['published','公開'],['hidden','隱藏']]:[['unread','未讀'],['read','已讀'],['resolved','已處理']];
+ return <MutationForm action={()=>rpc('spa_moderate',{p_kind:kind,p_id:row.id,p_status:status,p_reply:reply})} onSaved={saved}><p>{row.comment||row.message}</p><Field label="處理狀態"><select value={status} onChange={e=>setStatus(e.target.value)}>{choices.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></Field>{kind==='review'&&<Field label="店家公開回覆"><textarea maxLength={1000} value={reply} onChange={e=>setReply(e.target.value)}/></Field>}</MutationForm>;
+}
+function Reports({data,open}){
+ return <><div className="grid">{[['療程淨收入',money(data.revenue_cents)],['實收款（含儲值／套票／小費）',money(data.cash_in_cents)],['實付款（支出／退款）',money(data.cash_out_cents)],['收支淨額',money(Number(data.cash_in_cents)-Number(data.cash_out_cents))],['費用支出',money(data.expenses_cents)],['目前未使用儲值',money(data.wallet_liability_cents)],['目前未兌換套票金額',money(data.package_liability_cents)],['完成／取消／未到',`${data.completed} / ${data.cancelled} / ${data.no_show}`]].map(([label,value])=><div className="card" key={label}><span className="muted">{label}</span><div className="metric">{value}</div></div>)}</div><p className="muted">儲值與套票在收款時增加預收款，療程完成結帳時才認列收入；小費單列。退款在實際退款日沖回收入。會員餘額為目前值，不受上方日期範圍限制。</p><div className="toolbar"><button className="primary" onClick={()=>open({kind:'expense',title:'記錄門店支出'})}>記錄支出</button><button onClick={()=>exportCSV('收支流水.csv',data.cash_entries.map(e=>({日期:dateTime(e.created_at),分類:e.category,方式:e.method,金額:Number(e.amount_cents)/100,備註:e.note})))}>匯出收支</button><button onClick={()=>exportCSV('員工績效.csv',data.staff.map(s=>({員工:s.name,完成:s.completed,分鐘:s.minutes,淨收入:Number(s.revenue_cents)/100,提成:Number(s.commission_cents)/100,評分:s.rating,評價數:s.reviews})))}>匯出績效</button></div><h2>每日收支</h2><div className="card spark">{data.daily.map(d=><div key={d.date}><span>{money(d.net_cents)}</span><i style={{height:Math.max(4,Math.abs(Number(d.net_cents))/Math.max(1,...data.daily.map(x=>Math.abs(Number(x.net_cents))))*100),background:Number(d.net_cents)<0?'#ba8274':undefined}}/><span>{d.date.slice(5)}</span></div>)}{!data.daily.length&&<Empty/>}</div><h2 style={{marginTop:24}}>員工績效</h2><div className="table-wrap"><table><thead><tr><th>員工</th><th>完成療程</th><th>服務分鐘</th><th>療程淨收入</th><th>提成估算</th><th>評分／評價數</th></tr></thead><tbody>{data.staff.map(s=><tr key={s.id}><td>{s.name}</td><td>{s.completed}</td><td>{s.minutes}</td><td>{money(s.revenue_cents)}</td><td>{money(s.commission_cents)}</td><td>{s.rating??'—'} / {s.reviews}</td></tr>)}</tbody></table></div><h2 style={{marginTop:24}}>完整收支流水</h2><div className="table-wrap"><table><thead><tr><th>時間</th><th>分類</th><th>支付方式</th><th>金額</th><th>備註</th></tr></thead><tbody>{data.cash_entries.map(e=><tr key={e.id}><td>{dateTime(e.created_at)}</td><td>{e.category}</td><td>{e.method}</td><td>{money(e.amount_cents)}</td><td>{e.note}</td></tr>)}</tbody></table></div><h2 style={{marginTop:24}}>操作紀錄（最近 200 筆）</h2><div className="table-wrap"><table><thead><tr><th>時間</th><th>操作</th><th>操作人</th><th>記錄</th></tr></thead><tbody>{data.audit.map(a=><tr key={a.id}><td>{dateTime(a.created_at)}</td><td>{a.action}</td><td>{a.actor||'顧客'}</td><td>{JSON.stringify(a.detail)}</td></tr>)}</tbody></table></div></>;
+}
+function Settings({catalog,data,owner,open}){return <><div className="card" style={{marginTop:20}}><h2>門店與預約規則</h2><p>Asia/Taipei · TWD · {minuteLabel(catalog.settings.opening_minute)}–{minuteLabel(catalog.settings.closing_minute)}</p><p>可預約 {catalog.settings.booking_days} 天 · {catalog.settings.auto_confirm?'自動確認':'店員審核後確認'} · 取消期限 {catalog.settings.cancellation_hours} 小時前</p><button onClick={()=>open({kind:'settings',title:'預約規則'})}>修改</button></div><h2 style={{marginTop:24}}>服務與價格</h2><div className="grid">{catalog.services.map(s=><div className="card" key={s.id}><h3>{s.name}</h3><p>{s.duration_minutes} 分鐘＋{s.buffer_minutes} 分鐘緩衝 · {money(s.price_cents)}</p><button onClick={()=>open({kind:'service',title:'修改療程',row:s})}>修改</button></div>)}</div><h2>舊預約遷移</h2><p className="muted">原始記錄完整保留；未能對應技師、療程或手機的資料需人工核對。</p>{(data.legacy||[]).map(r=><p key={r.source_id}>舊編號 {r.source_id} · {r.date} · {r.service} · {r.outcome==='imported'?'已匯入':`待核對：${r.reason}`}</p>)}<h2>床位容量</h2><div className="row">{data.rooms.map(r=><div className="card" key={r.id}><p>{r.name} · {r.active?'啟用':'停用'}</p><button onClick={()=>open({kind:'room',title:'床位設定',row:r})}>修改</button></div>)}<button onClick={()=>open({kind:'room',title:'新增床位',row:null})}>新增床位</button></div>{owner&&<><h2 style={{marginTop:24}}>帳號權限</h2><p className="muted">先在 Supabase Authentication 建立帳號，再填入其 User UUID；只有店主可修改角色。</p><button onClick={()=>open({kind:'role',title:'新增／修改帳號權限',row:null})}>配置權限</button>{data.roles.map(r=><p key={r.user_id}>{r.user_id} · {r.role} · {r.active?'啟用':'停用'} <button onClick={()=>open({kind:'role',title:'修改權限',row:r})}>修改</button></p>)}</>}</>;}
+function SettingsForm({row,saved}){
+ const [f,setF]=useState(row);const set=(k,v)=>setF({...f,[k]:v});
+ return <MutationForm action={()=>rpc('spa_settings_save',{p_open:Number(f.opening_minute),p_close:Number(f.closing_minute),p_days:Number(f.booking_days),p_auto:f.auto_confirm,p_cancel:Number(f.cancellation_hours)})} onSaved={saved}><div className="form-grid"><MinuteField label="營業開始" value={f.opening_minute} change={v=>set('opening_minute',v)}/><MinuteField label="營業結束" value={f.closing_minute} change={v=>set('closing_minute',v)}/><Field label="可預約天數"><input required type="number" min="1" max="180" value={f.booking_days} onChange={e=>set('booking_days',e.target.value)}/></Field><Field label="取消提前小時"><input required type="number" min="0" value={f.cancellation_hours} onChange={e=>set('cancellation_hours',e.target.value)}/></Field><Field label="預約確認方式"><select value={String(f.auto_confirm)} onChange={e=>set('auto_confirm',e.target.value==='true')}><option value="false">店員審核</option><option value="true">自動確認</option></select></Field></div></MutationForm>;
+}
+function ServiceForm({row,saved}){
+ const [f,setF]=useState({...row,price:Number(row.price_cents)/100});const set=(k,v)=>setF({...f,[k]:v});
+ return <MutationForm action={()=>rpc('spa_service_save',{p_id:row.id,p_name:f.name,p_name_en:f.name_en,p_minutes:Number(f.duration_minutes),p_buffer:Number(f.buffer_minutes),p_cents:cents(f.price),p_active:f.active})} onSaved={saved}><div className="form-grid">{[['name','療程名稱','text'],['name_en','英文名稱','text'],['duration_minutes','療程分鐘','number'],['buffer_minutes','清潔緩衝分鐘','number'],['price','價格 NT$','number']].map(([k,l,t])=><Field key={k} label={l}><input required type={t} min="0" step={k==='price'?'0.01':'1'} value={f[k]} onChange={e=>set(k,e.target.value)}/></Field>)}</div><p className="muted">只影響新預約；已建立預約保留原本價格與時長。</p></MutationForm>;
+}
+function RoomForm({row,saved}){const [name,setName]=useState(row?.name||''),[active,setActive]=useState(row?.active??true);return <MutationForm action={()=>rpc('spa_room_save',{p_id:row?.id||null,p_name:name,p_active:active})} onSaved={saved}><Field label="床位名稱"><input required value={name} onChange={e=>setName(e.target.value)}/></Field><Field label="狀態"><select value={String(active)} onChange={e=>setActive(e.target.value==='true')}><option value="true">啟用</option><option value="false">停用</option></select></Field></MutationForm>;}
+function RoleForm({row,staff,saved}){const [user,setUser]=useState(row?.user_id||''),[role,setRole]=useState(row?.role||'receptionist'),[linked,setLinked]=useState(row?.staff_id||''),[active,setActive]=useState(row?.active??true);return <MutationForm action={()=>rpc('spa_role_save',{p_user:user,p_role:role,p_staff:linked||null,p_active:active})} onSaved={saved}><div className="form-grid"><Field wide label="User UUID"><input required value={user} onChange={e=>setUser(e.target.value)}/></Field><Field label="角色"><select value={role} onChange={e=>setRole(e.target.value)}>{[['owner','店主'],['manager','主管'],['receptionist','櫃台'],['therapist','技師']].map(([id,l])=><option value={id} key={id}>{l}</option>)}</select></Field><Field label="對應技師"><select required={role==='therapist'} value={linked} onChange={e=>setLinked(e.target.value)}><option value="">無</option>{staff.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></Field><Field label="狀態"><select value={String(active)} onChange={e=>setActive(e.target.value==='true')}><option value="true">啟用</option><option value="false">停用</option></select></Field></div></MutationForm>;}

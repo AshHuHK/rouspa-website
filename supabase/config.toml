@@ -1,0 +1,11 @@
+project_id = "rouspa-website"
+[api]
+enabled = true
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+[db]
+major_version = 17
+[auth]
+enabled = true
+site_url = "https://rouspa.tw"
+additional_redirect_urls = ["http://localhost:5173", "https://rouspa.tw"]

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
-import Admin from './Admin.jsx';
-import Shop from './Shop.jsx';
-import Contact from './Contact.jsx';
+const Admin = React.lazy(() => import('./Admin.jsx'));
+const Shop = React.lazy(() => import('./Shop.jsx'));
+const Contact = React.lazy(() => import('./Contact.jsx'));
+const Member = React.lazy(() => import('./Member.jsx'));
+const BookingPortal = React.lazy(() => import('./BookingPortal.jsx'));
 
 // 路由：
 // https://rouspa.tw/           → 客人网站
@@ -27,6 +29,9 @@ function Router() {
     window.location.hash = hash;
   };
 
+  if (route === "#member") return <Member />;
+  if (route.startsWith("#manage/")) return <BookingPortal token={route.slice(8)} />;
+  if (route.startsWith("#review/")) return <BookingPortal token={route.slice(8)} review />;
   if (route === "#admin") {
     return <Admin />;
   }
@@ -39,4 +44,4 @@ function Router() {
   return <App onNavigateShop={() => navigateTo("shop")} onNavigateContact={() => navigateTo("contact")} onLangChange={setLang} />;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<Router />);
+ReactDOM.createRoot(document.getElementById('root')).render(<React.Suspense fallback={<div style={{padding:40,textAlign:"center"}}>載入中…</div>}><Router /></React.Suspense>);
