@@ -7,6 +7,18 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } }
 );
 const errors = {
+  ACCOUNT_AUTH_SYNC_REQUIRED: '後台存取權限已儲存，但登入系統尚未同步；請重新執行啟用／停用，或聯絡店主。',
+  ACCOUNT_LINK_CLEANUP_REQUIRED: '帳號綁定失敗且清理未完成，請由店主核對登入系統後再重試。',
+  INVALID_USERNAME: '使用者名稱需為 3～32 字元的英文字母、數字、點、底線或連字號。',
+  USERNAME_TAKEN: '這個使用者名稱已被使用，請換一個名稱。',
+  INVALID_LOGIN: '使用者名稱或密碼不正確，或帳號已停用。',
+  ACCOUNT_CREATE_FAILED: '無法建立帳號，請確認使用者名稱尚未被使用，並使用至少 12 字元的密碼。',
+  ACCOUNT_EXISTS: '此人員已有登入帳號，請重新整理後修改登入權限或重設密碼。',
+  ACCOUNT_NOT_FOUND: '此人員尚未建立登入帳號。',
+  ACCOUNT_CONFLICT: '帳號與人員資料不一致，請重新整理後核對；同一帳號只能綁定一位人員。',
+  PASSWORD_TOO_SHORT: '密碼請使用 12～128 個字元。', PASSWORD_RESET_FAILED: '密碼重設未成功，請重試；舊後台會話已停用。',
+  OWNER_PROTECTED: '店主帳號保持不變，不能透過人員管理修改或停用。', STAFF_ARCHIVED: '此人員已移除，請先恢復人員資料。',
+  ACCOUNT_SERVICE_UNAVAILABLE: '人員帳號服務暫時無法連線，請稍後重試。',
   BOOKING_ACCESS_EXPIRED: '查詢已逾時，請重新輸入手機與姓名；私人連結可重新開啟。',
   RESCHEDULE_CUTOFF: '已超過線上改期期限，請聯絡門店。',
   SLOT_TAKEN: '此時段已無可用技師或療程室，請重新選擇。',

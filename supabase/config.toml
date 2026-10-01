@@ -9,3 +9,7 @@ major_version = 17
 enabled = true
 site_url = "https://rouspa.tw"
 additional_redirect_urls = ["http://localhost:5173", "https://rouspa.tw"]
+[functions.staff-accounts]
+verify_jwt = false
+[functions.staff-login]
+verify_jwt = false
