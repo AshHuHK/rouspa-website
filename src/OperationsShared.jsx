@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
 import { supabase, rpc, errorText } from './lib/spa.js';
 import './operations.css';
 export function useSession() {
@@ -12,16 +12,29 @@ export function useSession() {
   return session;
 }
 export function Login({ title = '管理後台' }) {
-  const [email, setEmail] = useState(''); const [password, setPassword] = useState('');
+  const [loginName, setLoginName] = useState(''); const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   async function login(e) {
     e.preventDefault(); setBusy(true); setError('');
-    try { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; }
+    try {
+      if (loginName.includes('@')) { const {error} = await supabase.auth.signInWithPassword({email:loginName.trim(),password});if(error)throw error; }
+      else {
+        const {data,error} = await supabase.functions.invoke('staff-login',{body:{username:loginName,password}});
+        if(error){let code='';try{code=(await error.context?.json())?.error||'';}catch{}throw new Error(code||'ACCOUNT_SERVICE_UNAVAILABLE');}
+        if(data?.error)throw new Error(data.error);
+        if(!data?.access_token||!data?.refresh_token)throw new Error('INVALID_LOGIN');
+        const {error:sessionError}=await supabase.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});if(sessionError)throw sessionError;
+      }
+    }
     catch (err) { setError(errorText(err)); } finally { setBusy(false); }
   }
-  return <div className="ops"><div className="login card"><h1>柔療髮浴</h1><p>{title}</p><p className="muted">請使用門店為您建立的帳號登入。</p><form onSubmit={login}><label>電子郵件<input type="email" autoComplete="username" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label>密碼<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<p role="alert" className="alert">{error}</p>}<button className="primary" disabled={busy}>{busy?'登入中…':'登入'}</button></form><p><a href="#">返回首頁</a></p></div></div>;
+  return <div className="ops"><div className="login card"><h1>柔療髮浴</h1><p>{title}</p><p className="muted">請使用門店為您建立的帳號登入。</p><form onSubmit={login}><label>使用者名稱或電子郵件<input autoComplete="username" required maxLength={254} value={loginName} onChange={e=>setLoginName(e.target.value)}/></label><label>密碼<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<p role="alert" className="alert">{error}</p>}<button className="primary" disabled={busy}>{busy?'登入中…':'登入'}</button></form><p><a href="#">返回首頁</a></p></div></div>;
 }
-export function Field({ label, children, wide = false }) { return <label className={wide?'wide':''}>{label}{children}</label>; }
+export function Field({ label, children, wide = false }) {
+ const control=isValidElement(children)&&['input','select','textarea'].includes(children.type)
+  ?cloneElement(children,{'aria-label':children.props['aria-label']||label}):children;
+ return <label className={wide?'wide':''}>{label}{control}</label>;
+}
 export function Modal({ title, children, onClose }) {
   const ref = useRef(null);
   useEffect(()=>{ref.current.showModal();},[]);
