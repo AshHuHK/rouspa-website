@@ -7,6 +7,8 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } }
 );
 const errors = {
+  BOOKING_ACCESS_EXPIRED: '查詢已逾時，請重新輸入手機與姓名；私人連結可重新開啟。',
+  RESCHEDULE_CUTOFF: '已超過線上改期期限，請聯絡門店。',
   SLOT_TAKEN: '此時段已無可用技師或療程室，請重新選擇。',
   INVALID_DATE: '日期或時段不在可預約範圍。', INVALID_INPUT: '請檢查輸入資料。',
   FORBIDDEN: '此帳號沒有執行這項操作的權限。', INVALID_TRANSITION: '目前狀態無法執行此操作，請重新整理。',

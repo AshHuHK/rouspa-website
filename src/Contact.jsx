@@ -96,9 +96,9 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
         e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.03)";
     }}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+      <div className="contact-card-row" style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
         <div style={{ fontSize: "24px", marginTop: "2px" }}>{icon}</div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "2px", marginBottom: "8px", fontWeight: 600 }}>{label}</div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "#4a443a", letterSpacing: "1px", marginBottom: subValue ? "4px" : "0", lineHeight: 1.6 }}>{value}</div>
           {subValue && <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", lineHeight: 1.6 }}>{subValue}</div>}
@@ -122,7 +122,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
   );
 
   return (
-    <div style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh" }}>
+    <div className="contact-page" style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
         
@@ -139,7 +139,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
       `}</style>
 
       {/* NAV */}
-      <nav style={{
+      <nav className="public-page-nav" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         background: "rgba(242, 237, 228, 0.95)", backdropFilter: "blur(20px)",
         borderBottom: "1px solid rgba(163,130,63,0.1)",
@@ -232,7 +232,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
             }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
                 <div style={{ fontSize: "24px", marginTop: "2px" }}>💬</div>
-                <div style={{ flex: 1, minWidth: "200px" }}>
+                <div style={{ flex: 1, minWidth: "min(200px, 100%)" }}>
                   <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "2px", marginBottom: "8px", fontWeight: 600 }}>{t.line}</div>
                   <div style={{ fontSize: "16px", fontWeight: 500, letterSpacing: "1px", marginBottom: "6px", color: "#4a443a" }}>
                     LINE ID: <span style={{ color: "#06C755", fontWeight: 700 }}>{CONFIG.LINE_ID}</span>
@@ -265,7 +265,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
             }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
                 <div style={{ fontSize: "24px", marginTop: "2px" }}>🟢</div>
-                <div style={{ flex: 1, minWidth: "200px" }}>
+                <div style={{ flex: 1, minWidth: "min(200px, 100%)" }}>
                   <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "2px", marginBottom: "8px", fontWeight: 600 }}>{t.wechat}</div>
                   <div style={{ fontSize: "16px", fontWeight: 500, letterSpacing: "1px", marginBottom: "6px", color: "#4a443a" }}>
                     {isZh ? "微信號" : "WeChat ID"}: <span style={{ color: "#07C160", fontWeight: 700 }}>{CONFIG.WECHAT_ID}</span>
