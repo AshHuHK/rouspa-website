@@ -283,13 +283,14 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
             border: "1px solid rgba(163,130,63,0.2)", boxShadow: "0 10px 30px rgba(0,0,0,0.05)"
           }}>
             <iframe
-              src="https://www.google.com/maps?q=嘉義市西區蘭井街421號&output=embed"
+              title={isZh ? "門市位置地圖" : "Store location map"}
+              src={`https://www.google.com/maps?q=${encodeURIComponent(CONFIG.ADDRESS_ZH)}&output=embed`}
               width="100%" height="100%" style={{ border: 0, filter: "sepia(20%) contrast(1.1) brightness(1.05)" }}
               allowFullScreen="" loading="lazy"
             />
           </div>
           <div style={{ textAlign: "center", marginTop: "16px", fontSize: "13px", color: "rgba(74, 68, 58, 0.5)", fontWeight: 500 }}>
-            {isZh ? "※ 正式開幕後將更新精確地圖定位" : "※ Map will be updated with exact location upon opening"}
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(CONFIG.ADDRESS_ZH)}`} target="_blank" rel="noopener noreferrer" style={{ color: "#80622d", display: "inline-flex", alignItems: "center", minHeight: "44px" }}>{isZh ? "在 Google Maps 開啟門市位置 ↗" : "Open store location in Google Maps ↗"}</a>
           </div>
         </div>
       </div>
