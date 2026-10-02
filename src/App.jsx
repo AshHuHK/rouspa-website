@@ -567,25 +567,12 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         /* ===== Hero 主 logo 下移，避免與頂端漢堡選單重疊 ===== */
         .hero-logo-wrap { margin-top: 7vh; }
 
-        /* ===== Hero 副標花字 + 金線繚繞整句 ===== */
-        @property --gold-ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        /* ===== Hero 棕色副標 + 間歇金色掃光 ===== */
         .hero-brand-block {
           position: relative; display: flex; flex-direction: column;
           align-items: center; gap: 8px; padding: 16px 32px;
-          border-radius: 46px; margin-bottom: 16px;
+          margin-bottom: 16px;
         }
-        .hero-brand-block::before {
-          content: ''; position: absolute; inset: 0; border-radius: 46px; padding: 1.6px;
-          background: conic-gradient(from var(--gold-ang),
-            rgba(163,130,63,0) 0deg, rgba(163,130,63,0) 200deg,
-            #a3823f 258deg, #efd396 300deg, #a3823f 342deg, rgba(163,130,63,0) 360deg);
-          -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          -webkit-mask-composite: xor;
-          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          mask-composite: exclude;
-          animation: goldThread 4.5s linear infinite; pointer-events: none;
-        }
-        @keyframes goldThread { to { --gold-ang: 360deg; } }
         .hero-fancy {
           font-family: 'Noto Serif TC', serif; font-weight: 700;
           font-size: clamp(17px, 4.6vw, 22px);
@@ -601,13 +588,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             background-size: 250% 100%; background-repeat: no-repeat;
             -webkit-background-clip: text; background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: heroGoldSweep 0.8s ease-in-out infinite;
+            animation: heroGoldSweep 6.6s linear infinite;
           }
         }
-        /* Wider background starts the gold band off the left edge and ends off the right. */
+        /* Each 6.6-second cycle sweeps left to right for 1.6 seconds, then holds brown for 5 seconds. */
         @keyframes heroGoldSweep {
-          from { background-position: 100% center; }
-          to { background-position: 0% center; }
+          0% { background-position: 100% center; animation-timing-function: ease-in-out; }
+          24.242424%, 100% { background-position: 0% center; }
         }
         .hero-divider {
           width: 180px; max-width: 100%; height: 1px; margin: 20px auto;
@@ -1195,7 +1182,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <SealLogo variant="hero" size={200} />
           </div>
 
-          {/* 棕色加粗副標，金色光帶由左至右掃過（每次 0.8 秒） */}
+          {/* 棕色加粗副標：掃光 1.6 秒，停留 5 秒後再次由左至右掃過 */}
           <div className="animate-in-delay-1 hero-brand-block">
             <span className="hero-fancy">{t.brandSub}</span>
             <span className="hero-fancy">{t.hero.title}</span>
