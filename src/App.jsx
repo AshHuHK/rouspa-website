@@ -17,7 +17,7 @@ const i18n = {
   zh: {
     brand: "柔療髮浴",
     brandEn: "ROU SPA",
-    brandSub: "東方頭療・經絡養生",
+    brandSub: "東方頭療・經絡舒緩",
     nav: { home: "首頁", services: "服務項目", booking: "立即預約", lookup: "查詢預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",
@@ -260,7 +260,9 @@ const LineIcon = () => (
   </svg>
 );
 
-const GoldDivider = () => (
+const GoldDivider = ({ plain = false }) => plain ? (
+  <div className="hero-divider" aria-hidden="true" />
+) : (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", margin: "20px 0" }}>
     <div style={{ width: "60px", height: "1px", background: "linear-gradient(to right, transparent, #a3823f)" }} />
     <div style={{ color: "#a3823f", fontSize: "10px", letterSpacing: "4px" }}>◆</div>
@@ -585,16 +587,38 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         }
         @keyframes goldThread { to { --gold-ang: 360deg; } }
         .hero-fancy {
-          font-family: 'Noto Serif TC', serif; font-weight: 500;
+          font-family: 'Noto Serif TC', serif; font-weight: 700;
           font-size: clamp(17px, 4.6vw, 22px);
           letter-spacing: 6px; line-height: 1.55; white-space: nowrap;
-          background: linear-gradient(100deg, #7d6229 0%, #a3823f 24%, #f4dca6 50%, #a3823f 76%, #7d6229 100%);
-          background-size: 220% auto;
-          -webkit-background-clip: text; background-clip: text;
-          -webkit-text-fill-color: transparent; color: transparent;
-          animation: goldShimmer 6s linear infinite;
+          color: rgba(102, 70, 43, 0.9);
         }
-        @keyframes goldShimmer { to { background-position: 220% center; } }
+        @supports (background-clip: text) or (-webkit-background-clip: text) {
+          .hero-fancy {
+            background-image: linear-gradient(90deg,
+              rgba(102,70,43,0.9) 0%, rgba(102,70,43,0.9) 40%,
+              rgba(186,143,65,0.94) 46%, rgba(231,195,119,0.96) 50%,
+              rgba(186,143,65,0.94) 54%, rgba(102,70,43,0.9) 60%, rgba(102,70,43,0.9) 100%);
+            background-size: 250% 100%; background-repeat: no-repeat;
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: heroGoldSweep 0.8s ease-in-out infinite;
+          }
+        }
+        /* Wider background starts the gold band off the left edge and ends off the right. */
+        @keyframes heroGoldSweep {
+          from { background-position: 100% center; }
+          to { background-position: 0% center; }
+        }
+        .hero-divider {
+          width: 180px; max-width: 100%; height: 1px; margin: 20px auto;
+          background: rgba(131,101,52,0.65); transform: scaleY(0.5);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .hero-fancy {
+            animation: none; background-image: none;
+            -webkit-text-fill-color: currentColor;
+          }
+        }
         @media (max-width: 640px) {
           .hero-logo-wrap { margin-top: 15vh !important; }
           .hero-brand-block { padding: 13px 22px; gap: 6px; margin-bottom: 14px; }
@@ -1171,7 +1195,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             <SealLogo variant="hero" size={200} />
           </div>
 
-          {/* 副標花字 + 金線繚繞（東方頭療・經絡養生 / 以柔養生） */}
+          {/* 棕色加粗副標，金色光帶由左至右掃過（每次 0.8 秒） */}
           <div className="animate-in-delay-1 hero-brand-block">
             <span className="hero-fancy">{t.brandSub}</span>
             <span className="hero-fancy">{t.hero.title}</span>
@@ -1179,7 +1203,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
           {/* 裝飾線 */}
           <div className="animate-in-delay-2" style={{ marginBottom: "24px" }}>
-            <GoldDivider />
+            <GoldDivider plain />
           </div>
           
           {/* 第一段內文 - 控制斷行 */}
