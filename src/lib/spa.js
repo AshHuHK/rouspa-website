@@ -17,7 +17,7 @@ const errors = {
   ACCOUNT_NOT_FOUND: '此人員尚未建立登入帳號。',
   ACCOUNT_CONFLICT: '帳號與人員資料不一致，請重新整理後核對；同一帳號只能綁定一位人員。',
   PASSWORD_TOO_SHORT: '密碼請使用 12～128 個字元。', PASSWORD_RESET_FAILED: '密碼重設未成功，請重試；舊後台會話已停用。',
-  OWNER_PROTECTED: '店主帳號保持不變，不能透過人員管理修改或停用。', STAFF_ARCHIVED: '此人員已移除，請先恢復人員資料。',
+  OWNER_PROTECTED: '店主帳號保持不變，不能透過人員管理修改或停用。', STAFF_ARCHIVED: '此人員已封存，請先恢復人員資料。',
   ACCOUNT_SERVICE_UNAVAILABLE: '人員帳號服務暫時無法連線，請稍後重試。',
   BOOKING_ACCESS_EXPIRED: '查詢已逾時，請重新輸入手機與姓名；私人連結可重新開啟。',
   RESCHEDULE_CUTOFF: '已超過線上改期期限，請聯絡門店。',
@@ -31,8 +31,28 @@ const errors = {
   TOO_EARLY: '尚未到預約時間，無法到店、完成或標記未到。', OWNER_SELF_CHANGE: '不能停用或降級自己的店主帳號。',
   REQUEST_CONFLICT: '此操作編號已用於其他記錄，請重新整理。'
 };
-export function errorText(error) {
+const publicErrorsEn = {
+  BOOKING_ACCESS_EXPIRED: 'Your booking access has expired. Search again or reopen your private link.',
+  RESCHEDULE_CUTOFF: 'The online rescheduling deadline has passed. Please contact the store.',
+  CANCELLATION_CUTOFF: 'The online cancellation deadline has passed. Please contact the store.',
+  SLOT_TAKEN: 'This time is no longer available. Please choose another time.',
+  INVALID_DATE: 'Choose a date and time within the booking period.',
+  INVALID_INPUT: 'Please check the information you entered.',
+  FORBIDDEN: 'You do not have permission to perform this action.',
+  NOT_FOUND: 'This record could not be found.',
+  RATE_LIMIT: 'Too many attempts. Please try again later or contact the store.',
+  REVIEW_NOT_ELIGIBLE: 'Reviews are available after the store confirms your treatment is completed.',
+  REASON_REQUIRED: 'Please enter a reason.',
+  INVALID_TRANSITION: 'This booking cannot be changed in its current state. Please refresh.',
+  REQUEST_CONFLICT: 'Please refresh before trying again.'
+};
+export function errorText(error, lang = 'zh') {
   const message = error?.message || String(error);
+  if (lang === 'en') {
+    for (const [key, value] of Object.entries(publicErrorsEn)) if (message.includes(key)) return value;
+    if (error?.code === 'PGRST202' || message.includes('schema cache')) return 'Online booking is unavailable. Please contact us on LINE.';
+    return 'The action could not be completed. Please try again or contact the store.';
+  }
   for (const [key, value] of Object.entries(errors)) if (message.includes(key)) return value;
   if (error?.code === 'PGRST202' || message.includes('schema cache')) return '預約系統尚未啟用，請透過 LINE 聯絡門店。';
   if (message.includes('Invalid login')) return '電子郵件或密碼不正確。';
@@ -45,7 +65,7 @@ export async function rpc(name, args = {}) {
   return data;
 }
 export function money(cents = 0) {
-  return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 2 }).format(Number(cents) / 100);
+  return 'NT$' + new Intl.NumberFormat('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(cents) / 100);
 }
 export function cents(value) {
   const text = String(value).trim();
@@ -56,8 +76,8 @@ export function cents(value) {
   return text.startsWith('-') ? -n : n;
 }
 export { taipeiDate, dateAfter } from './date-range.js';
-export function dateTime(iso) {
-  return new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', dateStyle: 'short', timeStyle: 'short', hour12: false }).format(new Date(iso));
+export function dateTime(iso, lang = 'zh') {
+  return new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'zh-TW', { timeZone: 'Asia/Taipei', dateStyle: 'short', timeStyle: 'short', hour12: false }).format(new Date(iso));
 }
 export const statusNames = { pending: '待確認', confirmed: '已確認', checked_in: '已到店', completed: '已完成', cancelled: '已取消', no_show: '未到店' };
 export function exportCSV(name, rows) {

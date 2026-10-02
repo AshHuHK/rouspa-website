@@ -1,17 +1,12 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import BookingLookup from "./BookingLookup.jsx";
+import { STORE, hoursText, publicName, slotLabel } from "./lib/public-copy.js";
 import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 
 // ============================================================
 // 🔧 CONFIGURATION
 // ============================================================
-const CONFIG = {
-  LINE_URL: "https://line.me/R/ti/p/@258llual",
-  DOMAIN: "https://rouspa.tw",
-  PHONE: "0978-918-737",
-  ADDRESS_ZH: "嘉義市西區蘭井街421號",
-  ADDRESS_EN: "No.421, Lanjing St., West Dist., Chiayi City",
-};
+const CONFIG = STORE;
 
 const i18n = {
   zh: {
@@ -21,29 +16,11 @@ const i18n = {
     nav: { home: "首頁", services: "服務項目", booking: "立即預約", lookup: "查詢預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",
-      subtitle: "源自千年中醫智慧的頭部經絡調理",
-      desc: "柔療髮浴以傳統中醫理論為根基，融合現代養生手法，為您開啟身心療癒之旅。疏通頭部經絡，調和氣血，讓身心回歸自然平衡。",
       cta: "預約體驗"
     },
     services: {
       title: "養生項目",
       subtitle: "精選調理 · 身心合一",
-      items: [
-        { name: "經典頭療", duration: "60分鐘", price: "NT$1,800", desc: "運用傳統中醫推拿手法，疏通頭部十二經絡，緩解頭痛、失眠、壓力，恢復氣血暢通。", icon: "☯" },
-        { name: "御方草本頭療", duration: "90分鐘", price: "NT$2,800", desc: "嚴選十八味漢方草本精華，搭配熱敷薰蒸與穴位按摩，深層滋養頭皮，養髮固本。", icon: "🌿" },
-        { name: "艾灸通絡頭療", duration: "75分鐘", price: "NT$2,200", desc: "以陳年艾草溫灸百會、太陽等要穴，溫經散寒，祛濕排毒，改善頭部循環。", icon: "🔥" },
-        { name: "全息頭部SPA", duration: "120分鐘", price: "NT$3,800", desc: "結合頭部刮痧、耳燭、面部撥筋與肩頸調理，從頭到肩全方位深度放鬆與修復。", icon: "✨" }
-      ]
-    },
-    team: {
-      members: [
-        { name: "林雅芳", title: "首席調理師", exp: "15年經驗", specialty: "經絡調理 · 艾灸養生", desc: "師承中醫名家，精通頭部經絡與穴位調理，擅長針對性調理方案。" },
-        { name: "陳柏翰", title: "資深調理師", exp: "12年經驗", specialty: "草本頭療 · 刮痧排毒", desc: "深研漢方草本學，獨創御方頭療配方，深受顧客好評。" },
-        { name: "王詩涵", title: "調理師", exp: "8年經驗", specialty: "全息SPA · 肩頸調理", desc: "手法細膩溫柔，擅長全身經絡疏通，讓您在寧靜中找回平衡。" },
-        { name: "張家豪", title: "調理師", exp: "6年經驗", specialty: "頭部推拿 · 穴位按摩", desc: "力道精準到位，專注於頭部深層放鬆，有效改善睡眠品質。" },
-        { name: "李靜怡", title: "調理師", exp: "5年經驗", specialty: "芳香療法 · 淋巴排毒", desc: "專精精油調配與淋巴引流手法，結合東西方療癒智慧。" },
-        { name: "吳俊霖", title: "調理師", exp: "4年經驗", specialty: "經絡推拿 · 拔罐理療", desc: "嫻熟傳統推拿技法，擅長針對肩頸腰背痠痛調理。" }
-      ]
     },
     booking: {
       title: "預約調理",
@@ -62,19 +39,19 @@ const i18n = {
       confirm: "確認預約",
       success: "預約成功！",
       successSub: "我們將盡快與您確認預約時間",
-      successLine: "加入 LINE 官方帳號，即時接收預約確認與專屬優惠",
+      successLine: "加入 LINE 官方帳號，聯絡門店確認預約或詢問服務。",
       addLine: "加入 LINE",
       morning: "上午",
       afternoon: "下午",
       evening: "晚間",
-      submitting: "預約中..."
+      submitting: "預約中…"
     },
     feedback: {
       eyebrow: "FEEDBACK",
       title: "您的反饋，能讓我們更好",
       placeholder: "柔療需要改進的地方",
       submit: "送出",
-      sending: "傳送中...",
+      sending: "傳送中…",
       thanks: "謝謝您的寶貴意見，我們會持續改善。",
       tooShort: "請再多寫幾個字，讓我們更清楚。",
       tooFast: "請稍候片刻再送出。",
@@ -83,7 +60,6 @@ const i18n = {
     },
     footer: {
       address: CONFIG.ADDRESS_ZH,
-      hours: "營業時間：10:00 - 02:00（全年無休）",
       phone: CONFIG.PHONE,
       copyright: "© 2026 柔療髮浴 版權所有"
     },
@@ -91,65 +67,48 @@ const i18n = {
     langSwitch: "EN"
   },
   en: {
-      // (保持原本的英文翻譯不變)
       brand: "ROU SPA",
       brandEn: "ROU SPA",
-      brandSub: "Oriental Head Therapy · Meridian Wellness",
-      nav: { home: "Home", services: "Services", booking: "Book Now", lookup: "Find Booking", shop: "Products", contact: "Contact" },
+      brandSub: "Head therapy · Meridian relaxation",
+      nav: { home: "Home", services: "Services", booking: "Book now", lookup: "Find booking", shop: "Products", contact: "Contact" },
       hero: {
-        title: "Gentle\nWellness",
-        subtitle: "Ancient Chinese Medicine Wisdom for Modern Healing",
-        desc: "Rooted in Traditional Chinese Medicine, Rou Spa's head therapy harmonizes Qi and blood flow, guiding you on a journey of holistic healing and deep relaxation.",
-        cta: "Book Now"
+        title: "Wellness through gentle care",
+        cta: "Book now"
       },
       services: {
         title: "Services",
-        subtitle: "Curated Therapies · Mind & Body Unity",
-        items: [
-          { name: "Classic Head Therapy", duration: "60 min", price: "NT$1,800", desc: "Traditional TCM massage techniques to unblock head meridians, relieve headaches, insomnia, and stress.", icon: "☯" },
-          { name: "Herbal Head Therapy", duration: "90 min", price: "NT$2,800", desc: "Premium herbal essence blend with hot compress and acupoint massage for deep scalp nourishment.", icon: "🌿" },
-          { name: "Moxibustion Therapy", duration: "75 min", price: "NT$2,200", desc: "Aged moxa warming of Baihui and Taiyang points to dispel cold, remove dampness, and improve circulation.", icon: "🔥" },
-          { name: "Holistic Head SPA", duration: "120 min", price: "NT$3,800", desc: "Full spectrum treatment combining Gua Sha, ear candling, facial meridian work, and shoulder therapy.", icon: "✨" }
-        ]
+        subtitle: "Curated therapies · Mind and body",
       },
-      team: {
-        members: [
-          { name: "Lin Ya-Fang", title: "Chief Therapist", exp: "15 Years", specialty: "Meridian Therapy · Moxibustion", desc: "Trained under renowned TCM masters, expert in head meridian and acupoint therapy." },
-          { name: "Chen Bo-Han", title: "Senior Therapist", exp: "12 Years", specialty: "Herbal Therapy · Gua Sha", desc: "Deep expertise in herbal formulations, creator of our signature herbal blend." },
-          { name: "Wang Shi-Han", title: "Therapist", exp: "8 Years", specialty: "Holistic SPA · Shoulder Care", desc: "Gentle and precise technique, specializing in full-body meridian harmony." },
-          { name: "Zhang Jia-Hao", title: "Therapist", exp: "6 Years", specialty: "Head Massage · Acupoint Work", desc: "Precise pressure control, focused on deep head relaxation and sleep improvement." }
-        ]
-      },
-      booking: {
-        title: "Book Appointment",
-        subtitle: "Begin Your Wellness Journey",
-        steps: ["Select Service", "Select Therapist", "Select Time", "Confirm"],
+    booking: {
+        title: "Book an appointment",
+        subtitle: "Begin your wellness journey",
+        steps: ["Select service", "Select therapist", "Select time", "Confirm"],
         selectService: "Choose a service",
         selectTherapist: "Choose a therapist",
-        anyTherapist: "No Preference",
-        selectDate: "Select Date",
-        selectTime: "Select Time",
-        name: "Full Name",
-        phone: "Phone Number",
-        note: "Notes (Optional)",
+        anyTherapist: "No preference",
+        selectDate: "Select date",
+        selectTime: "Select time",
+        name: "Full name",
+        phone: "Phone number",
+        note: "Notes (optional)",
         next: "Next",
         prev: "Back",
-        confirm: "Confirm Booking",
-        success: "Booking Confirmed!",
+        confirm: "Confirm booking",
+        success: "Booking confirmed",
         successSub: "We will contact you shortly to confirm your appointment.",
-        successLine: "Follow our LINE account for instant booking confirmation & exclusive offers.",
-        addLine: "Add LINE",
+        successLine: "Add our LINE account to contact us about your booking or services.",
+        addLine: "Add on LINE",
         morning: "Morning",
         afternoon: "Afternoon",
         evening: "Evening",
-        submitting: "Submitting..."
+        submitting: "Submitting…"
       },
       feedback: {
         eyebrow: "FEEDBACK",
-        title: "Your Feedback Helps Us Grow",
-        placeholder: "What could Rou Spa do better?",
+        title: "Your feedback helps us improve",
+        placeholder: "What could ROU SPA do better?",
         submit: "Send",
-        sending: "Sending...",
+        sending: "Sending…",
         thanks: "Thank you for your thoughts — we will keep improving.",
         tooShort: "Please write a little more so we understand.",
         tooFast: "Please wait a moment before sending.",
@@ -158,11 +117,10 @@ const i18n = {
       },
       footer: {
         address: CONFIG.ADDRESS_EN,
-        hours: "Hours: 10:00 AM - 2:00 AM (Open Daily)",
         phone: CONFIG.PHONE,
-        copyright: "© 2026 Rou Spa. All Rights Reserved."
+        copyright: "© 2026 ROU SPA. All rights reserved."
       },
-      line: { tooltip: "LINE Chat" },
+      line: { tooltip: "LINE chat" },
       langSwitch: "中文"
   }
 };
@@ -224,6 +182,7 @@ const SealLogo = ({ size = 44, variant = "mark" }) => (
 function FormulaCard({ stamp, name, sub, steps, isOpen, onEnter, onLeave, onToggle, variant = "v90" }) {
   return (
     <div
+      role="button" tabIndex={0} aria-expanded={isOpen} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onToggle();}}}
       className={`service-card formula-card ${variant} ${isOpen ? "open" : ""}`}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
@@ -383,8 +342,8 @@ const Particle = ({ delay, x, duration }) => (
   }} />
 );
 
-export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange }) {
-  const [lang, setLang] = useState("zh");
+export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact, onLangChange }) {
+  const setLang = next => onLangChange?.(next);
   const [bookingStep, setBookingStep] = useState(0);
   const [bookingMode, setBookingMode] = useState("new");
   const bookingAnchor = useRef(null), navRef = useRef(null), bookingMounted = useRef(false);
@@ -468,7 +427,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   }, [bookingStep, bookingComplete, bookingMode]);
 
   useEffect(() => {
-    rpc("spa_catalog").then(setCatalog).catch(err => setCatalogError(errorText(err)));
+    rpc("spa_catalog").then(setCatalog).catch(err => setCatalogError(errorText(err, lang)));
   }, []);
 
   useEffect(() => {
@@ -478,7 +437,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
     setLoadingSlots(true); setSlotError("");
     rpc("spa_availability", { p_service: services[selectedService].id, p_date: selectedDate, p_staff: selectedTherapist === -1 ? null : selectedTherapist })
       .then(slots => { if (current) setBookedSlots(slots); })
-      .catch(err => { if (current) setSlotError(errorText(err)); })
+      .catch(err => { if (current) setSlotError(errorText(err, lang)); })
       .finally(() => { if (current) setLoadingSlots(false); });
     return () => { current = false; };
   }, [selectedDate, selectedService, selectedTherapist, catalog]);
@@ -500,7 +459,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
       const result = await rpc("spa_create_booking", { p_request: bookingRequest.current.id, ...payload });
       setReceipt(result); setBookingComplete(true);
     } catch (err) {
-      setSlotError(errorText(err));
+      setSlotError(errorText(err, lang));
       if (err.message?.includes("SLOT_TAKEN")) {
         setSelectedTime(""); setBookingStep(2);
         try { setBookedSlots(await rpc("spa_availability", { p_service: payload.p_service, p_date: selectedDate, p_staff: payload.p_staff })); }
@@ -519,6 +478,18 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   const navOpacity = Math.min(scrollY / 300, 0.98);
 
   // ===== 養生方子資料 =====
+  const ritualEnglish = {
+    '頭肩頸筋絡按摩':'Head, shoulder and neck massage', '頭皮洗淨':'Scalp cleanse', '水療眼部':'Eye-area water treatment', '手技收尾':'Finishing massage',
+    '臉部牛角刷去角質':'Facial exfoliation with a horn brush', '綠豆泥頭皮去角質':'Mung bean scalp exfoliation', '舒緩泡腳':'Relaxing foot soak', '四肢放鬆':'Arm and leg relaxation',
+    '木質萃湯浴養髮':'Botanical hair bath', '鮮薑溫通舒筋':'Fresh ginger care', '鮮生薑頭部敷泥':'Fresh ginger scalp mask', '耳穴撥筋':'Ear-area massage',
+    '眼部清濁':'Eye-area care', '水乳面膜':'Hydrating face mask', '羽式采耳':'Gentle ear care',
+    '苦茶籽潔淨髮浴':'Camellia seed cleansing hair bath', '森呼吸':'Forest breath', '柔禾角質調理':'Gentle exfoliating care', '墨玉烏':'Jade botanical care',
+    '60天木質萃湯浴':'60-day botanical bath', '薑暖陽':'Ginger warmth'
+  };
+  const ritualText = text => lang === 'en' ? ritualEnglish[text] || text : text;
+  const serviceFor = code => services.find(service => service.code === code);
+  const serviceTitle = code => publicName(serviceFor(code), lang) || (lang === 'zh' ? '療程資訊載入中…' : 'Loading service…');
+  const servicePrice = code => serviceFor(code) ? money(serviceFor(code).price_cents) : (lang === 'zh' ? '請聯絡門店確認價格' : 'Contact us for pricing');
   const steps45 = ["頭肩頸筋絡按摩", "頭皮洗淨", "水療眼部", "手技收尾"];
   const formulas90 = [
     { stamp: "清", name: "森呼吸", sub: "柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
@@ -532,10 +503,8 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
   ];
 
   return (
-    <div className="public-home" style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "clip" }}>
+    <div className="public-home" data-language={lang} style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "clip" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: auto; }
 
         @keyframes floatUp {
@@ -553,7 +522,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
 
         /* 手機版控制斷行 - 預設隱藏 */
         .mobile-break { display: none; }
-        
+
         @media (max-width: 640px) {
           .mobile-break { display: inline !important; }
         }
@@ -760,7 +729,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           .desktop-nav { display: none !important; }
           .mobile-menu-btn { display: flex !important; }
         }
-        
+
         /* 技师卡片响应式布局 */
         .team-grid {
           display: grid;
@@ -769,7 +738,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           max-width: 1000px;
           margin: 0 auto;
         }
-        
+
         /* Hero文案响应式优化 */
         @media (max-width: 768px) {
           .team-grid {
@@ -790,14 +759,14 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             font-size: 18px !important;
           }
         }
-        
+
         @media (max-width: 640px) {
           .hero-text-mobile {
             font-size: 14px !important;
             letter-spacing: 1px !important;
             padding: 0 20px;
           }
-          
+
           /* Hero區塊手機版 - 完全置中對稱 */
           .hero-section {
             padding: 0 20px !important;
@@ -852,7 +821,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             padding: 0 !important;
             width: 100% !important;
           }
-          
+
           /* 服務項目小卡片手機版 */
           .service-section-mobile {
             padding: 80px 20px !important;
@@ -869,7 +838,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             margin-left: 0 !important;
           }
         }
-        
+
         @media (max-width: 640px) {
           /* 養生項目縱向列表手機版優化 */
           .service-vertical-list {
@@ -887,7 +856,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             font-size: 11px !important;
             letter-spacing: 0.5px !important;
           }
-          
+
           /* 預約頁面服務選項手機版 - 保持橫向 */
           .booking-service-options {
             gap: 10px !important;
@@ -905,7 +874,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             letter-spacing: 1px !important;
           }
         }
-        
+
         @media (max-width: 380px) {
           /* 超小手機螢幕 */
           .booking-service-options {
@@ -1043,30 +1012,30 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           <div />
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
             {Object.entries(t.nav).map(([key, label]) => (
-              <span key={key} onClick={() => key === "shop" ? onNavigateShop?.() : key === "contact" ? onNavigateContact?.() : scrollTo(key)} style={{
+              <button type="button" className="public-nav-link" key={key} onClick={() => key === "shop" ? onNavigateShop?.() : key === "contact" ? onNavigateContact?.() : scrollTo(key)} style={{
                 cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
                 color: key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)",
                 transition: "color 0.3s", fontWeight: key === "booking" ? 600 : 400
               }}
               onMouseEnter={e => e.target.style.color = "#a3823f"}
               onMouseLeave={e => e.target.style.color = key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)"}
-              >{label}</span>
+              >{label}</button>
             ))}
-            <span onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); }} style={{
+            <button type="button" className="public-nav-link" onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); }} style={{
               cursor: "pointer", fontSize: "12px", letterSpacing: "2px", padding: "5px 14px",
               border: "1px solid rgba(163,130,63,0.3)", color: "#a3823f", borderRadius: "2px", transition: "all 0.3s"
             }}
             onMouseEnter={e => e.target.style.background = "rgba(163,130,63,0.1)"}
             onMouseLeave={e => e.target.style.background = "transparent"}
-            >{t.langSwitch}</span>
+            >{t.langSwitch}</button>
           </div>
-          <div className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{
+          <button type="button" aria-label={lang === "zh" ? "開啟導覽選單" : "Open navigation menu"} aria-expanded={menuOpen} className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{
             cursor: "pointer", display: "none", flexDirection: "column", gap: "5px", padding: "4px"
           }}>
             <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(6px)" : "none" }} />
             <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
             <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : "none" }} />
-          </div>
+          </button>
         </div>
         {menuOpen && (
           <div className="mobile-nav" style={{
@@ -1075,9 +1044,9 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
             borderBottom: "1px solid rgba(163,130,63,0.1)"
           }}>
             {Object.entries(t.nav).map(([key, label]) => (
-              <span key={key} onClick={() => { if (key === "shop") { onNavigateShop?.(); } else if (key === "contact") { onNavigateContact?.(); } else { scrollTo(key); } setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "#4a443a", padding: "8px 0" }}>{label}</span>
+              <button type="button" className="public-nav-link" key={key} onClick={() => { if (key === "shop") { onNavigateShop?.(); } else if (key === "contact") { onNavigateContact?.(); } else { scrollTo(key); } setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "#4a443a", padding: "8px 0" }}>{label}</button>
             ))}
-            <span onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "13px", letterSpacing: "2px", color: "#a3823f", padding: "8px 0" }}>{t.langSwitch}</span>
+            <button type="button" className="public-nav-link" onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "13px", letterSpacing: "2px", color: "#a3823f", padding: "8px 0" }}>{t.langSwitch}</button>
           </div>
         )}
       </nav>
@@ -1166,9 +1135,9 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         }} />
 
         {/* 主內容容器 - 統一中軸 */}
-        <div className="hero-main-container" style={{ 
-          position: "relative", 
-          zIndex: 1, 
+        <div className="hero-main-container" style={{
+          position: "relative",
+          zIndex: 1,
           width: "min(100%, 400px)",
           margin: "0 auto",
           display: "flex",
@@ -1183,81 +1152,79 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           </div>
 
           {/* 棕色加粗副標：掃光 1.6 秒，停留 5 秒後再次由左至右掃過 */}
-          <div className="animate-in-delay-1 hero-brand-block">
+          <h1 className="animate-in-delay-1 hero-brand-block">
             <span className="hero-fancy">{t.brandSub}</span>
             <span className="hero-fancy">{t.hero.title}</span>
-          </div>
+          </h1>
 
           {/* 裝飾線 */}
           <div className="animate-in-delay-2" style={{ marginBottom: "24px" }}>
             <GoldDivider plain />
           </div>
-          
+
           {/* 第一段內文 - 控制斷行 */}
           <p className="animate-in-delay-3 hero-intro-1" style={{
-            fontSize: "15px", 
-            lineHeight: 2, 
-            color: "rgba(74, 68, 58, 0.85)", 
-            margin: "0 0 28px 0", 
-            letterSpacing: "2px", 
+            fontSize: "15px",
+            lineHeight: 2,
+            color: "rgba(74, 68, 58, 0.85)",
+            margin: "0 0 28px 0",
+            letterSpacing: "2px",
             fontWeight: 400,
             textAlign: "center"
           }}>
-            取東方養護之意，循舒緩調理之法<span className="mobile-break"><br /></span>
-            由頭開始，漸入身心。
+            {lang === "zh" ? <>取東方養護之意，循舒緩調理之法<span className="mobile-break"><br /></span>由頭開始，漸入身心。</> : <>Inspired by Eastern care, guided by a gentle touch.<br />Relaxation begins with the head.</>}
           </p>
-          
+
           {/* 五感療癒小標 */}
           <div className="animate-in-delay-4 hero-subtitle-wrap" style={{
-            display: "flex", 
-            alignItems: "center", 
+            display: "flex",
+            alignItems: "center",
             justifyContent: "center",
-            gap: "16px", 
+            gap: "16px",
             marginBottom: "24px",
             width: "100%"
           }}>
-            <div className="hero-subtitle-line" style={{ 
-              width: "40px", 
-              height: "1px", 
+            <div className="hero-subtitle-line" style={{
+              width: "40px",
+              height: "1px",
               background: "rgba(163,130,63,0.4)",
-              flexShrink: 0 
+              flexShrink: 0
             }} />
             <h2 style={{
-              fontSize: "16px", 
-              fontWeight: 500, 
+              fontSize: "16px",
+              fontWeight: 500,
               letterSpacing: "6px",
-              color: "#a3823f", 
+              color: "#a3823f",
               fontFamily: "'Noto Serif TC', serif",
-              whiteSpace: "nowrap"
-            }}>五感療癒</h2>
-            <div className="hero-subtitle-line" style={{ 
-              width: "40px", 
-              height: "1px", 
+              whiteSpace: lang === "zh" ? "nowrap" : "normal", textAlign: "center"
+            }}>{lang === "zh" ? "五感療癒" : "Care for the senses"}</h2>
+            <div className="hero-subtitle-line" style={{
+              width: "40px",
+              height: "1px",
               background: "rgba(163,130,63,0.4)",
-              flexShrink: 0 
+              flexShrink: 0
             }} />
           </div>
-          
+
           {/* 第二段內文 - 控制斷行 */}
           <p className="animate-in-delay-4 hero-intro-2" style={{
-            fontSize: "14px", 
-            lineHeight: 2, 
-            color: "rgba(74, 68, 58, 0.8)", 
-            margin: "0 0 36px 0", 
-            letterSpacing: "2px", 
+            fontSize: "14px",
+            lineHeight: 2,
+            color: "rgba(74, 68, 58, 0.8)",
+            margin: "0 0 36px 0",
+            letterSpacing: "2px",
             fontWeight: 400,
             textAlign: "center"
           }}>
-            香和其息，音靜其神，觸柔其體，<span className="mobile-break"><br /></span>
-            境緩其意，養歸於心。
+            {lang === "zh" ? <>香和其息，音靜其神，觸柔其體，<span className="mobile-break"><br /></span>境緩其意，養歸於心。</> : <>Aroma, sound and a gentle touch.<br />A calm space to unwind.</>}
           </p>
-          
+
           {/* CTA 按鈕 */}
           <div className="animate-in-delay-4 hero-actions" style={{ width: "100%" }}>
             <button className="gold-btn" onClick={() => scrollTo("booking")} style={{
-              padding: "16px 48px", 
-              fontSize: "14px", 
-              letterSpacing: "4px", 
+              padding: "16px 48px",
+              fontSize: "14px",
+              letterSpacing: "4px",
               borderRadius: "2px"
             }}>{t.hero.cta}</button><button className="outline-btn" onClick={() => scrollTo('lookup')} style={{padding:'16px 32px',fontSize:14,borderRadius:2}}>{lang === 'zh' ? '查詢預約' : 'Find booking'}</button>
           </div>
@@ -1278,17 +1245,17 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
               {lang === "zh" ? "滑鼠移入或點擊項目，展開完整療程內容" : "Hover or tap each item to reveal the full ritual"}
             </p>
           </div>
-          
+
           {/* 45分方子區塊 */}
           <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-1" : ""}>
-            <div style={{ textAlign: "center", marginBottom: "28px" }}>
-              <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>45分方子</span>
-              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價{services.find(s=>s.code==='formula45') ? Number(services.find(s=>s.code==='formula45').price_cents)/100 : 1100}</span>
+            <div className="service-heading" style={{ textAlign: "center", marginBottom: "28px" }}>
+              <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>{serviceTitle("formula45")}</span>
+              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>{servicePrice("formula45")}</span>
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               <FormulaCard
-                name="苦茶籽潔淨髮浴"
-                steps={steps45}
+                name={ritualText("苦茶籽潔淨髮浴")}
+                steps={steps45.map(ritualText)}
                 isOpen={openFormula === "45-0"}
                 onEnter={() => enterFormula("45-0")}
                 onLeave={() => leaveFormula("45-0")}
@@ -1296,21 +1263,21 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
               />
             </div>
           </div>
-          
+
           {/* 90分方子區塊 */}
           <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-2" : ""}>
-            <div style={{ textAlign: "center", marginBottom: "28px" }}>
-              <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>90分方子</span>
-              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>原價{services.find(s=>s.code==='formula90') ? Number(services.find(s=>s.code==='formula90').price_cents)/100 : 2360}</span>
+            <div className="service-heading" style={{ textAlign: "center", marginBottom: "28px" }}>
+              <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>{serviceTitle("formula90")}</span>
+              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>{servicePrice("formula90")}</span>
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               {formulas90.map((f, i) => (
                 <FormulaCard
                   key={i}
                   stamp={f.stamp}
-                  name={f.name}
-                  sub={f.sub}
-                  steps={f.steps}
+                  name={ritualText(f.name)}
+                  sub={ritualText(f.sub)}
+                  steps={f.steps.map(ritualText)}
                   isOpen={openFormula === `90-${i}`}
                   onEnter={() => enterFormula(`90-${i}`)}
                   onLeave={() => leaveFormula(`90-${i}`)}
@@ -1319,24 +1286,24 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
               ))}
             </div>
           </div>
-          
+
           {/* 120分全息區塊 */}
           <div style={{ marginBottom: "40px" }} className={isAnimated("services") ? "animate-in-delay-3" : ""}>
-            <div style={{ textAlign: "center", marginBottom: "28px" }}>
+            <div className="service-heading" style={{ textAlign: "center", marginBottom: "28px" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: "14px" }}>
-                <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>120分方子</span>
-                <span className="tea-tag">精品茶席</span>
+                <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>{serviceTitle("formula120")}</span>
+
               </div>
-              <div style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginTop: "10px" }}>原價{services.find(s=>s.code==='formula120') ? Number(services.find(s=>s.code==='formula120').price_cents)/100 : 3200}</div>
+              <div style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginTop: "10px" }}>{servicePrice("formula120")}</div>
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               {formulas120.map((f, i) => (
                 <FormulaCard
                   key={i}
                   stamp={f.stamp}
-                  name={f.name}
-                  sub={f.sub}
-                  steps={f.steps}
+                  name={ritualText(f.name)}
+                  sub={ritualText(f.sub)}
+                  steps={f.steps.map(ritualText)}
                   variant="v120"
                   isOpen={openFormula === `120-${i}`}
                   onEnter={() => enterFormula(`120-${i}`)}
@@ -1366,7 +1333,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
           <div className="booking-mode" role="tablist" aria-label={lang === 'zh' ? '預約功能' : 'Booking options'}><button role="tab" aria-selected={bookingMode === 'new'} onClick={() => setBookingMode('new')}>{lang === 'zh' ? '新增預約' : 'New booking'}</button><button role="tab" aria-selected={bookingMode === 'lookup'} onClick={() => setBookingMode('lookup')}>{lang === 'zh' ? '查詢預約' : 'Find booking'}</button></div>
           {bookingMode === 'lookup' ? <BookingLookup lang={lang}/> : <>
           {(catalogError || slotError) && <p role="alert" style={{ color: "#b5523b", textAlign: "center", marginBottom: 20 }}>{catalogError || slotError}</p>}
-          {!catalog && !catalogError && <p style={{ textAlign: "center" }}>正在載入預約服務…</p>}
+          {!catalog && !catalogError && <p style={{ textAlign: "center" }}>{lang === "zh" ? "正在載入預約服務…" : "Loading booking services…"}</p>}
           {!bookingComplete && (
             <div className="booking-progress" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "50px" }}>
               {t.booking.steps.map((step, i) => (
@@ -1398,7 +1365,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                   <button className="line-btn" style={{ padding: "12px 32px", fontSize: "14px", borderRadius: "6px" }}><LineIcon /> {t.booking.addLine}</button>
                 </a>
               </div>
-              <button className="outline-btn" onClick={resetBooking} style={{ padding: "12px 36px", fontSize: "13px", borderRadius: "2px" }}>{lang === "zh" ? "重新預約" : "Book Again"}</button>
+              <button className="outline-btn" onClick={resetBooking} style={{ padding: "12px 36px", fontSize: "13px", borderRadius: "2px" }}>{lang === "zh" ? "重新預約" : "Book again"}</button>
             </div>
           ) : (
             <div style={{ animation: "fadeIn 0.4s ease-out" }}>
@@ -1406,20 +1373,21 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 <div>
                   <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "50px", letterSpacing: "2px", fontWeight: 500 }}>{t.booking.selectService}</p>
                   {/* 橫向三選項 - 膠囊式按鈕 */}
-                  <div className="booking-service-options" style={{ 
-                    display: "flex", 
-                    justifyContent: "center", 
-                    gap: "24px", 
+                  <div className="booking-service-options" style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "24px",
                     marginBottom: "50px",
                     flexWrap: "nowrap"
                   }}>
                     {services.map((service, i) => (
-                      <div key={i} 
+                      <div key={i}
+                        role="button" tabIndex={0} aria-pressed={selectedService === i} onKeyDown={e => { if(e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedService(i); setSelectedTherapist(null); } }}
                         className={`service-card booking-option-card ${selectedService === i ? "selected" : ""}`}
                         onClick={() => { setSelectedService(i); setSelectedTherapist(null); }}
-                        style={{ 
-                          padding: "18px 36px", 
-                          borderRadius: "40px", 
+                        style={{
+                          padding: "18px 36px",
+                          borderRadius: "40px",
                           textAlign: "center",
                           cursor: "pointer",
                           transition: "all 0.3s ease",
@@ -1427,10 +1395,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                           flex: "1",
                           maxWidth: "160px"
                         }}>
-                        <div style={{ 
-                          fontSize: "15px", 
-                          fontWeight: 500, 
-                          letterSpacing: "2px", 
+                        <div style={{
+                          fontSize: "15px",
+                          fontWeight: 500,
+                          letterSpacing: "2px",
                           color: selectedService === i ? "#a3823f" : "#4a443a",
                           whiteSpace: "nowrap"
                         }}>{lang === "en" ? service.name_en || service.name : service.name}</div>
@@ -1448,17 +1416,17 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                 <div>
                   <p style={{ fontSize: "14px", color: "#a3823f", textAlign: "center", marginBottom: "30px", letterSpacing: "1px", fontWeight: 500 }}>{t.booking.selectTherapist}</p>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-                    <div className={`therapist-card ${selectedTherapist === -1 ? "selected" : ""}`} onClick={() => setSelectedTherapist(-1)}
+                    <div role="button" tabIndex={0} aria-pressed={selectedTherapist === -1} onKeyDown={e => { if(e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedTherapist(-1); } }} className={`therapist-card ${selectedTherapist === -1 ? "selected" : ""}`} onClick={() => setSelectedTherapist(-1)}
                       style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
                       <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: "rgba(163,130,63,0.08)", border: "1px solid rgba(163,130,63,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", color: "#a3823f" }}>✦</div>
                       <div style={{ fontSize: "14px", letterSpacing: "2px", color: "#a3823f", fontWeight: 500 }}>{t.booking.anyTherapist}</div>
                     </div>
                     {therapists.map((m) => (
-                      <div key={m.id} className={`therapist-card ${selectedTherapist === m.id ? "selected" : ""}`} onClick={() => setSelectedTherapist(m.id)}
+                      <div key={m.id} role="button" tabIndex={0} aria-pressed={selectedTherapist === m.id} onKeyDown={e => { if(e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedTherapist(m.id); } }} className={`therapist-card ${selectedTherapist === m.id ? "selected" : ""}`} onClick={() => setSelectedTherapist(m.id)}
                         style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
                         <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: `linear-gradient(135deg, rgba(163,130,63,0.15), rgba(255,255,255,0.5))`, border: "1px solid rgba(163,130,63,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "#a3823f", fontWeight: 600 }}>{m.name.charAt(0)}</div>
-                        <div style={{ fontSize: "14px", fontWeight: 600, letterSpacing: "2px", marginBottom: "4px", color: "#4a443a" }}>{m.name}</div>
-                        <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.6)" }}>{m.specialty}</div>
+                        <div style={{ fontSize: "14px", fontWeight: 600, letterSpacing: "2px", marginBottom: "4px", color: "#4a443a" }}>{publicName(m, lang)}</div>
+                        <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.6)" }}>{lang === "zh" ? m.specialty : m.title === "首席調理師" ? "Lead therapist" : m.title === "資深調理師" ? "Senior therapist" : "Therapist"}</div>
                       </div>
                     ))}
                   </div>
@@ -1493,7 +1461,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                     <div style={{ animation: "fadeInUp 0.4s ease-out" }}>
                       <label style={{ display: "block", fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "16px", fontWeight: 600 }}>{t.booking.selectTime}</label>
                       {loadingSlots ? (
-                        <div style={{ textAlign: "center", padding: "30px", color: "rgba(74, 68, 58, 0.5)", fontSize: "13px" }}>{lang === "zh" ? "正在查詢可用時段..." : "Loading..."}</div>
+                        <div style={{ textAlign: "center", padding: "30px", color: "rgba(74, 68, 58, 0.5)", fontSize: "13px" }}>{lang === "zh" ? "正在查詢可用時段…" : "Loading…"}</div>
                       ) : (
                       <>
                       {Object.entries(timeSlots).map(([period, slots]) => (
@@ -1503,10 +1471,10 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                             {slots.map(time => {
                               const booked = !time.available;
                               return (
-                                <div key={time.starts_at} className={`time-chip ${selectedTime === time.starts_at ? "selected" : ""} ${booked ? "booked" : ""}`}
+                                <div key={time.starts_at} role="button" tabIndex={booked ? -1 : 0} aria-disabled={booked} aria-pressed={selectedTime === time.starts_at} onKeyDown={e => { if(!booked && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setSelectedTime(time.starts_at); } }} className={`time-chip ${selectedTime === time.starts_at ? "selected" : ""} ${booked ? "booked" : ""}`}
                                   onClick={() => !booked && setSelectedTime(time.starts_at)}
                                   style={{ padding: "10px 18px", borderRadius: "3px", opacity: booked ? 0.4 : 1, cursor: booked ? "not-allowed" : "pointer" }}>
-                                  {time.time_label}
+                                  {slotLabel(time.time_label, lang)}
                                 </div>
                               );
                             })}
@@ -1527,13 +1495,13 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
               {bookingStep === 3 && (
                 <div>
                   <div style={{ background: "rgba(255,255,255,0.5)", border: "1px solid rgba(163,130,63,0.1)", borderRadius: "4px", padding: "28px", marginBottom: "36px" }}>
-                    <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "16px", fontWeight: 600 }}>預約摘要</div>
+                    <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "16px", fontWeight: 600 }}>{lang === "zh" ? "預約摘要" : "Booking summary"}</div>
                     <div style={{ display: "grid", gap: "12px" }}>
                       {[
-                        [lang === "zh" ? "服務" : "Service", services[selectedService]?.name],
-                        [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : therapists.find(m => m.id === selectedTherapist)?.name],
+                        [lang === "zh" ? "服務" : "Service", publicName(services[selectedService], lang)],
+                        [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : publicName(therapists.find(m => m.id === selectedTherapist), lang)],
                         [lang === "zh" ? "日期" : "Date", selectedDate],
-                        [lang === "zh" ? "時間" : "Time", bookedSlots.find(s => s.starts_at === selectedTime)?.time_label],
+                        [lang === "zh" ? "時間" : "Time", slotLabel(bookedSlots.find(s => s.starts_at === selectedTime)?.time_label, lang)],
                         [lang === "zh" ? "費用" : "Price", money(services[selectedService]?.price_cents || 0)],
                       ].map(([label, val], i) => (
                         <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
@@ -1544,9 +1512,9 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "40px" }}>
-                    <input value={formName} onChange={e => setFormName(e.target.value)} maxLength={80} placeholder={lang === "zh" ? "您的姓名" : t.booking.name} />
-                    <input value={formPhone} onChange={e => setFormPhone(e.target.value)} type="tel" maxLength={25} placeholder={lang === "zh" ? "您的手機號碼" : t.booking.phone} />
-                    <textarea value={formNote} onChange={e => setFormNote(e.target.value)} maxLength={1000} rows={3} placeholder={t.booking.note} />
+                    <input value={formName} onChange={e => setFormName(e.target.value)} maxLength={80} aria-label={t.booking.name} autoComplete="name" placeholder={lang === "zh" ? "您的姓名" : t.booking.name} />
+                    <input value={formPhone} onChange={e => setFormPhone(e.target.value)} type="tel" maxLength={25} aria-label={t.booking.phone} autoComplete="tel" placeholder={lang === "zh" ? "您的手機號碼" : t.booking.phone} />
+                    <textarea value={formNote} onChange={e => setFormNote(e.target.value)} maxLength={1000} rows={3} aria-label={t.booking.note} placeholder={t.booking.note} />
                   </div>
                   <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
                     <button className="outline-btn" onClick={() => setBookingStep(2)} style={{ padding: "14px 36px", fontSize: "13px", letterSpacing: "3px", borderRadius: "2px" }}>{t.booking.prev}</button>
@@ -1563,7 +1531,7 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         </div>
       </section>
 
-      <div style={{ textAlign: "center", padding: 20, background: "#f2ede4" }}><a href="#member" style={{ color: "#a3823f", fontSize: 13 }}>會員中心 · 查看 credits 與療程記錄</a></div>
+      <div style={{ textAlign: "center", padding: 20, background: "#f2ede4" }}><a href="#member" style={{ color: "#a3823f", fontSize: 13 }}>{lang === "zh" ? "會員中心 · 查看儲值餘額與療程記錄" : "Member centre · Balance and visit history (Chinese)"}</a></div>
 
       {/* ========== FEEDBACK（匿名意見回饋） ========== */}
       <FeedbackSection t={t} />
@@ -1574,21 +1542,21 @@ export default function RouSpa({ onNavigateShop, onNavigateContact, onLangChange
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "50px" }}>
             <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>LOCATION</div>
-            <h2 style={{ fontSize: "32px", fontWeight: 500, color: "#4a443a" }}>交通位置</h2>
+            <h2 style={{ fontSize: "32px", fontWeight: 500, color: "#4a443a" }}>{lang === "zh" ? "交通位置" : "Find us"}</h2>
             <GoldDivider />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px", alignItems: "center" }}>
+          <div className="location-grid">
             <div>
               <div style={{ marginBottom: "28px" }}>
-                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>地址</div>
+                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>{lang === "zh" ? "地址" : "Address"}</div>
                 <p style={{ fontSize: "15px", color: "#4a443a" }}>{t.footer.address}</p>
               </div>
               <div style={{ marginBottom: "28px" }}>
-                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>營業時間</div>
-                <p style={{ fontSize: "15px", color: "#4a443a" }}>10:00 - 02:00（全年無休）</p>
+                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>{lang === "zh" ? "營業時間" : "Opening hours"}</div>
+                <p style={{ fontSize: "15px", color: "#4a443a" }}>{hoursText(catalog?.settings, lang)}</p>
               </div>
               <div style={{ marginBottom: "28px" }}>
-                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>預約電話</div>
+                <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>{lang === "zh" ? "預約電話" : "Phone"}</div>
                 <p style={{ fontSize: "18px", color: "#a3823f", fontWeight: 600 }}>{CONFIG.PHONE}</p>
               </div>
             </div>

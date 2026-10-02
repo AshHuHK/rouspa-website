@@ -1,0 +1,28 @@
+:root { --public-font: 'Noto Serif TC', Georgia, serif; }
+*, *::before, *::after { box-sizing: border-box; }
+:where(.public-home, .contact-page, .shop-page) :where(*) { margin: 0; padding: 0; }
+button, input, select, textarea { font-family: inherit; }
+button, [role=button], a { -webkit-tap-highlight-color: transparent; }
+:where(button, a, input, select, textarea, [role=button]):focus-visible { outline: 2px solid #9b763c; outline-offset: 4px; }
+.public-nav button { border: 0; background: transparent; font-family: inherit; }
+.public-nav .public-nav-link { min-height: 44px; }
+.public-nav .mobile-menu-btn { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+.public-home[data-language=en] .hero-fancy { white-space: normal; letter-spacing: 1px !important; overflow-wrap: normal; max-width: 100%; }
+.public-home[data-language=en] .hero-brand-block { max-width: 100%; }
+.public-home[data-language=en] .formula-name, .public-home[data-language=en] .formula-sub,
+.public-home[data-language=en] .formula-step { letter-spacing: 0.3px; }
+.public-home .location-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 40px; align-items: center; }
+.public-home .service-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 8px 16px; }
+.shop-page, .contact-page { overflow-wrap: anywhere; }
+@media(max-width:700px) {
+  .public-home .location-grid { grid-template-columns: minmax(0,1fr); gap: 28px; }
+  .ops input, .ops textarea, .ops select { font-size: 16px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .public-home .ink-bg, .public-home .particle, .contact-animate, .shop-animate { animation: none !important; opacity: 1 !important; }
+}
+
+.public-home[data-language=en] .booking-option-card > div { white-space: normal !important; letter-spacing: 0.3px !important; line-height: 1.5; }
+.public-home[data-language=en] .booking-option-card { padding-left: 12px !important; padding-right: 12px !important; }
+.public-page-nav .public-brand-link { border: 0; background: transparent; font-family: inherit; min-height: 44px; text-align: left; }
+.public-page-nav .back-btn { min-height: 44px; }

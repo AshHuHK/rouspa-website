@@ -27,7 +27,7 @@ export function StaffAccountForm({row,account,saved}) {
  {['create','username'].includes(mode) && <Field wide label="登入使用者名稱"><input required autoComplete="off" minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" value={username} onChange={e=>setUsername(e.target.value)}/></Field>}
  {['create','password'].includes(mode) && <Field wide label="設定密碼（至少 12 個字元）"><input required type="password" autoComplete="new-password" minLength={12} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/></Field>}
  {['create','access'].includes(mode) && <Field label="人員角色"><select value={role} onChange={e=>setRole(e.target.value)}>{Object.entries(staffRoleNames).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></Field>}
- {mode==='access' && <Field label="后台登入"><select value={String(active)} onChange={e=>setActive(e.target.value==='true')}><option value="true">啟用</option><option value="false">停用</option></select></Field>}
+ {mode==='access' && <Field label="後台登入"><select value={String(active)} onChange={e=>setActive(e.target.value==='true')}><option value="true">啟用</option><option value="false">停用</option></select></Field>}
  </div><p className="muted">所有人員角色只可查看日程、會員與自己的資料。職稱與薪酬在「編輯資料」設定，店主帳號保持不變。</p>
  {mode==='password' && <p className="muted">密碼無法查看。重設後舊後台會話失效，請由門店把新密碼交給本人，再重新登入。</p>}
  {mode==='username' && <p className="muted">修改後請使用新使用者名稱登入。原密碼不變，舊後台會話失效。</p>}
@@ -37,8 +37,8 @@ export function StaffAccountForm({row,account,saved}) {
 export function StaffArchiveForm({row,saved}) {
  const [reason,setReason]=useState('');
  const archived=!!row.archived_at;
- return <MutationForm action={()=>accountAction({action:archived?'restore':'archive',staff_id:row.id,reason})} onSaved={saved} submit={archived?'恢復人員資料':'確認移除並停用登入'}>
- <p>{row.name}</p><p>{archived?'恢復後預設不接單、不可登入，請再設定排班、接單與登入權限。':'移除後停止接單並停用後台登入。歷史療程、薪酬設定、提成與評價保留。已有未結束預約時，請先處理預約。'}</p>
+ return <MutationForm action={()=>accountAction({action:archived?'restore':'archive',staff_id:row.id,reason})} onSaved={saved} submit={archived?'恢復人員資料':'確認封存並停用登入'}>
+ <p>{row.name}</p><p>{archived?'恢復後預設不接單、不可登入，請再設定排班、接單與登入權限。':'封存後停止接單並停用後台登入。歷史療程、薪酬設定、提成與評價保留。已有未結束預約時，請先處理預約。'}</p>
  <Field label="處理原因"><textarea required maxLength={1000} value={reason} onChange={e=>setReason(e.target.value)}/></Field></MutationForm>;
 }
 export function StaffSelf({data}) {
@@ -55,5 +55,5 @@ const minutes=n=>`${n>=1440?'翌日 ':''}${String(Math.floor(n/60)%24).padStart(
 export function EmployeeCustomer({row}) {
  const [detail,setDetail]=useState(null),[error,setError]=useState('');
  useEffect(()=>{let live=true;rpc('spa_employee_customer',{p_customer:row.id}).then(d=>{if(live)setDetail(d);}).catch(e=>{if(live)setError(errorText(e));});return()=>{live=false;};},[row.id]);
- return <><p>{row.name} · {row.phone} · {row.tier}</p><p>儲值餘額 {money(row.balance_cents)} · 完成 {row.visits} 堂</p>{error&&<p role="alert" className="alert">{error}</p>}<h3>會員療程套票</h3>{detail?detail.packages.length?detail.packages.map(p=><div className="card" key={p.id}><p>{p.name} · {p.service_name}</p><p>剩 {p.remaining} / {p.sessions} 次 · 到期 {dateTime(p.expires_at)}</p></div>):<Empty>尚無療程套票。</Empty>:!error&&<Empty>載入中…</Empty>}<p className="muted">員工僅可查看會員資料。充值、扣款、編輯及完整帳務由店主處理。</p></>;
+ return <><p>{row.name} · {row.phone} · {row.tier}</p><p>儲值餘額 {money(row.balance_cents)} · 完成 {row.visits} 堂</p>{error&&<p role="alert" className="alert">{error}</p>}<h3>會員療程套票</h3>{detail?detail.packages.length?detail.packages.map(p=><div className="card" key={p.id}><p>{p.name} · {p.service_name}</p><p>剩 {p.remaining} / {p.sessions} 次 · 到期 {dateTime(p.expires_at)}</p></div>):<Empty>尚無療程套票。</Empty>:!error&&<Empty>載入中…</Empty>}<p className="muted">員工僅可查看會員資料。加值、扣款、編輯及完整帳務由店主處理。</p></>;
 }

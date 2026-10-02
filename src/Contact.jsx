@@ -1,19 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { STORE, hoursText } from "./lib/public-copy.js";
+import { rpc } from "./lib/spa.js";
 
 // ============================================================
 // 聯繫資訊配置
 // ============================================================
-const CONFIG = {
-  ADDRESS_ZH: "嘉義市西區蘭井街421號",
-  ADDRESS_EN: "No.421, Lanjing St., West Dist., Chiayi City",
-  EMAIL: "rosa12345@gmail.com",
-  PHONE: "0978-918-737",
-  LINE_URL: "https://line.me/R/ti/p/@258llual",
-  LINE_ID: "@258llual",
-  WECHAT_ID: "your_wechat_id",
-  FACEBOOK_URL: "https://facebook.com/your_page",
-  FACEBOOK_NAME: "柔療髮浴 Rou Spa",
-};
+const CONFIG = STORE;
 
 const contactInfo = {
   zh: {
@@ -27,58 +19,41 @@ const contactInfo = {
     wechat: "微信",
     facebook: "Facebook 粉絲專頁",
     hours: "營業時間",
-    hoursDetail: "每日 10:00 - 02:00（全年無休）",
-    scanLine: "掃碼加好友",
-    scanWechat: "掃碼加微信",
     visitFb: "前往粉絲專頁",
     sendEmail: "發送郵件",
     copyTip: "已複製",
     mapTitle: "交通位置",
-    mrt: "🚗 建議騎乘機車或開車前往，門市附近設有停車位",
   },
   en: {
-    title: "Contact Us",
+    title: "Contact us",
     subtitle: "CONTACT US",
     intro: "Reach out to us through any of the channels below for appointments or inquiries.",
     address: "Address",
     phone: "Phone",
     email: "Email",
-    line: "LINE Official",
+    line: "Official LINE account",
     wechat: "WeChat",
-    facebook: "Facebook Page",
-    hours: "Business Hours",
-    hoursDetail: "Daily 10:00 AM - 2:00 AM (Open Year Round)",
-    scanLine: "Scan to add",
-    scanWechat: "Scan to add",
-    visitFb: "Visit Page",
-    sendEmail: "Send Email",
+    facebook: "Facebook page",
+    hours: "Opening hours",
+    visitFb: "Visit page",
+    sendEmail: "Send email",
     copyTip: "Copied",
-    mapTitle: "Find Us",
-    mrt: "🚗 Scooter or car recommended. Parking available nearby."
+    mapTitle: "Find us",
   }
 };
 
-// QR code 佔位圖 (同步為淺卡其色系)
-const QRPlaceholder = ({ label }) => (
-  <div style={{
-    width: "120px", height: "120px", background: "rgba(163,130,63,0.05)",
-    border: "1px solid rgba(163,130,63,0.15)", borderRadius: "4px",
-    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
-  }}>
-    <div style={{ fontSize: "28px", marginBottom: "6px", opacity: 0.6 }}>📱</div>
-    <div style={{ fontSize: "9px", color: "#a3823f", letterSpacing: "1px", fontWeight: 600 }}>{label}</div>
-  </div>
-);
-
 export default function Contact({ lang = "zh", onNavigateHome }) {
   const [copied, setCopied] = useState("");
+  const [copyError, setCopyError] = useState("");
+  const [settings, setSettings] = useState(null);
+  useEffect(() => { let live = true; rpc("spa_catalog").then(c => { if(live) setSettings(c.settings); }).catch(() => {}); return () => { live = false; }; }, []);
   const t = contactInfo[lang];
   const isZh = lang === "zh";
 
-  const copyText = (text, label) => {
-    navigator.clipboard?.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(""), 2000);
+  const copyText = async (text, label) => {
+    setCopyError('');
+    try { await navigator.clipboard.writeText(text); setCopied(label); setTimeout(() => setCopied(''), 2000); }
+    catch { setCopyError(isZh ? '複製未成功，請手動選取並複製。' : 'Could not copy. Please select and copy the text manually.'); }
   };
 
   const ContactCard = ({ icon, label, value, subValue, action, actionLabel }) => (
@@ -124,7 +99,6 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
   return (
     <div className="contact-page" style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
         
         .back-btn {
           padding: 8px 20px; border: 1px solid rgba(163,130,63,0.3); background: transparent;
@@ -146,11 +120,11 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
         padding: "16px 30px", display: "flex", justifyContent: "space-between", alignItems: "center"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <div onClick={onNavigateHome} style={{ cursor: "pointer" }}>
+          <button className="public-brand-link" onClick={onNavigateHome} style={{ cursor: "pointer" }}>
             <span style={{ fontSize: "18px", color: "#a3823f", letterSpacing: "4px", fontWeight: 700 }}>
               {isZh ? "柔療髮浴" : "ROU SPA"}
             </span>
-          </div>
+          </button>
           <span style={{ color: "rgba(163,130,63,0.2)" }}>|</span>
           <span style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px", fontWeight: 500 }}>
             {t.title}
@@ -197,20 +171,20 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
             <ContactCard
               icon="📍" label={t.address}
               value={isZh ? CONFIG.ADDRESS_ZH : CONFIG.ADDRESS_EN}
-              subValue={t.mrt}
+              subValue={isZh ? "出發前可透過 LINE 詢問交通資訊。" : "Contact us on LINE for directions before your visit."}
               action={() => copyText(isZh ? CONFIG.ADDRESS_ZH : CONFIG.ADDRESS_EN, t.address)}
               actionLabel={isZh ? "複製地址" : "Copy"}
             />
           </div>
 
           <div className="contact-animate" style={{ animationDelay: "0.15s" }}>
-            <ContactCard icon="🕐" label={t.hours} value={t.hoursDetail} />
+            <ContactCard icon="🕐" label={t.hours} value={hoursText(settings, lang)} />
           </div>
 
           <div className="contact-animate" style={{ animationDelay: "0.2s" }}>
             <ContactCard
               icon="📞" label={t.phone} value={CONFIG.PHONE}
-              action={() => window.open(`tel:${CONFIG.PHONE.replace(/-/g, "")}`)}
+              action={() => window.location.assign(`tel:${CONFIG.PHONE.replace(/-/g, "")}`)}
               actionLabel={isZh ? "撥打電話" : "Call"}
             />
           </div>
@@ -218,7 +192,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
           <div className="contact-animate" style={{ animationDelay: "0.25s" }}>
             <ContactCard
               icon="✉️" label={t.email} value={CONFIG.EMAIL}
-              action={() => window.open(`mailto:${CONFIG.EMAIL}`)}
+              action={() => window.location.assign(`mailto:${CONFIG.EMAIL}`)}
               actionLabel={t.sendEmail}
             />
           </div>
@@ -238,18 +212,17 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
                     LINE ID: <span style={{ color: "#06C755", fontWeight: 700 }}>{CONFIG.LINE_ID}</span>
                   </div>
                   <div style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.5)", lineHeight: 1.6 }}>
-                    {isZh ? "點擊按鈕或掃描 QR Code 加好友" : "Click button or scan QR code to add"}
+                    {isZh ? "點擊下方按鈕，加入 LINE 官方帳號。" : "Use the button below to add our official LINE account."}
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-                  <QRPlaceholder label={t.scanLine} />
-                  <button onClick={() => window.open(CONFIG.LINE_URL)} style={{
+                  <button onClick={() => window.open(CONFIG.LINE_URL, "_blank", "noopener,noreferrer")} style={{
                     padding: "8px 20px", fontSize: "12px", letterSpacing: "1px",
                     background: "#06C755", border: "none",
                     color: "white", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit",
                     fontWeight: 600, boxShadow: "0 4px 10px rgba(6,199,85,0.2)"
                   }}>
-                    {isZh ? "加入 LINE 好友" : "Add Friend"}
+                    {isZh ? "加入 LINE 好友" : "Add on LINE"}
                   </button>
                 </div>
               </div>
@@ -257,7 +230,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
           </div>
 
           {/* WeChat Card (Special Styled) */}
-          <div className="contact-animate" style={{ animationDelay: "0.35s" }}>
+          {CONFIG.WECHAT_ID && <div className="contact-animate" style={{ animationDelay: "0.35s" }}>
             <div style={{
               background: "#ffffff", border: "1px solid rgba(163,130,63,0.15)",
               borderRadius: "4px", padding: "24px", transition: "all 0.3s",
@@ -271,11 +244,10 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
                     {isZh ? "微信號" : "WeChat ID"}: <span style={{ color: "#07C160", fontWeight: 700 }}>{CONFIG.WECHAT_ID}</span>
                   </div>
                   <div style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.5)", lineHeight: 1.6 }}>
-                    {isZh ? "掃描 QR Code 或搜尋微信號添加" : "Scan QR code or search ID to add"}
+                    {isZh ? "搜尋微信號加入聯絡人。" : "Search the WeChat ID to add us."}
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-                  <QRPlaceholder label={t.scanWechat} />
                   <button onClick={() => copyText(CONFIG.WECHAT_ID, t.wechat)} style={{
                     padding: "8px 20px", fontSize: "12px", letterSpacing: "1px",
                     background: "#07C160", border: "none",
@@ -287,18 +259,19 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
                 </div>
               </div>
             </div>
-          </div>
+          </div>}
 
-          <div className="contact-animate" style={{ animationDelay: "0.4s" }}>
+          {CONFIG.FACEBOOK_URL && <div className="contact-animate" style={{ animationDelay: "0.4s" }}>
             <ContactCard
               icon="📘" label={t.facebook} value={CONFIG.FACEBOOK_NAME}
               subValue={CONFIG.FACEBOOK_URL.replace("https://", "")}
-              action={() => window.open(CONFIG.FACEBOOK_URL)}
+              action={() => window.open(CONFIG.FACEBOOK_URL, "_blank", "noopener,noreferrer")}
               actionLabel={t.visitFb}
             />
-          </div>
+          </div>}
 
         </div>
+        {copyError && <p role="alert">{copyError}</p>}
 
         {/* MAP SECTION */}
         <div className="contact-animate" style={{ animationDelay: "0.45s", marginBottom: "100px" }}>
@@ -324,7 +297,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
       {/* FOOTER */}
       <footer style={{ padding: "60px 30px 40px", borderTop: "1px solid rgba(163,130,63,0.1)", textAlign: "center" }}>
         <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.4)", letterSpacing: "1px", fontWeight: 500 }}>
-          © 2026 {isZh ? "柔療髮浴 版權所有" : "Rou Spa. All Rights Reserved."}
+          © 2026 {isZh ? "柔療髮浴 版權所有" : "ROU SPA. All rights reserved."}
         </div>
       </footer>
     </div>
