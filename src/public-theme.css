@@ -1,4 +1,4 @@
-:root { --public-font: 'Noto Serif TC', Georgia, serif; }
+:root { --public-font: 'ROU Serif TC', 'Songti TC', 'PMingLiU', Georgia, serif; }
 *, *::before, *::after { box-sizing: border-box; }
 :where(.public-home, .contact-page, .shop-page) :where(*) { margin: 0; padding: 0; }
 button, input, select, textarea { font-family: inherit; }
@@ -26,3 +26,37 @@ button, [role=button], a { -webkit-tap-highlight-color: transparent; }
 .public-home[data-language=en] .booking-option-card { padding-left: 12px !important; padding-right: 12px !important; }
 .public-page-nav .public-brand-link { border: 0; background: transparent; font-family: inherit; min-height: 44px; text-align: left; }
 .public-page-nav .back-btn { min-height: 44px; }
+
+@font-face {
+  font-family: 'ROU Serif TC';
+  src: url('/fonts/rou-serif-tc-v1.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/fonts/cormorant-garamond-v1.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+.public-home, .contact-page, .shop-page { font-synthesis: none; }
+.public-home .service-heading { max-width: 520px; margin: 0 auto 24px; gap: 8px 24px; }
+.service-name { font-size: 20px; font-weight: 500; line-height: 1.5; letter-spacing: 1.5px; }
+.service-price { font-size: 15px; font-weight: 400; line-height: 1.5; color: #947339; letter-spacing: 0.8px; white-space: nowrap; }
+.public-home .formula-head:focus-visible { outline-offset: -4px; }
+.service-contact { text-align: center; margin: 32px auto 0; font-size: 14px; }
+.service-contact a { display: inline-flex; align-items: center; min-height: 44px; color: #80622d; text-underline-offset: 4px; }
+@media(max-width:768px) {
+  .public-home .services-section { padding: 64px 24px !important; }
+  .public-home .services-intro { margin-bottom: 36px !important; }
+  .public-home .service-group { margin-bottom: 44px !important; }
+  .public-home .service-heading { margin-bottom: 20px; gap: 8px 20px; }
+  .service-name { font-size: 19px; letter-spacing: 1px; }
+  .service-price { font-size: 14px; letter-spacing: 0.5px; }
+  .public-home .line-tooltip, .public-home .line-floating.over-content { display: none !important; }
+  .public-home .line-floating { right: 12px !important; bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important; }
+  .public-home .line-floating > a { animation: none !important; box-shadow: 0 3px 12px rgba(6,199,85,0.18) !important; transform: none !important; }
+  .public-home .hero-main-container { padding-bottom: 24px; }
+}

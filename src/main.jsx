@@ -12,8 +12,8 @@ const BookingPortal = React.lazy(() => import('./BookingPortal.jsx'));
 
 // 路由：
 // https://rouspa.tw/           → 客人网站
-// https://rouspa.tw/#shop      → 产品商城
-// https://rouspa.tw/#contact   → 联系我们
+// https://rouspa.tw/#shop      → 產品展示
+// https://rouspa.tw/#contact   → 聯繫我們
 // https://rouspa.tw/#admin     → 管理后台
 function Router() {
   const [route, setRoute] = useState(window.location.hash);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import BookingLookup from "./BookingLookup.jsx";
 import { STORE, hoursText, publicName, slotLabel } from "./lib/public-copy.js";
 import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
@@ -179,28 +179,23 @@ const SealLogo = ({ size = 44, variant = "mark" }) => (
 );
 
 // 圓圈章印（清・養・通）+ 展開式方子卡片
-function FormulaCard({ stamp, name, sub, steps, isOpen, onEnter, onLeave, onToggle, variant = "v90" }) {
+function FormulaCard({ stamp, name, sub, steps, isOpen, onToggle, variant = "v90" }) {
+  const panelId = useId();
   return (
-    <div
-      role="button" tabIndex={0} aria-expanded={isOpen} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onToggle();}}}
-      className={`service-card formula-card ${variant} ${isOpen ? "open" : ""}`}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      onClick={onToggle}
-    >
-      <div className="formula-head">
+    <div className={`service-card formula-card ${variant} ${isOpen ? "open" : ""}`}>
+      <button type="button" className="formula-head" aria-expanded={isOpen} aria-controls={panelId} onClick={onToggle}>
         {stamp && (
           <span className={`seal-stamp seal-${variant}`}>
             <span className="seal-char">{stamp}</span>
           </span>
         )}
-        <div className={stamp ? "formula-title" : "formula-title formula-title-center"}>
+        <span className={stamp ? "formula-title" : "formula-title formula-title-center"}>
           <span className="formula-name">{name}</span>
           {sub && <span className="formula-sub">{sub}</span>}
-        </div>
-        <span className="formula-toggle">⌄</span>
-      </div>
-      <div className="formula-body">
+        </span>
+        <span className="formula-toggle" aria-hidden="true">⌄</span>
+      </button>
+      <div id={panelId} className="formula-body" hidden={!isOpen}>
         <div className="formula-inner">
           <div className="formula-steps">
             {steps.map((s, i) => (
@@ -370,9 +365,8 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   const [animatedSections, setAnimatedSections] = useState(new Set());
   const [lineHover, setLineHover] = useState(false);
   const [showLineTooltip, setShowLineTooltip] = useState(false);
+  const [lineOverContent, setLineOverContent] = useState(false);
   const [openFormula, setOpenFormula] = useState(null);
-  const enterFormula = (key) => setOpenFormula(key);
-  const leaveFormula = (key) => setOpenFormula((prev) => (prev === key ? null : prev));
   const toggleFormula = (key) => setOpenFormula((prev) => (prev === key ? null : key));
 
   const t = i18n[lang];
@@ -393,6 +387,16 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
     Object.entries(sectionRefs).forEach(([key, ref]) => {
       if (ref.current) { ref.current.dataset.section = key; observer.observe(ref.current); }
     });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const visible = new Set();
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) entry.isIntersecting ? visible.add(entry.target) : visible.delete(entry.target);
+      setLineOverContent(visible.size > 0);
+    });
+    [sectionRefs.services.current, sectionRefs.booking.current].filter(Boolean).forEach(el => observer.observe(el));
     return () => observer.disconnect();
   }, []);
 
@@ -503,7 +507,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   ];
 
   return (
-    <div className="public-home" data-language={lang} style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "clip" }}>
+    <div className="public-home" data-language={lang} style={{ fontFamily: "var(--public-font)", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "clip" }}>
       <style>{`
         html { scroll-behavior: auto; }
 
@@ -543,7 +547,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           margin-bottom: 16px;
         }
         .hero-fancy {
-          font-family: 'Noto Serif TC', serif; font-weight: 700;
+          font-family: var(--public-font); font-weight: 700;
           font-size: clamp(17px, 4.6vw, 22px);
           letter-spacing: 6px; line-height: 1.55; white-space: nowrap;
           color: rgba(102, 70, 43, 0.9);
@@ -584,7 +588,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         .gold-btn {
           background: linear-gradient(135deg, #a3823f 0%, #8a6d35 100%);
           color: #f2ede4; border: none; cursor: pointer;
-          font-family: 'Noto Serif TC', serif; font-weight: 500;
+          font-family: var(--public-font); font-weight: 500;
           letter-spacing: 2px; transition: all 0.4s ease;
           position: relative; overflow: hidden;
         }
@@ -593,14 +597,14 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
 
         .outline-btn {
           background: transparent; color: #a3823f; border: 1px solid rgba(163,130,63,0.4);
-          cursor: pointer; font-family: 'Noto Serif TC', serif; font-weight: 400;
+          cursor: pointer; font-family: var(--public-font); font-weight: 400;
           letter-spacing: 2px; transition: all 0.4s ease;
         }
         .outline-btn:hover { border-color: #a3823f; background: rgba(163,130,63,0.08); }
 
         .line-btn {
           background: #06C755; color: white; border: none; cursor: pointer;
-          font-family: 'Noto Serif TC', serif; font-weight: 500;
+          font-family: var(--public-font); font-weight: 500;
           letter-spacing: 1px; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px;
         }
         .line-btn:hover { background: #05b34c; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(6,199,85,0.3); }
@@ -635,7 +639,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
 
         input, textarea {
           background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(163,130,63,0.2);
-          color: #4a443a; font-family: 'Noto Serif TC', serif; font-size: 15px;
+          color: #4a443a; font-family: var(--public-font); font-size: 15px;
           padding: 14px 18px; width: 100%; border-radius: 4px; transition: all 0.3s; outline: none;
         }
         input:focus, textarea:focus { border-color: #a3823f; background: #fff; box-shadow: 0 0 20px rgba(163,130,63,0.05); }
@@ -730,7 +734,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           .mobile-menu-btn { display: flex !important; }
         }
 
-        /* 技师卡片响应式布局 */
+        /* 技師卡片響應式布局 */
         .team-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
@@ -739,7 +743,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           margin: 0 auto;
         }
 
-        /* Hero文案响应式优化 */
+        /* Hero文案響應式優化 */
         @media (max-width: 768px) {
           .team-grid {
             grid-template-columns: repeat(3, 1fr);
@@ -843,7 +847,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           /* 養生項目縱向列表手機版優化 */
           .service-vertical-list {
             gap: 12px !important;
-            padding: 0 20px !important;
+            padding: 0 !important;
           }
           .service-item-vertical {
             padding: 18px 20px !important;
@@ -901,6 +905,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         .formula-card:hover { transform: none; border-color: rgba(163,130,63,0.3); }
         .formula-head {
           display: flex; align-items: center; gap: 18px;
+          width: 100%; border: 0; background: transparent; text-align: left; color: inherit; font: inherit; cursor: pointer;
           padding: 22px 26px;
         }
         /* 圓圈章印：清・養・通 */
@@ -909,7 +914,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           width: 48px; height: 48px; flex-shrink: 0;
           border-radius: 50%;
           display: flex; align-items: center; justify-content: center;
-          font-family: 'Noto Serif TC', serif;
+          font-family: var(--public-font);
         }
         .seal-char { line-height: 1; display: block; transform: translateY(0.5px); }
         /* 90分：淡雅描邊章（單圈細框、色淡、通透） */
@@ -955,8 +960,8 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         }
         .formula-title { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
         .formula-title-center { align-items: center; text-align: center; }
-        .formula-name { font-size: 17px; letter-spacing: 2.5px; color: #3d382f; font-weight: 600; line-height: 1.25; }
-        .formula-sub { font-size: 12.5px; letter-spacing: 1.5px; color: rgba(74,68,58,0.6); font-weight: 400; line-height: 1.25; }
+        .formula-name { font-size: 17px; letter-spacing: 1.5px; color: #3d382f; font-weight: 500; line-height: 1.5; overflow-wrap: break-word; }
+        .formula-sub { font-size: 13px; letter-spacing: 0.5px; color: #756b5b; font-weight: 400; line-height: 1.5; }
         .formula-toggle {
           flex-shrink: 0; font-size: 18px; color: #a3823f; opacity: 0.7;
           transition: transform 0.4s ease; line-height: 1;
@@ -967,8 +972,8 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           box-shadow: 0 10px 34px rgba(163,130,63,0.12);
           border-color: rgba(163,130,63,0.35);
         }
-        .formula-body { max-height: 0; overflow: hidden; transition: max-height 0.55s cubic-bezier(0.4,0,0.2,1); }
-        .formula-card.open .formula-body { max-height: 680px; }
+        .formula-body { overflow: hidden; }
+        .formula-body[hidden] { display: none; }
         .formula-inner {
           padding: 20px 28px 26px;
           border-top: 1px dashed rgba(163,130,63,0.28);
@@ -987,12 +992,12 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
 
         @media (max-width: 640px) {
           .hero-logo-wrap img { height: 170px !important; }
-          .formula-head { padding: 18px 18px; gap: 13px; }
+          .formula-head { padding: 18px 16px; gap: 12px; }
           .seal-stamp { width: 44px; height: 44px; }
           .seal-stamp.seal-v90 { font-size: 20px; }
           .seal-stamp.seal-v120 { width: 48px; height: 48px; font-size: 21px; }
-          .formula-name { font-size: 16px; letter-spacing: 2px; }
-          .formula-sub { font-size: 12px; letter-spacing: 1px; }
+          .formula-name { font-size: 17px; letter-spacing: 1px; }
+          .formula-sub { font-size: 13px; letter-spacing: 0.5px; }
           .formula-inner { padding: 18px 20px 22px; }
           .formula-steps { grid-template-columns: 1fr; gap: 11px; }
           .formula-step { font-size: 14px; }
@@ -1052,9 +1057,9 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
       </nav>
 
       {/* ========== LINE FLOATING BUTTON ========== */}
-      <div className="line-floating" style={{ position: "fixed", bottom: "30px", right: "30px", zIndex: 99, display: "flex", alignItems: "center", gap: "12px" }}>
+      <div className={`line-floating ${lineOverContent ? "over-content" : ""}`} style={{ position: "fixed", bottom: "30px", right: "30px", zIndex: 99, display: "flex", alignItems: "center", gap: "12px" }}>
         {showLineTooltip && (
-          <div style={{
+          <div className="line-tooltip" style={{
             background: "white", border: "1px solid rgba(6,199,85,0.2)",
             padding: "10px 16px", borderRadius: "8px", fontSize: "13px", color: "#4a443a",
             boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
@@ -1195,7 +1200,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
               fontWeight: 500,
               letterSpacing: "6px",
               color: "#a3823f",
-              fontFamily: "'Noto Serif TC', serif",
+              fontFamily: "var(--public-font)",
               whiteSpace: lang === "zh" ? "nowrap" : "normal", textAlign: "center"
             }}>{lang === "zh" ? "五感療癒" : "Care for the senses"}</h2>
             <div className="hero-subtitle-line" style={{
@@ -1232,43 +1237,41 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
       </section>
 
       {/* ========== SERVICES ========== */}
-      <section ref={sectionRefs.services} style={{
+      <section ref={sectionRefs.services} className="services-section" style={{
         padding: "120px 30px", position: "relative", overflow: "hidden",
         background: "rgba(255,255,255,0.2)"
       }}>
         <div style={{ maxWidth: "900px", margin: "0 auto", position: "relative", zIndex: 1 }}>
-          <div style={{ textAlign: "center", marginBottom: "80px" }} className={isAnimated("services") ? "animate-in" : ""}>
+          <div style={{ textAlign: "center", marginBottom: "80px" }} className={`services-intro ${isAnimated("services") ? "animate-in" : ""}`}>
             <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>SERVICES</div>
             <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.services.title}</h2>
             <GoldDivider />
             <p style={{ fontSize: "12px", letterSpacing: "2px", color: "rgba(74,68,58,0.5)", marginTop: "4px" }}>
-              {lang === "zh" ? "滑鼠移入或點擊項目，展開完整療程內容" : "Hover or tap each item to reveal the full ritual"}
+              {lang === "zh" ? "點擊療程，查看完整內容" : "Tap a therapy to see the full ritual"}
             </p>
           </div>
 
           {/* 45分方子區塊 */}
-          <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-1" : ""}>
-            <div className="service-heading" style={{ textAlign: "center", marginBottom: "28px" }}>
-              <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>{serviceTitle("formula45")}</span>
-              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>{servicePrice("formula45")}</span>
+          <div style={{ marginBottom: "70px" }} className={`service-group ${isAnimated("services") ? "animate-in-delay-1" : ""}`}>
+            <div className="service-heading">
+              <h3 className="service-name">{serviceTitle("formula45")}</h3>
+              <span className="service-price">{servicePrice("formula45")}</span>
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               <FormulaCard
                 name={ritualText("苦茶籽潔淨髮浴")}
                 steps={steps45.map(ritualText)}
                 isOpen={openFormula === "45-0"}
-                onEnter={() => enterFormula("45-0")}
-                onLeave={() => leaveFormula("45-0")}
                 onToggle={() => toggleFormula("45-0")}
               />
             </div>
           </div>
 
           {/* 90分方子區塊 */}
-          <div style={{ marginBottom: "70px" }} className={isAnimated("services") ? "animate-in-delay-2" : ""}>
-            <div className="service-heading" style={{ textAlign: "center", marginBottom: "28px" }}>
-              <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>{serviceTitle("formula90")}</span>
-              <span style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginLeft: "16px" }}>{servicePrice("formula90")}</span>
+          <div style={{ marginBottom: "70px" }} className={`service-group ${isAnimated("services") ? "animate-in-delay-2" : ""}`}>
+            <div className="service-heading">
+              <h3 className="service-name">{serviceTitle("formula90")}</h3>
+              <span className="service-price">{servicePrice("formula90")}</span>
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               {formulas90.map((f, i) => (
@@ -1279,8 +1282,6 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
                   sub={ritualText(f.sub)}
                   steps={f.steps.map(ritualText)}
                   isOpen={openFormula === `90-${i}`}
-                  onEnter={() => enterFormula(`90-${i}`)}
-                  onLeave={() => leaveFormula(`90-${i}`)}
                   onToggle={() => toggleFormula(`90-${i}`)}
                 />
               ))}
@@ -1288,13 +1289,10 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           </div>
 
           {/* 120分全息區塊 */}
-          <div style={{ marginBottom: "40px" }} className={isAnimated("services") ? "animate-in-delay-3" : ""}>
-            <div className="service-heading" style={{ textAlign: "center", marginBottom: "28px" }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: "14px" }}>
-                <span style={{ fontSize: "18px", letterSpacing: "3px", color: "#4a443a", fontWeight: 600 }}>{serviceTitle("formula120")}</span>
-
-              </div>
-              <div style={{ fontSize: "13px", letterSpacing: "2px", color: "rgba(163,130,63,0.7)", marginTop: "10px" }}>{servicePrice("formula120")}</div>
+          <div style={{ marginBottom: "40px" }} className={`service-group ${isAnimated("services") ? "animate-in-delay-3" : ""}`}>
+            <div className="service-heading">
+              <h3 className="service-name">{serviceTitle("formula120")}</h3>
+              <span className="service-price">{servicePrice("formula120")}</span>
             </div>
             <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
               {formulas120.map((f, i) => (
@@ -1306,13 +1304,12 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
                   steps={f.steps.map(ritualText)}
                   variant="v120"
                   isOpen={openFormula === `120-${i}`}
-                  onEnter={() => enterFormula(`120-${i}`)}
-                  onLeave={() => leaveFormula(`120-${i}`)}
                   onToggle={() => toggleFormula(`120-${i}`)}
                 />
               ))}
             </div>
           </div>
+          <p className="service-contact"><a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer">{lang === "zh" ? "療程諮詢 · 聯絡 LINE" : "Questions about treatments? Contact us on LINE"} ↗</a></p>
         </div>
       </section>
 
