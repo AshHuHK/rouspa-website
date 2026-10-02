@@ -42,10 +42,10 @@ export function Modal({ title, children, onClose }) {
 }
 export function Empty({ children = '目前沒有記錄。' }) { return <p className="empty">{children}</p>; }
 export function Method({ value, onChange }) { return <select value={value} onChange={e=>onChange(e.target.value)}><option value="cash">現金</option><option value="card">刷卡（已在店內收款）</option><option value="transfer">轉帳（已核對入帳）</option></select>; }
-export function MutationForm({ action, onSaved, children, submit = '儲存' }) {
+export function MutationForm({ action, onSaved, children, submit = '儲存', lang = 'zh' }) {
   const [busy,setBusy]=useState(false),[error,setError]=useState('');
   const request=useRef(crypto.randomUUID());
-  return <form onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setError('');try{await action(request.current);await onSaved();}catch(err){setError(errorText(err));}finally{setBusy(false);}}}>{children}{error&&<p className="alert" role="alert">{error}</p>}<div className="actions"><button className="primary" disabled={busy}>{busy?'處理中…':submit}</button></div></form>;
+  return <form onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setError('');try{await action(request.current);await onSaved();}catch(err){setError(errorText(err, lang));}finally{setBusy(false);}}}>{children}{error&&<p className="alert" role="alert">{error}</p>}<div className="actions"><button className="primary" disabled={busy}>{busy?(lang === 'en' ? 'Saving…' : '處理中…'):submit}</button></div></form>;
 }
 export function PrivateLink({ path, label }) {
   const [copied,setCopied]=useState(false),[error,setError]=useState('');
