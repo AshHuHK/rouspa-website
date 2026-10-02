@@ -105,7 +105,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
   const isZh = lang === "zh";
 
   return (
-    <div className="shop-page" style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh" }}>
+    <div className="shop-page" style={{ fontFamily: "var(--public-font)", color: "#4a443a", background: "#f2ede4", minHeight: "100vh" }}>
       <style>{`
 
         .shop-card {

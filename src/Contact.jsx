@@ -97,7 +97,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
   );
 
   return (
-    <div className="contact-page" style={{ fontFamily: "'Noto Serif TC', 'Noto Serif', Georgia, serif", color: "#4a443a", background: "#f2ede4", minHeight: "100vh" }}>
+    <div className="contact-page" style={{ fontFamily: "var(--public-font)", color: "#4a443a", background: "#f2ede4", minHeight: "100vh" }}>
       <style>{`
         
         .back-btn {
