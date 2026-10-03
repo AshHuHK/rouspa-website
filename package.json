@@ -6,10 +6,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node scripts/test-public-fonts.mjs && node scripts/test-date-range.mjs && node scripts/test-booking-state.mjs && node scripts/test-database.mjs && node scripts/test-staff-portal.mjs && node scripts/test-staff-auth.mjs"
+    "test": "node scripts/test-public-fonts.mjs && node scripts/test-date-range.mjs && node scripts/test-booking-state.mjs && node scripts/test-database.mjs && node scripts/test-staff-portal.mjs && node scripts/test-staff-auth.mjs && node scripts/test-business-os.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
+    "exceljs": "4.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -17,6 +18,9 @@
     "@electric-sql/pglite": "^0.5.8",
     "@vitejs/plugin-react": "^6.1.1",
     "vite": "^8.3.2"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
   },
   "type": "module",
   "engines": {

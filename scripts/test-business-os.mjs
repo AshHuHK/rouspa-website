@@ -1,0 +1,121 @@
+process.on('uncaughtException',error=>{console.error(error.stack||error.message);if(error.where)console.error(error.where);process.exit(1);});
+import {PGlite} from '@electric-sql/pglite';
+import {readFile} from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
+import assert from 'node:assert/strict';
+
+const db=new PGlite();let assertions=0;
+const check=(ok,label)=>{assert.ok(ok,label);assertions++;};
+const rejected=async(fn,pattern=/FORBIDDEN|permission denied/)=>{await assert.rejects(fn,pattern);assertions++;};
+await db.exec(`create role anon;create role authenticated;create role service_role;
+create schema auth;create table auth.users(id uuid primary key,email text);
+create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
+grant usage on schema auth to anon,authenticated;grant execute on function auth.uid(),auth.jwt() to anon,authenticated;`);
+for(const file of ['202610010001_spa_operations.sql','202610010003_customer_booking.sql','202610010004_staff_portal.sql','202610030005_business_operating_system.sql'])await db.exec(await readFile(new URL('../supabase/migrations/'+file,import.meta.url),'utf8'));
+
+const owner=randomUUID(),catalogUser=randomUUID();
+await db.query('insert into auth.users(id,email) values($1,$2),($3,$4)',[owner,'owner@example.test',catalogUser,'catalog@example.test']);
+await db.query("insert into spa_roles(user_id,role,active) values($1,'owner',true)",[owner]);
+async function as(role,user,sql,args=[]){await db.exec('begin');try{await db.exec(`set local role ${role}`);await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[user||'',JSON.stringify({iat:Math.floor(Date.now()/1000)})]);const result=await db.query(sql,args);await db.exec('commit');return result.rows;}catch(error){await db.exec('rollback');throw error;}}
+async function call(user,name,args=[]){const sql=`select public.${name}(${args.map((_,index)=>'$'+(index+1)).join(',')}) result`;return (await as(user?'authenticated':'anon',user,sql,args))[0]?.result;}
+const admin=(name,args=[])=>call(owner,name,args),publicCall=(name,args=[])=>call(null,name,args);
+
+const session=await admin('spa_session');
+check(session.role==='owner'&&session.permissions.includes('payroll.manage'),'owner receives complete permission set');
+const dashboard=await admin('spa_dashboard');
+check(dashboard.rooms_active===4&&Array.isArray(dashboard.next_appointments),'dashboard uses live four-bed configuration');
+const publicCatalog=await publicCall('spa_catalog');
+check(publicCatalog.website_services.length===3&&publicCatalog.website_services.every(item=>item.website_content.zh?.length),'website treatment copy comes from database');
+const store=await publicCall('spa_store_catalog');
+check(store.products.length===18&&store.products.every(item=>item.inventory===20),'store catalog and opening inventory are database driven');
+await rejected(()=>as('anon',null,'select * from spa_products'));
+
+await admin('spa_role_profile_save',['catalog_editor','目錄編輯',['dashboard.view','catalog.view','catalog.manage'],true,80]);
+const firstStaff=(await db.query('select id from spa_staff order by display_order limit 1')).rows[0].id;
+await db.query("insert into spa_roles(user_id,role,staff_id,active,login_name) values($1,'catalog_editor',$2,true,'catalog_editor')",[catalogUser,firstStaff]);
+check((await call(catalogUser,'spa_catalog_admin')).products.length===18,'custom role can read its granted module');
+await rejected(()=>call(catalogUser,'spa_payroll_admin',['2026-10-01','2026-10-31',null]));
+const product=store.products[0];
+await call(catalogUser,'spa_catalog_bulk',['product',[product.id],'unpublish',null]);
+check(!(await publicCall('spa_store_catalog')).products.some(item=>item.id===product.id),'catalog publication immediately controls storefront');
+await call(catalogUser,'spa_catalog_bulk',['product',[product.id],'publish',null]);
+
+const services=(await admin('spa_catalog_admin')).services;
+const service=services[0];
+await call(catalogUser,'spa_catalog_bulk',['service',[service.id],'archive',null]);
+check(!(await publicCall('spa_catalog')).services.some(item=>item.id===service.id),'archived service is unavailable to new public bookings');
+await call(catalogUser,'spa_catalog_bulk',['service',[service.id],'publish',null]);
+
+await admin('spa_role_profile_save',['catalog_editor','營運主管',['dashboard.view','appointments.view','appointments.manage','customers.view','customers.manage','reviews.manage','pos.use','team.view','team.manage','finance.view','finance.manage','catalog.view','catalog.manage','reports.view','settings.manage'],true,80]);
+const customSession=await call(catalogUser,'spa_session');
+check(customSession.permissions.includes('customers.manage')&&customSession.permissions.includes('finance.manage'),'saved custom role updates live backend permissions');
+const customer=await call(catalogUser,'spa_customer_save',[null,'權限測試會員','0988777666','','一般會員','測試',null]);
+await call(catalogUser,'spa_topup',[randomUUID(),customer,100000,'cash','測試儲值']);
+check((await call(catalogUser,'spa_customers_list')).find(item=>item.id===customer).balance_cents===100000,'custom customer permission supports member and wallet operations');
+await call(catalogUser,'spa_package_sell',[randomUUID(),customer,service.id,'權限測試套票',2,200000,'2099-12-31T23:59:00+08:00','cash']);
+await call(catalogUser,'spa_expense',[randomUUID(),5000,'cash','測試支出']);
+const financeDay=(await db.query("select (now() at time zone 'Asia/Taipei')::date::text value")).rows[0].value;
+check((await call(catalogUser,'spa_report',[financeDay,financeDay])).cash_out_cents>=5000,'custom finance/report permissions control existing financial RPCs');
+const room=(await db.query('select * from spa_rooms order by name limit 1')).rows[0];
+await call(catalogUser,'spa_room_save',[room.id,room.name,true]);
+await call(catalogUser,'spa_shift_save',[firstStaff,1,600,1560]);
+check((await call(catalogUser,'spa_settings_os')).resources.length===4,'custom settings and team permissions control existing resource and shift RPCs');
+await call(catalogUser,'spa_time_off_save',[firstStaff,'2099-10-03T12:00:00+08:00','2099-10-03T13:00:00+08:00','午間休息']);
+const savedTimeOff=(await call(catalogUser,'spa_team_os')).time_off.find(item=>item.reason==='午間休息');
+check(savedTimeOff&&savedTimeOff.staff_id===firstStaff,'schedule blocks are persisted and returned by the unified team API');
+await call(catalogUser,'spa_time_off_delete',[savedTimeOff.id]);
+check(Array.isArray((await call(catalogUser,'spa_reviews_admin')).reviews),'custom review permission opens moderation queue');
+const bookingDay=(await db.query("select ((now() at time zone 'Asia/Taipei')::date+2)::text value")).rows[0].value;
+const slot=(await as('anon',null,'select * from spa_availability($1,$2,$3)',[service.id,bookingDay,null])).find(item=>item.available);
+const booked=await publicCall('spa_create_booking',[randomUUID(),service.id,bookingDay,slot.starts_at,null,'權限測試會員','0988777666',0,'']);
+const appointment=(await db.query('select * from spa_appointments where manage_token=$1',[booked.manage_token])).rows[0];
+await db.query("update spa_appointments set status='completed' where id=$1",[appointment.id]);
+const serviceSale=await call(catalogUser,'spa_checkout',[randomUUID(),appointment.id,0,0,null,0,'cash']);
+check(serviceSale.revenue_cents===appointment.price_cents,'custom POS permission completes treatment checkout');
+await call(catalogUser,'spa_refund',[randomUUID(),appointment.id,'權限測試退款']);
+check((await db.query('select refunded_at from spa_checkouts where id=$1',[serviceSale.id])).rows[0].refunded_at,'custom finance permission completes audited refund');
+
+const team=await admin('spa_team_os');
+check(team.staff.length===6&&team.employment_types.length===3&&team.role_profiles.some(role=>role.code==='catalog_editor'),'team API unifies people, employment and login roles');
+const profile=team.staff[0];
+await admin('spa_staff_profile_save_v2',[{...profile,id:profile.id,phone:'0912345678',employment_type_code:'full_time',job_title_id:profile.job_title_id,is_bookable:true,website_visible:true,base_pay_cents:2400000,commission_bps:0,services:publicCatalog.services.map(item=>item.id)}]);
+check((await admin('spa_team_os')).staff.find(item=>item.id===profile.id).phone==='0912345678','staff profile saves HR and compensation fields together');
+
+const today=(await db.query("select (now() at time zone 'Asia/Taipei')::date::text value")).rows[0].value;
+await admin('spa_overtime_save',[profile.id,today,'weekday',120,'延長營業']);
+await admin('spa_payroll_adjustment_save',[profile.id,today.slice(0,8)+'01','bonus',10000,'本月獎金']);
+const payroll=await admin('spa_payroll_admin',[today.slice(0,8)+'01',today,null]);
+const payRow=payroll.preview.find(item=>item.staff_id===profile.id);
+check(payRow.overtime_cents===26800&&payRow.total_cents===2436800,'payroll applies 1.34 overtime tier, bonus and integer cents');
+const rule=payroll.rules.find(item=>item.status==='active');
+const currentRates=payroll.rates.filter(item=>item.rule_version_id===rule.id).map(({employment_type_code,overtime_type,start_minute,end_minute,multiplier_bps})=>({employment_type_code,overtime_type,start_minute,end_minute,multiplier_bps}));
+await admin('spa_payroll_components_save',[rule.id,currentRates,[{metric:'service_minutes',threshold_from:0,threshold_to:null,rate_bps:0,service_category_id:null}]]);
+check((await db.query('select count(*) n from spa_payroll_commission_tiers where rule_version_id=$1',[rule.id])).rows[0].n===1,'owner can save versioned commission tiers');
+const nextRule=await admin('spa_payroll_rule_create',['新版薪資測試',today,240,true,2760,3240,8280]);
+const nextPayroll=await admin('spa_payroll_admin',[today.slice(0,8)+'01',today,nextRule]);
+const nextRates=nextPayroll.rates.filter(item=>item.rule_version_id===nextRule).map(({employment_type_code,overtime_type,start_minute,end_minute,multiplier_bps})=>({employment_type_code,overtime_type,start_minute,end_minute,multiplier_bps:employment_type_code==='full_time'&&overtime_type==='weekday'&&start_minute===0?15000:multiplier_bps}));
+await admin('spa_payroll_components_save',[nextRule,nextRates,[{metric:'product_sales_cents',threshold_from:0,threshold_to:null,rate_bps:1000,service_category_id:null}]]);
+const configuredPreview=await admin('spa_payroll_preview',[today.slice(0,8)+'01',today,nextRule]);
+check(configuredPreview.find(item=>item.staff_id===profile.id).overtime_cents===30000,'edited overtime multiplier is used by payroll preview');
+await rejected(()=>admin('spa_payroll_components_save',[rule.id,currentRates,[]]),/PAYROLL_RULE_READ_ONLY/);
+const run=await admin('spa_payroll_run_save',[today.slice(0,8)+'01',today,rule.id,true]);
+const snapshotBefore=(await db.query('select total_cents from spa_payroll_items where run_id=$1 and staff_id=$2',[run,profile.id])).rows[0].total_cents;
+await db.query('update spa_staff set base_pay_cents=9999999 where id=$1',[profile.id]);
+const snapshotAfter=(await db.query('select total_cents from spa_payroll_items where run_id=$1 and staff_id=$2',[run,profile.id])).rows[0].total_cents;
+check(snapshotBefore===2436800&&snapshotAfter===snapshotBefore,'finalized payroll preserves immutable calculation snapshot');
+await rejected(()=>admin('spa_payroll_run_save',[today.slice(0,8)+'01',today,rule.id,false]),/PAYROLL_LOCKED/);
+await admin('spa_payroll_reopen',[run,'會計更正']);
+check((await db.query('select status from spa_payroll_runs where id=$1',[run])).rows[0].status==='draft','payroll reopen requires explicit audited workflow');
+
+const sale=await admin('spa_pos_checkout',[randomUUID(),null,[{product_id:product.id,quantity:2,staff_id:null}],0,'cash','門店測試']);
+check(sale.status==='paid'&&sale.total_cents===product.price_cents*2,'POS totals use catalog price');
+check((await publicCall('spa_store_catalog')).products.find(item=>item.id===product.id).inventory===18,'POS decrements inventory atomically');
+const sold=(await db.query('select name_snapshot,unit_price_cents from spa_order_items where order_id=$1',[sale.id])).rows[0];
+await db.query('update spa_products set name=$2,price_cents=$3 where id=$1',[product.id,'修改後名稱',1]);
+const preserved=(await db.query('select name_snapshot,unit_price_cents from spa_order_items where order_id=$1',[sale.id])).rows[0];
+check(preserved.name_snapshot===sold.name_snapshot&&preserved.unit_price_cents===sold.unit_price_cents,'historical order keeps name and price snapshots');
+check((await db.query("select count(*) n from spa_audit where action in ('role_profile.saved','catalog.bulk','overtime.created','payroll.finalized','payroll.reopened','order.paid')")).rows[0].n>=6,'high-impact changes are audited');
+
+await db.close();
+console.log(`PASS: ${assertions} business operating system assertions`);
