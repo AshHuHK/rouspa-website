@@ -150,13 +150,14 @@ React 中原本硬编码的官网疗程文案和 18 项商店商品已移入数�
 
 ## Deployment Verification
 
-正式部署完成后验证以下项目：
+2026-10-03 已完成生产数据层与函数部署验证：
 
-- Supabase 迁移成功且 active beds = 4。
-- 人员、商品、角色与薪资规则种子数量正确。
-- `staff-accounts` Edge Function 为最新版本。
-- GitHub 主分支、Vercel 生产部署与 `https://www.rouspa.tw/` 指向同一提交。
-- 生产官网、商店、预约和后台登录无 runtime error。
+- Supabase SQL Editor 返回 `Success. No rows returned`；公开 `spa_catalog` 回传 3 项预约疗程与 3 项官网疗程。
+- `spa_store_catalog` 回传 18 项商品、4 个商品分类；18 项商品各自带有库存数值。
+- 匿名调用 `spa_dashboard` 返回 401，匿名直接查询 `spa_products` 也返回 401，确认浏览器不能绕过 RPC 读取后台资料。
+- 数据迁移保留并继续使用既有 4 个启用床位；Business OS 自动化也锁定验证 active beds = 4。
+- `staff-accounts` Edge Function 已在 Supabase 控制台部署成功，控制台显示 `Successfully updated edge function`。
+- GitHub PR #9 的 `validate` 与 Vercel Preview 检查通过；合并后的正式站检查记录会与本报告一起更新。
 
 ## Remaining Issues / Operating Notes
 
@@ -165,4 +166,3 @@ React 中原本硬编码的官网疗程文案和 18 项商店商品已移入数�
 - 薪资系统是规则与试算工具，不会自动汇款或申报税务。
 - Google Calendar 没有在没有正式 OAuth 连接的情况下做假同步；预约数据库仍是唯一事实来源。
 - 图片目前使用 URL；若后续要让店主直接上传，可再接 Supabase Storage 与图片处理流程。
-
