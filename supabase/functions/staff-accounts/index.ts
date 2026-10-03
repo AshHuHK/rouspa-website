@@ -31,7 +31,7 @@ export function createStaffHandler({ clientFactory, environment }) {
    if (!input || typeof input !== 'object' || Array.isArray(input) || !uuid.test(input.staff_id || '')) return reply(400,'INVALID_INPUT');
    const {action,staff_id} = input;
    if (!['create','password','username','access','archive','restore'].includes(action)) return reply(400,'INVALID_INPUT');
-   if (['create','access'].includes(action) && !['manager','receptionist','therapist'].includes(input.role)) return reply(400,'INVALID_INPUT');
+   if (['create','access'].includes(action) && (typeof input.role !== 'string' || !/^[a-z][a-z0-9_]{1,31}$/.test(input.role) || input.role === 'owner')) return reply(400,'INVALID_INPUT');
    if (action === 'access' && typeof input.active !== 'boolean') return reply(400,'INVALID_INPUT');
    if (['create','password'].includes(action) && (typeof input.password !== 'string' || input.password.length < 12 || input.password.length > 128)) return reply(400,'PASSWORD_TOO_SHORT');
    const username = typeof input.username === 'string' ? input.username.trim().toLowerCase() : '';

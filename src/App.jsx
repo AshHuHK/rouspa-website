@@ -481,30 +481,9 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   const isAnimated = (s) => animatedSections.has(s);
   const navOpacity = Math.min(scrollY / 300, 0.98);
 
-  // ===== 養生方子資料 =====
-  const ritualEnglish = {
-    '頭肩頸筋絡按摩':'Head, shoulder and neck massage', '頭皮洗淨':'Scalp cleanse', '水療眼部':'Eye-area water treatment', '手技收尾':'Finishing massage',
-    '臉部牛角刷去角質':'Facial exfoliation with a horn brush', '綠豆泥頭皮去角質':'Mung bean scalp exfoliation', '舒緩泡腳':'Relaxing foot soak', '四肢放鬆':'Arm and leg relaxation',
-    '木質萃湯浴養髮':'Botanical hair bath', '鮮薑溫通舒筋':'Fresh ginger care', '鮮生薑頭部敷泥':'Fresh ginger scalp mask', '耳穴撥筋':'Ear-area massage',
-    '眼部清濁':'Eye-area care', '水乳面膜':'Hydrating face mask', '羽式采耳':'Gentle ear care',
-    '苦茶籽潔淨髮浴':'Camellia seed cleansing hair bath', '森呼吸':'Forest breath', '柔禾角質調理':'Gentle exfoliating care', '墨玉烏':'Jade botanical care',
-    '60天木質萃湯浴':'60-day botanical bath', '薑暖陽':'Ginger warmth'
-  };
-  const ritualText = text => lang === 'en' ? ritualEnglish[text] || text : text;
-  const serviceFor = code => services.find(service => service.code === code);
-  const serviceTitle = code => publicName(serviceFor(code), lang) || (lang === 'zh' ? '療程資訊載入中…' : 'Loading service…');
-  const servicePrice = code => serviceFor(code) ? money(serviceFor(code).price_cents) : (lang === 'zh' ? '請聯絡門店確認價格' : 'Contact us for pricing');
-  const steps45 = ["頭肩頸筋絡按摩", "頭皮洗淨", "水療眼部", "手技收尾"];
-  const formulas90 = [
-    { stamp: "清", name: "森呼吸", sub: "柔禾角質調理", steps: ["頭肩頸筋絡按摩", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-    { stamp: "養", name: "墨玉烏", sub: "60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "木質萃湯浴養髮", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-    { stamp: "通", name: "薑暖陽", sub: "鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "鮮生薑頭部敷泥", "舒緩泡腳", "水療眼部", "四肢放鬆", "手技收尾"] },
-  ];
-  const formulas120 = [
-    { stamp: "清", name: "森呼吸", sub: "柔禾角質調理", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "臉部牛角刷去角質", "綠豆泥頭皮去角質", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-    { stamp: "養", name: "墨玉烏", sub: "60天木質萃湯浴", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "木質萃湯浴養髮", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-    { stamp: "通", name: "薑暖陽", sub: "鮮薑溫通舒筋", steps: ["頭肩頸筋絡按摩", "耳穴撥筋", "眼部清濁", "鮮生薑頭部敷泥", "水乳面膜", "舒緩泡腳", "水療眼部", "四肢放鬆", "羽式采耳", "手技收尾"] },
-  ];
+  // 官網療程內容與預約價格共用後台主資料；停用或封存會同步從前台移除。
+  const websiteServices = catalog?.website_services || services;
+  const serviceRituals = service => service.website_content?.[lang] || service.website_content?.zh || [];
 
   return (
     <div className="public-home" data-language={lang} style={{ fontFamily: "var(--public-font)", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "clip" }}>
@@ -1251,64 +1230,16 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
             </p>
           </div>
 
-          {/* 45分方子區塊 */}
-          <div style={{ marginBottom: "70px" }} className={`service-group ${isAnimated("services") ? "animate-in-delay-1" : ""}`}>
-            <div className="service-heading">
-              <h3 className="service-name">{serviceTitle("formula45")}</h3>
-              <span className="service-price">{servicePrice("formula45")}</span>
-            </div>
-            <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
-              <FormulaCard
-                name={ritualText("苦茶籽潔淨髮浴")}
-                steps={steps45.map(ritualText)}
-                isOpen={openFormula === "45-0"}
-                onToggle={() => toggleFormula("45-0")}
-              />
-            </div>
-          </div>
-
-          {/* 90分方子區塊 */}
-          <div style={{ marginBottom: "70px" }} className={`service-group ${isAnimated("services") ? "animate-in-delay-2" : ""}`}>
-            <div className="service-heading">
-              <h3 className="service-name">{serviceTitle("formula90")}</h3>
-              <span className="service-price">{servicePrice("formula90")}</span>
-            </div>
-            <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
-              {formulas90.map((f, i) => (
-                <FormulaCard
-                  key={i}
-                  stamp={f.stamp}
-                  name={ritualText(f.name)}
-                  sub={ritualText(f.sub)}
-                  steps={f.steps.map(ritualText)}
-                  isOpen={openFormula === `90-${i}`}
-                  onToggle={() => toggleFormula(`90-${i}`)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* 120分全息區塊 */}
-          <div style={{ marginBottom: "40px" }} className={`service-group ${isAnimated("services") ? "animate-in-delay-3" : ""}`}>
-            <div className="service-heading">
-              <h3 className="service-name">{serviceTitle("formula120")}</h3>
-              <span className="service-price">{servicePrice("formula120")}</span>
-            </div>
-            <div className="service-vertical-list formula-list" style={{ maxWidth: "520px", margin: "0 auto" }}>
-              {formulas120.map((f, i) => (
-                <FormulaCard
-                  key={i}
-                  stamp={f.stamp}
-                  name={ritualText(f.name)}
-                  sub={ritualText(f.sub)}
-                  steps={f.steps.map(ritualText)}
-                  variant="v120"
-                  isOpen={openFormula === `120-${i}`}
-                  onToggle={() => toggleFormula(`120-${i}`)}
-                />
-              ))}
-            </div>
-          </div>
+          {websiteServices.map((service,groupIndex)=>{
+            const rituals=serviceRituals(service);
+            return <div key={service.id} style={{marginBottom:groupIndex===websiteServices.length-1?'40px':'70px'}} className={`service-group ${isAnimated("services")?`animate-in-delay-${Math.min(groupIndex+1,4)}`:""}`}>
+              <div className="service-heading"><h3 className="service-name">{publicName(service,lang)}</h3><span className="service-price">{money(service.price_cents)}</span></div>
+              <div className="service-vertical-list formula-list" style={{maxWidth:"520px",margin:"0 auto"}}>
+                {rituals.map((ritual,index)=>{const key=`${service.code}-${index}`;return <FormulaCard key={key} stamp={ritual.stamp} name={ritual.name} sub={ritual.sub} steps={ritual.steps||[]} variant={service.duration_minutes>=120?'v120':''} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;})}
+                {!rituals.length&&<p className="service-contact">{lang==='zh'?(service.description||'療程內容請洽門店'):(service.description_en||'Contact us for treatment details')}</p>}
+              </div>
+            </div>;
+          })}
           <p className="service-contact"><a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer">{lang === "zh" ? "療程諮詢 · 聯絡 LINE" : "Questions about treatments? Contact us on LINE"} ↗</a></p>
         </div>
       </section>
