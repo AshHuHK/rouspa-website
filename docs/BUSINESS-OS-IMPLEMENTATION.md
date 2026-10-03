@@ -157,7 +157,10 @@ React 中原本硬编码的官网疗程文案和 18 项商店商品已移入数�
 - 匿名调用 `spa_dashboard` 返回 401，匿名直接查询 `spa_products` 也返回 401，确认浏览器不能绕过 RPC 读取后台资料。
 - 数据迁移保留并继续使用既有 4 个启用床位；Business OS 自动化也锁定验证 active beds = 4。
 - `staff-accounts` Edge Function 已在 Supabase 控制台部署成功，控制台显示 `Successfully updated edge function`。
-- GitHub PR #9 的 `validate` 与 Vercel Preview 检查通过；合并后的正式站检查记录会与本报告一起更新。
+- GitHub PR #9 已合并到 `main`；合并提交为 `d53d15e1deacdc4bc43b2e2dc3537dabbffe13e9`，GitHub `Validate SPA operations` 与 Vercel Production 均成功。
+- `https://www.rouspa.tw/` 已载入与该提交本地构建相同的生产资源；生产后台包含新版薪资/营运模块，商店包调用 `spa_store_catalog`，前端包未包含 service-role 密钥。
+- 真实浏览器以 390px 手机和 1440px 桌面检查首页，横向溢出均为 0；手机商店显示 18 项商品与 5 个分类标签，管理后台登录页为 2 个输入栏和 1 个登录按钮。
+- 生产浏览器回归没有 console error 或 runtime error；首页疗程、商店库存、后台登录页与员工函数预检均通过。
 
 ## Remaining Issues / Operating Notes
 
