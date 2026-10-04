@@ -130,8 +130,10 @@
  .ops .payroll-compact,.ops .payroll-compact tbody,.ops .payroll-compact tr,.ops .payroll-compact td{display:block;width:100%}
  .ops .payroll-compact tbody{padding:7px}
  .ops .payroll-compact tr{margin:8px 0;border:1px solid var(--line);border-radius:7px;background:rgba(255,251,246,.58);overflow:hidden}
- .ops .payroll-compact td{display:flex;justify-content:space-between;gap:14px;padding:9px 11px;border-bottom:1px solid rgba(111,78,55,.14);white-space:normal;text-align:right}
- .ops .payroll-compact td::before{content:attr(data-label);flex:0 0 82px;color:var(--muted);font-size:10px;letter-spacing:.04em;text-align:left}
+ .ops .payroll-compact td{display:grid;grid-template-columns:82px minmax(0,1fr);gap:2px 14px;padding:9px 11px;border-bottom:1px solid rgba(111,78,55,.14);white-space:normal;text-align:right}
+ .ops .payroll-compact td::before{content:attr(data-label);grid-column:1;grid-row:1/span 3;color:var(--muted);font-size:10px;letter-spacing:.04em;text-align:left}
+ .ops .payroll-compact td>strong,.ops .payroll-compact td>small{grid-column:2;overflow-wrap:normal}
+ .ops .payroll-compact td>strong{white-space:nowrap}
  .ops .payroll-compact .payroll-person-cell{display:block;padding:13px 11px;text-align:left;background:rgba(180,130,82,.065)}
  .ops .payroll-compact .payroll-person-cell::before,.ops .payroll-compact .payroll-detail-cell::before{display:none}
  .ops .payroll-person-cell .badge{float:right}
