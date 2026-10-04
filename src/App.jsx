@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import BookingLookup from "./BookingLookup.jsx";
-import { STORE, hoursText, publicName, slotLabel } from "./lib/public-copy.js";
+import { STORE, businessTimeText, hoursText, publicName, slotLabel } from "./lib/public-copy.js";
 import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 
 // ============================================================
@@ -223,6 +223,25 @@ const GoldDivider = ({ plain = false }) => plain ? (
     <div style={{ width: "60px", height: "1px", background: "linear-gradient(to left, transparent, #a3823f)" }} />
   </div>
 );
+
+function TodayHours({ hours, lang, loading }) {
+  if (!hours && !loading) return null;
+  const isOpen = hours?.is_open;
+  const label = lang === "zh" ? "今日營業時間" : "Today's hours";
+  const value = loading
+    ? (lang === "zh" ? "讀取中…" : "Loading…")
+    : isOpen
+      ? `${businessTimeText(hours.opening_minute, lang)}–${businessTimeText(hours.closing_minute, lang)}`
+      : (lang === "zh" ? "今日休假" : "Closed today");
+  return (
+    <div className={`hero-today-hours ${isOpen === false ? "is-closed" : ""}`} aria-live="polite">
+      <span className="hero-today-dot" aria-hidden="true" />
+      <span className="hero-today-label">{label}</span>
+      <strong>{value}</strong>
+      {!loading && hours?.note && <small>{hours.note}</small>}
+    </div>
+  );
+}
 
 const FeedbackSection = ({ t }) => {
   const fb = t.feedback;
@@ -580,6 +599,34 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           letter-spacing: 2px; transition: all 0.4s ease;
         }
         .outline-btn:hover { border-color: #a3823f; background: rgba(163,130,63,0.08); }
+
+        .hero-actions {
+          display: flex; justify-content: center; align-items: stretch; gap: 12px;
+        }
+        .hero-today-hours {
+          display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+          gap: 7px 10px; width: min(100%, 360px); min-height: 38px;
+          margin: 14px auto 0; padding: 9px 16px;
+          border-top: 1px solid rgba(131,101,52,0.3);
+          color: rgba(74,68,58,0.85); font-size: 12px; letter-spacing: 1px;
+        }
+        .hero-today-dot {
+          width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%;
+          background: #75916d; box-shadow: 0 0 0 4px rgba(117,145,109,0.12);
+        }
+        .hero-today-hours.is-closed .hero-today-dot {
+          background: #a3823f; box-shadow: 0 0 0 4px rgba(163,130,63,0.12);
+        }
+        .hero-today-label { color: rgba(102,70,43,0.72); }
+        .hero-today-hours strong { color: #6f512a; font-weight: 600; letter-spacing: 1.5px; }
+        .hero-today-hours small {
+          flex-basis: 100%; color: rgba(74,68,58,0.62); font-size: 11px; line-height: 1.5;
+        }
+        @media (max-width: 640px) {
+          .hero-actions { width: 100%; gap: 10px; }
+          .hero-actions button { min-width: 0; padding: 14px 20px !important; flex: 1; }
+          .hero-today-hours { margin-top: 12px; padding: 8px 10px; font-size: 11px; }
+        }
 
         .line-btn {
           background: #06C755; color: white; border: none; cursor: pointer;
@@ -1212,6 +1259,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
               borderRadius: "2px"
             }}>{t.hero.cta}</button><button className="outline-btn" onClick={() => scrollTo('lookup')} style={{padding:'16px 32px',fontSize:14,borderRadius:2}}>{lang === 'zh' ? '查詢預約' : 'Find booking'}</button>
           </div>
+          <TodayHours hours={catalog?.today_hours} lang={lang} loading={!catalog && !catalogError} />
         </div>
       </section>
 

@@ -11,8 +11,14 @@ export const STORE = {
   FACEBOOK_NAME: '柔療髮浴 ROU SPA',
 };
 
+export function businessTimeText(minutes, lang = 'zh') {
+  if (!Number.isInteger(minutes)) return '';
+  const clock = `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  return `${minutes >= 1440 ? (lang === 'en' ? 'Next day ' : '翌日 ') : ''}${clock}`;
+}
+
 export function hoursText(settings, lang = 'zh', businessHours = [], todayHours = null) {
-  const time = n => `${String(Math.floor(n / 60) % 24).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}${n >= 1440 ? (lang === 'en' ? ' next day' : ' 翌日') : ''}`;
+  const time = n => businessTimeText(n, lang);
   const ordered = [1,2,3,4,5,6,0].map(day => businessHours.find(row => row.weekday === day)).filter(Boolean);
   let weekly = '';
   if (ordered.length === 7) {
