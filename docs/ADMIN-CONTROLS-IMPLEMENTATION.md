@@ -178,6 +178,7 @@
 - `src/BusinessOS.jsx`：首頁營業控制、每日排班、角色限制、薪資試算及來源明細。
 - `src/StaffPortal.jsx`：員工個人完成堂數、已結／待結帳、提成、評價及每日排班。
 - `src/lib/payroll-xlsx.js`：可追溯的薪資 Excel 匯出。
+- `docs/PAYROLL-SETUP-GUIDE.md`：薪酬欄位、加班倍率、階梯提成、加扣項及每月結算的店主操作手冊。
 - `src/lib/public-copy.js`：前台營業時間文字與特殊日期顯示。
 - `src/App.jsx`、`src/Contact.jsx`：把資料庫營業時間傳遞到前台。
 - `src/operations.css`：後台品牌色和互動效果。
