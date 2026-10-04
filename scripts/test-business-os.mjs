@@ -117,5 +117,49 @@ const preserved=(await db.query('select name_snapshot,unit_price_cents from spa_
 check(preserved.name_snapshot===sold.name_snapshot&&preserved.unit_price_cents===sold.unit_price_cents,'historical order keeps name and price snapshots');
 check((await db.query("select count(*) n from spa_audit where action in ('role_profile.saved','catalog.bulk','overtime.created','payroll.finalized','payroll.reopened','order.paid')")).rows[0].n>=6,'high-impact changes are audited');
 
+await db.exec(await readFile(new URL('../supabase/migrations/202610030006_admin_controls.sql',import.meta.url),'utf8'));
+const restrictedSession=await call(catalogUser,'spa_session');
+check(restrictedSession.permissions.length===3&&['dashboard.view','appointments.view','reviews.view'].every(permission=>restrictedSession.permissions.includes(permission)),'migration enforces the fixed non-owner permission boundary');
+await rejected(()=>call(catalogUser,'spa_catalog_admin'));
+check(Array.isArray((await call(catalogUser,'spa_reviews_admin')).reviews),'employee can read reviews without moderation permission');
+await rejected(()=>call(catalogUser,'spa_moderate',['review',randomUUID(),'published','']));
+await rejected(()=>admin('spa_role_profile_save',['catalog_editor','越權測試',['catalog.manage'],true,80]),/STAFF_PERMISSION_LIMIT/);
+
+const weekly=(await admin('spa_settings_os')).business_hours;
+check(weekly.length===7&&weekly.every(row=>row.is_open),'weekly opening hours are seeded without changing current availability');
+await admin('spa_business_day_override_save',[bookingDay,false,600,1560,'测试店休']);
+check((await as('anon',null,'select * from spa_availability($1,$2,$3)',[service.id,bookingDay,null])).length===0,'closed-day override immediately removes public availability');
+await admin('spa_business_day_override_save',[bookingDay,true,600,1560,'测试营业']);
+check((await as('anon',null,'select * from spa_availability($1,$2,$3)',[service.id,bookingDay,null])).length>0,'open-day override restores public availability within its window');
+check((await publicCall('spa_catalog')).business_hours.length===7,'public catalog exposes the same weekly hours used by booking');
+
+check((await admin('spa_customers_list')).find(row=>row.id===customer).customer_type==='member','existing wallet or package customers are classified as members');
+const disposableGuest=await admin('spa_customer_save_v2',[null,'可刪消費客人','0911000001','','一般會員','guest test','guest',null]);
+await rejected(()=>admin('spa_customer_delete',[disposableGuest,'WRONG']),/CUSTOMER_DELETE_CONFIRMATION_REQUIRED/);
+check((await admin('spa_customer_delete',[disposableGuest,'DELETE'])).mode==='deleted'&&!(await db.query('select id from spa_customers where id=$1',[disposableGuest])).rows.length,'guest profile without history can be permanently deleted');
+const memberProfile=await admin('spa_customer_save_v2',[null,'自動會員','0911000002','','一般會員','','guest',null]);
+await admin('spa_topup',[randomUUID(),memberProfile,50000,'cash','會員儲值']);
+check((await admin('spa_customers_list')).find(row=>row.id===memberProfile).customer_type==='member','top-up automatically promotes a consumer to member');
+check((await admin('spa_customer_delete',[memberProfile,'DELETE'])).mode==='archived'&&(await db.query('select archived_at from spa_customers where id=$1',[memberProfile])).rows[0].archived_at,'customer with financial history is safely archived');
+await admin('spa_customer_restore',[memberProfile]);
+check(!(await db.query('select archived_at from spa_customers where id=$1',[memberProfile])).rows[0].archived_at,'archived customer profile can be restored');
+
+const visibleBookings=await call(catalogUser,'spa_admin_bookings',[bookingDay,bookingDay]);
+check(visibleBookings.some(row=>row.id===appointment.id)&&visibleBookings.every(row=>row.phone===null&&!('manage_token' in row)),'employee schedule covers the store while hiding private booking fields');
+const appointmentPreview=await admin('spa_reset_preview',['appointments',bookingDay,bookingDay]);
+check(appointmentPreview.counts.appointments>=1,'reset preview counts coupled appointment data before deletion');
+const backup=await admin('spa_backup_export',['appointments',bookingDay,bookingDay]);
+check(backup.appointments.some(row=>row.id===appointment.id)&&backup.checkouts.some(row=>row.appointment_id===appointment.id),'reset backup includes appointments and linked checkouts');
+await rejected(()=>call(catalogUser,'spa_reset_business_data',['appointments',bookingDay,bookingDay,'RESET']));
+await rejected(()=>admin('spa_reset_business_data',['appointments',bookingDay,bookingDay,'WRONG']),/RESET_CONFIRMATION_REQUIRED/);
+await admin('spa_reset_business_data',['appointments',bookingDay,bookingDay,'RESET']);
+check(!(await db.query('select id from spa_appointments where id=$1',[appointment.id])).rows.length&&!(await db.query('select id from spa_checkouts where appointment_id=$1',[appointment.id])).rows.length,'appointment reset deletes its complete operational chain');
+const orderPreview=await admin('spa_reset_preview',['orders',today,today]);
+check(orderPreview.counts.orders>=1,'order reset preview uses the selected Taiwan date');
+await admin('spa_reset_business_data',['orders',today,today,'RESET']);
+check(!(await db.query('select id from spa_orders where id=$1',[sale.id])).rows.length,'order reset removes order, item, inventory and cash links together');
+const masterData=await publicCall('spa_catalog');
+check(masterData.services.length>0&&(await admin('spa_team_os')).staff.length===6,'business resets preserve staff, services and configuration master data');
+
 await db.close();
 console.log(`PASS: ${assertions} business operating system assertions`);

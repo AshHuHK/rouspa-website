@@ -45,8 +45,8 @@ const contactInfo = {
 export default function Contact({ lang = "zh", onNavigateHome }) {
   const [copied, setCopied] = useState("");
   const [copyError, setCopyError] = useState("");
-  const [settings, setSettings] = useState(null);
-  useEffect(() => { let live = true; rpc("spa_catalog").then(c => { if(live) setSettings(c.settings); }).catch(() => {}); return () => { live = false; }; }, []);
+  const [catalog, setCatalog] = useState(null);
+  useEffect(() => { let live = true; rpc("spa_catalog").then(c => { if(live) setCatalog(c); }).catch(() => {}); return () => { live = false; }; }, []);
   const t = contactInfo[lang];
   const isZh = lang === "zh";
 
@@ -178,7 +178,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
           </div>
 
           <div className="contact-animate" style={{ animationDelay: "0.15s" }}>
-            <ContactCard icon="🕐" label={t.hours} value={hoursText(settings, lang)} />
+            <ContactCard icon="🕐" label={t.hours} value={hoursText(catalog?.settings, lang, catalog?.business_hours, catalog?.today_hours)} />
           </div>
 
           <div className="contact-animate" style={{ animationDelay: "0.2s" }}>

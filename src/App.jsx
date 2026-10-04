@@ -1481,7 +1481,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
               </div>
               <div style={{ marginBottom: "28px" }}>
                 <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>{lang === "zh" ? "營業時間" : "Opening hours"}</div>
-                <p style={{ fontSize: "15px", color: "#4a443a" }}>{hoursText(catalog?.settings, lang)}</p>
+                <p style={{ fontSize: "15px", color: "#4a443a" }}>{hoursText(catalog?.settings, lang, catalog?.business_hours, catalog?.today_hours)}</p>
               </div>
               <div style={{ marginBottom: "28px" }}>
                 <div style={{ fontSize: "12px", color: "#a3823f", letterSpacing: "2px", marginBottom: "10px", fontWeight: 600 }}>{lang === "zh" ? "預約電話" : "Phone"}</div>

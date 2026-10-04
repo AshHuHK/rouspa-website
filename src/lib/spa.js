@@ -29,7 +29,10 @@ const errors = {
   RATE_LIMIT: '提交次數較多，請稍後再試或聯絡門店。', REVIEW_NOT_ELIGIBLE: '療程完成後才能評價。',
   EXISTING_BOOKINGS: '此時段已有預約，請先改期再設定休假。', REASON_REQUIRED: '請填寫原因。',
   TOO_EARLY: '尚未到預約時間，無法到店、完成或標記未到。', OWNER_SELF_CHANGE: '不能停用或降級自己的店主帳號。',
-  REQUEST_CONFLICT: '此操作編號已用於其他記錄，請重新整理。'
+  REQUEST_CONFLICT: '此操作編號已用於其他記錄，請重新整理。',
+  STAFF_PERMISSION_LIMIT: '員工角色只能使用營運首頁、預約與日程、評價及自己的薪資與績效。',
+  RESET_CONFIRMATION_REQUIRED: '請輸入 RESET 才能執行資料重設。',
+  CUSTOMER_DELETE_CONFIRMATION_REQUIRED: '請輸入 DELETE 才能刪除或封存顧客檔案。'
 };
 const publicErrorsEn = {
   BOOKING_ACCESS_EXPIRED: 'Your booking access has expired. Search again or reopen your private link.',
