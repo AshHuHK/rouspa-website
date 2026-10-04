@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { productPresentationMark, serviceCardVariant, serviceDurationGroups, servicePresentationCards } from '../src/lib/catalog-presentation.js';
+import { productPresentationMark, serviceAddonGroup, serviceCardVariant, serviceDurationGroups, servicePresentationCards } from '../src/lib/catalog-presentation.js';
 
 const legacy = servicePresentationCards({
   name: '90分方子',
@@ -31,10 +31,11 @@ const groups = serviceDurationGroups([
   { id: '45', code: 'duration_45', name: '45 分鐘', display_order: 45 },
   { id: '90', code: 'duration_90', name: '90 分鐘', display_order: 90 },
   { id: '120', code: 'duration_120', name: '120 分鐘', display_order: 120 },
-], 'zh', [
-  { id: 'addon', duration_minutes: 60, target_category_codes: ['duration_45', 'duration_90'] },
-]);
-assert.deepEqual(groups.map(group => [group.code, group.services.length, group.addons.length]), [['duration_45', 1, 1], ['duration_90', 1, 1]], 'main services use the three fixed durations and add-ons appear under every selected parent');
+], 'zh');
+assert.deepEqual(groups.map(group => [group.code, group.services.length]), [['duration_45', 1], ['duration_90', 1]], 'main services use the three fixed duration categories');
+const addonGroup = serviceAddonGroup([{ id: 'addon', duration_minutes: 60 }], 'zh');
+assert.deepEqual([addonGroup.code, addonGroup.name, addonGroup.displayOrder, addonGroup.services.length], ['add_on', '加購項目', 900, 1], 'add-ons form one separate fourth category after all duration categories');
+assert.equal(serviceAddonGroup([], 'zh'), null, 'the standalone add-on category stays hidden when empty');
 
 assert.equal(productPresentationMark({ name: '身體乳' }, { code: 'body_care', name: '身體保養' }), '身', 'new product categories derive a stable artwork mark');
 assert.equal(productPresentationMark({ name: '普洱茶' }, { code: 'tea_cake', name: '茶餅' }), '茶', 'known product categories keep their brand mark');

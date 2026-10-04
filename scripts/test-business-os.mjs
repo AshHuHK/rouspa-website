@@ -239,17 +239,17 @@ check((await admin('spa_catalog_delete',['product',product.id,'DELETE'])).result
 await db.exec(await readFile(new URL('../supabase/migrations/202610040004_duration_catalog_payroll_versions.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/202610040005_payroll_adjustment_reconciliation.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/202610040006_service_addons.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/202610040007_standalone_addon_category.sql',import.meta.url),'utf8'));
 const durationCatalog=await admin('spa_catalog_admin');
 const durationCategories=durationCatalog.service_categories.filter(row=>row.active&&/^duration_/.test(row.code));
 const addonCategory=durationCatalog.service_categories.find(row=>row.active&&row.code==='add_on');
 check(durationCategories.length===3&&['duration_45','duration_90','duration_120'].every(code=>durationCategories.some(row=>row.code===code))&&!durationCatalog.service_categories.find(row=>row.code==='duration_60').active,'service master data exposes only the three fixed main treatment categories');
 check(durationCatalog.services.filter(row=>row.category_code!=='add_on').every(row=>row.category_id===durationCategories.find(category=>category.code===`duration_${row.duration_minutes}`)?.id),'existing main services stay in their matching fixed duration category');
-await rejected(()=>admin('spa_service_save_v2',[{name:'未指定歸屬測試',name_en:'Missing target',code:'missing-target-test',category_id:addonCategory.id,target_category_ids:[],description:'',description_en:'',duration_minutes:60,buffer_minutes:0,price_cents:10000,member_price_cents:'',image_url:'',status:'draft',online_booking_enabled:true,website_visible:false,display_order:998,website_content:{}}]),/SERVICE_ADDON_TARGET_REQUIRED/);
-const durationService=await admin('spa_service_save_v2',[{name:'60 分鐘測試加購',name_en:'60-minute add-on',code:'duration-test',category_id:durationCategories[0].id,target_category_ids:durationCategories.slice(0,2).map(row=>row.id),description:'測試加購',description_en:'Test add-on',duration_minutes:60,buffer_minutes:0,price_cents:10000,member_price_cents:'',image_url:'',status:'active',online_booking_enabled:true,website_visible:true,display_order:998,website_content:{}}]);
+const durationService=await admin('spa_service_save_v2',[{name:'60 分鐘測試加購',name_en:'60-minute add-on',code:'duration-test',category_id:durationCategories[0].id,target_category_ids:[],description:'測試加購',description_en:'Test add-on',duration_minutes:60,buffer_minutes:0,price_cents:10000,member_price_cents:'',image_url:'',status:'active',online_booking_enabled:true,website_visible:true,display_order:998,website_content:{}}]);
 const savedAddon=(await admin('spa_catalog_admin')).services.find(row=>row.id===durationService);
-check(savedAddon.category_code==='add_on'&&savedAddon.online_booking_enabled===false&&savedAddon.target_category_ids.length===2,'every newly created service is forced to an add-on and linked to selected main treatments');
+check(savedAddon.category_code==='add_on'&&savedAddon.online_booking_enabled===false&&savedAddon.target_category_ids.length===3,'every newly created service is forced to the standalone add-on category without manual parent selection');
 const groupedPublicCatalog=await publicCall('spa_catalog');
-check(groupedPublicCatalog.service_categories.length===3&&!groupedPublicCatalog.services.some(row=>row.id===durationService)&&groupedPublicCatalog.website_addons.find(row=>row.id===durationService)?.target_category_codes.length===2,'public catalog returns three main categories and displays add-ons only beneath their selected parents');
+check(groupedPublicCatalog.service_categories.length===3&&!groupedPublicCatalog.services.some(row=>row.id===durationService)&&groupedPublicCatalog.website_addons.find(row=>row.id===durationService)?.target_category_codes.length===3,'public catalog returns three bookable categories plus a separate add-on collection for the fourth website category');
 check((await admin('spa_catalog_delete',['service',durationService,'DELETE'])).result==='deleted','unused add-on service remains safely deletable');
 
 await admin('spa_payroll_adjustment_save',[actualStaff,bookingDay,'allowance',2345,'跨日期範圍測試']);

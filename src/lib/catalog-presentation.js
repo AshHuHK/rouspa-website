@@ -32,7 +32,7 @@ export function serviceCardVariant(service) {
   return Number(service?.duration_minutes) >= 120 ? 'v120' : 'v90';
 }
 
-export function serviceDurationGroups(services = [], categories = [], lang = 'zh', addons = []) {
+export function serviceDurationGroups(services = [], categories = [], lang = 'zh') {
   return serviceDurationCodes.map((code, index) => {
     const minutes = Number(code.replace('duration_', ''));
     const category = categories.find(item => item.code === code);
@@ -45,9 +45,18 @@ export function serviceDurationGroups(services = [], categories = [], lang = 'zh
       name: localized(category, 'name', lang) || (lang === 'en' ? `${minutes} minutes` : `${minutes} 分鐘`),
       displayOrder: Number(category?.display_order ?? index),
       services: items,
-      addons: addons.filter(addon => Array.isArray(addon?.target_category_codes) && addon.target_category_codes.includes(code)),
     };
   }).filter(group => group.services.length).sort((a, b) => a.displayOrder - b.displayOrder);
+}
+
+export function serviceAddonGroup(addons = [], lang = 'zh') {
+  if (!addons.length) return null;
+  return {
+    code: 'add_on',
+    name: lang === 'en' ? 'ADD-ONS' : '加購項目',
+    displayOrder: 900,
+    services: addons,
+  };
 }
 
 export function servicePresentationCards(service, lang = 'zh') {
