@@ -237,6 +237,7 @@ check((await admin('spa_catalog_delete',['product',disposableProduct,'DELETE']))
 check((await admin('spa_catalog_delete',['product',product.id,'DELETE'])).result==='archived'&&(await db.query('select status from spa_products where id=$1',[product.id])).rows[0].status==='archived','catalog item with transaction history is safely archived instead of breaking records');
 
 await db.exec(await readFile(new URL('../supabase/migrations/202610040004_duration_catalog_payroll_versions.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/202610040005_payroll_adjustment_reconciliation.sql',import.meta.url),'utf8'));
 const durationCatalog=await admin('spa_catalog_admin');
 const durationCategories=durationCatalog.service_categories.filter(row=>row.active);
 check(durationCategories.length===4&&['duration_45','duration_60','duration_90','duration_120'].every(code=>durationCategories.some(row=>row.code===code)),'service master data exposes exactly four active duration categories');
@@ -247,6 +248,13 @@ const durationService=await admin('spa_service_save_v2',[{name:'60 分鐘測試�
 const groupedPublicCatalog=await publicCall('spa_catalog');
 check(groupedPublicCatalog.service_categories.length===4&&groupedPublicCatalog.website_services.find(row=>row.id===durationService)?.category_code==='duration_60','public catalog returns four duration categories and category metadata for automatic grouping');
 check((await admin('spa_catalog_delete',['service',durationService,'DELETE'])).result==='deleted','unused duration service remains safely deletable');
+
+await admin('spa_payroll_adjustment_save',[actualStaff,bookingDay,'allowance',2345,'跨日期範圍測試']);
+const adjustmentRange=await admin('spa_payroll_admin',[today,bookingDay,null]);
+const adjustmentRow=adjustmentRange.preview.find(row=>row.staff_id===actualStaff),adjustmentDetail=await admin('spa_payroll_staff_detail',[actualStaff,today,bookingDay]);
+check(Number(adjustmentRow.allowance_cents)>=2345&&adjustmentRange.adjustments.some(row=>row.staff_id===actualStaff&&row.period_start===bookingDay),'an adjustment is included by its effective date anywhere inside the selected payroll range');
+check(adjustmentDetail.adjustments.some(row=>row.note==='跨日期範圍測試')&&Array.isArray(adjustmentDetail.time_entries),'payroll detail exposes adjustment and attendance source records for reconciliation');
+check(Number(adjustmentRow.total_cents)===Math.max(0,Number(adjustmentRow.base_cents)+Number(adjustmentRow.service_commission_cents)+Number(adjustmentRow.product_commission_cents)+Number(adjustmentRow.designated_bonus_cents)+Number(adjustmentRow.overtime_cents)+Number(adjustmentRow.bonus_cents)+Number(adjustmentRow.allowance_cents)-Number(adjustmentRow.deduction_cents)),'payroll total reconciles exactly to all displayed components');
 
 const createdRule=await admin('spa_payroll_rule_create',['版本管理測試',today,240,true,2760,3240,8280]);
 const versionAdmin=await admin('spa_payroll_admin',[today,today,createdRule]);
