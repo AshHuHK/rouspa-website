@@ -46,10 +46,10 @@ export function StaffSelf({data}) {
  if (!data.profile) return <Empty>此帳號尚未綁定人員資料，請由店主在「人員管理」配置登入帳號。</Empty>;
  const s=data.profile,m=data.metrics;
  return <><div className="card"><h2>{s.name}</h2><p>{s.title} · {payLabel(s)} · 療程提成 {(s.commission_bps/100).toFixed(2)}%</p><p className="muted">累計完成 {data.lifetime_completed} 堂。以下績效按上方療程營業日期統計，薪酬設定不是已發放薪資。</p></div>
- <div className="grid">{[['已完成療程',m.completed],['服務分鐘',m.minutes],['已結帳提成',money(m.commission_cents)],['平均評分／評價數',`${m.rating??'—'} / ${m.reviews}`]].map(([label,value])=><div className="card" key={label}><p className="muted">{label}</p><div className="metric">{value}</div></div>)}</div>
- <p className="muted">提成使用結帳時的比例快照，已退款療程不計入。評分包括已收到的待審核評價，公開顯示仍由店主審核。</p>
+ <div className="grid">{[['實際完成療程',m.completed],['已結帳／待結帳',`${m.settled_completed} / ${m.unsettled_completed}`],['已結帳服務分鐘',m.minutes],['已結帳提成',money(m.commission_cents)],['平均評分／評價數',`${m.rating??'—'} / ${m.reviews}`]].map(([label,value])=><div className="card" key={label}><p className="muted">{label}</p><div className="metric">{value}</div></div>)}</div>
+ <p className="muted">完成堂數、提成與評價均依門店最後確認的實際服務技師計入。提成只計算已結帳且未退款的療程。</p>
  <h2>我的評價</h2>{!data.reviews.length&&<Empty>這段期間尚未收到評價。</Empty>}{data.reviews.map((r,i)=><article className="card" key={i} style={{marginTop:12}}><h3>{'★'.repeat(r.rating)} · {r.service_name}</h3><p className="muted">{r.reference} · {dateTime(r.created_at)} · {{pending:'待審核',published:'已公開',hidden:'未公開'}[r.status]}</p><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{r.comment || '僅評分'}</p>{r.reply&&<p>店家回覆：{r.reply}</p>}</article>)}
- <p className="muted">最多顯示最近 100 則，評價總數包含整個所選期間。</p><h2>我的每週排班</h2>{data.shifts.map(s=><p key={s.id}>週{'日一二三四五六'[s.weekday]} · {minutes(s.start_minute)}–{minutes(s.end_minute)}</p>)}{!data.shifts.length&&<Empty/>}
+ <p className="muted">最多顯示最近 100 則，評價總數包含整個所選期間。</p><h2>我的每日排班</h2>{(data.daily_shifts||[]).map(s=><p key={s.id}>{s.business_date} · {s.is_working?`${minutes(s.start_minute)}–${minutes(s.end_minute)}`:'休班'}{s.note?` · ${s.note}`:''}</p>)}{!(data.daily_shifts||[]).length&&<p className="muted">所選期間沒有每日覆蓋設定，使用下方每週排班設定。</p>}<h2>我的每週排班設定</h2>{data.shifts.map(s=><p key={s.id}>週{'日一二三四五六'[s.weekday]} · {minutes(s.start_minute)}–{minutes(s.end_minute)}</p>)}{!data.shifts.length&&<Empty/>}
  <h2>我的休假</h2>{data.time_off.map(t=><p key={t.id}>{dateTime(t.starts_at)}–{dateTime(t.ends_at)} · {t.reason}</p>)}{!data.time_off.length&&<Empty/>}</>;
 }
 const minutes=n=>`${n>=1440?'翌日 ':''}${String(Math.floor(n/60)%24).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;

@@ -118,6 +118,7 @@ check(preserved.name_snapshot===sold.name_snapshot&&preserved.unit_price_cents==
 check((await db.query("select count(*) n from spa_audit where action in ('role_profile.saved','catalog.bulk','overtime.created','payroll.finalized','payroll.reopened','order.paid')")).rows[0].n>=6,'high-impact changes are audited');
 
 await db.exec(await readFile(new URL('../supabase/migrations/202610030006_admin_controls.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/202610030007_staff_attribution_roster_payroll.sql',import.meta.url),'utf8'));
 const restrictedSession=await call(catalogUser,'spa_session');
 check(restrictedSession.permissions.length===3&&['dashboard.view','appointments.view','reviews.view'].every(permission=>restrictedSession.permissions.includes(permission)),'migration enforces the fixed non-owner permission boundary');
 await rejected(()=>call(catalogUser,'spa_catalog_admin'));
@@ -132,6 +133,40 @@ check((await as('anon',null,'select * from spa_availability($1,$2,$3)',[service.
 await admin('spa_business_day_override_save',[bookingDay,true,600,1560,'测试营业']);
 check((await as('anon',null,'select * from spa_availability($1,$2,$3)',[service.id,bookingDay,null])).length>0,'open-day override restores public availability within its window');
 check((await publicCall('spa_catalog')).business_hours.length===7,'public catalog exposes the same weekly hours used by booking');
+
+const originalStaff=appointment.staff_id;
+const actualStaff=(await db.query('select id from spa_staff where id<>$1 and active and archived_at is null order by display_order limit 1',[originalStaff])).rows[0].id;
+await admin('spa_daily_shift_save',[actualStaff,bookingDay,false,600,1560,'每日排休測試']);
+check(!(await as('anon',null,'select * from spa_availability($1,$2,$3)',[service.id,bookingDay,actualStaff])).some(row=>row.available),'daily rest roster removes the technician from public availability');
+await admin('spa_daily_shift_save',[actualStaff,bookingDay,true,600,1560,'每日上班測試']);
+check((await as('anon',null,'select * from spa_availability($1,$2,$3)',[service.id,bookingDay,actualStaff])).some(row=>row.available)&&(await admin('spa_team_os')).daily_shifts.some(row=>row.staff_id===actualStaff&&row.business_date===bookingDay),'daily roster overrides the weekly template and is returned to personnel management');
+
+await db.query('update spa_staff set commission_bps=1000 where id=$1',[originalStaff]);
+await db.query('update spa_staff set commission_bps=2500 where id=$1',[actualStaff]);
+let attributionSlot=(await as('anon',null,'select * from spa_availability($1,$2,$3)',[service.id,bookingDay,originalStaff])).find(row=>row.available);
+const attributionBooking=await publicCall('spa_create_booking',[randomUUID(),service.id,bookingDay,attributionSlot.starts_at,originalStaff,'實際技師測試','0911888001',0,'']);
+const attributionAppointment=(await db.query('select * from spa_appointments where manage_token=$1',[attributionBooking.manage_token])).rows[0];
+await db.query("update spa_appointments set status='completed' where id=$1",[attributionAppointment.id]);
+const attributionCheckout=await admin('spa_checkout',[randomUUID(),attributionAppointment.id,0,0,null,0,'cash']);
+check(attributionCheckout.commission_cents===Math.round(Number(attributionAppointment.price_cents)*0.1),'checkout commission reads the assigned personnel rate');
+await publicCall('spa_submit_review',[attributionAppointment.review_token,5,'實際服務技師評價']);
+const reassigned=await admin('spa_appointment_reassign',[attributionAppointment.id,actualStaff,'現場改由其他技師完成']);
+const updatedAttribution=(await db.query('select staff_id from spa_appointments where id=$1',[attributionAppointment.id])).rows[0];
+const updatedCommission=(await db.query('select commission_cents from spa_checkouts where appointment_id=$1',[attributionAppointment.id])).rows[0].commission_cents;
+const actualName=(await db.query('select name from spa_staff where id=$1',[actualStaff])).rows[0].name;
+check(updatedAttribution.staff_id===actualStaff&&updatedCommission===Math.round(Number(attributionAppointment.price_cents)*0.25)&&reassigned.review_reassigned,'actual technician reassignment moves the appointment and recalculates commission');
+check((await admin('spa_reviews_admin')).reviews.find(row=>row.appointment_id===attributionAppointment.id).therapist===actualName,'existing review follows the actual technician instead of the originally requested technician');
+const attributionRow=(await admin('spa_admin_bookings',[bookingDay,bookingDay])).find(row=>row.id===attributionAppointment.id);
+check(attributionRow.original_staff_id===originalStaff&&attributionRow.staff_id===actualStaff&&Number(attributionRow.staff_change_count)===1,'booking output preserves original and actual technician attribution');
+
+attributionSlot=(await as('anon',null,'select * from spa_availability($1,$2,$3)',[service.id,bookingDay,actualStaff])).find(row=>row.available);
+const unsettledBooking=await publicCall('spa_create_booking',[randomUUID(),service.id,bookingDay,attributionSlot.starts_at,actualStaff,'待結帳測試','0911888002',0,'']);
+const unsettledAppointment=(await db.query('select * from spa_appointments where manage_token=$1',[unsettledBooking.manage_token])).rows[0];
+await db.query("update spa_appointments set status='completed' where id=$1",[unsettledAppointment.id]);
+const linkedPayroll=(await admin('spa_payroll_preview',[bookingDay,bookingDay,null])).find(row=>row.staff_id===actualStaff);
+check(linkedPayroll.completed_count===2&&linkedPayroll.service_count===1&&linkedPayroll.unsettled_completed_count===1&&linkedPayroll.service_commission_cents===updatedCommission,'payroll uses actual technician and settled completed orders while flagging unfinished checkout');
+const payrollSource=await admin('spa_payroll_staff_detail',[actualStaff,bookingDay,bookingDay]);
+check(payrollSource.services.length===2&&payrollSource.services.some(row=>row.settlement_status==='settled')&&payrollSource.services.some(row=>row.settlement_status==='unsettled'),'payroll detail traces every settled and unsettled service source');
 
 check((await admin('spa_customers_list')).find(row=>row.id===customer).customer_type==='member','existing wallet or package customers are classified as members');
 const disposableGuest=await admin('spa_customer_save_v2',[null,'可刪消費客人','0911000001','','一般會員','guest test','guest',null]);
