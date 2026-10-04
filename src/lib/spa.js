@@ -29,6 +29,7 @@ const errors = {
   RATE_LIMIT: '提交次數較多，請稍後再試或聯絡門店。', REVIEW_NOT_ELIGIBLE: '療程完成後才能評價。',
   EXISTING_BOOKINGS: '此時段已有預約，請先改期再設定休假。', REASON_REQUIRED: '請填寫原因。',
   SAME_STAFF: '所選技師與目前實際技師相同。', STAFF_NOT_ACTIVE: '此人員已停用或封存，無法排班或接受療程。',
+  DEPARTURE_DETAILS_REQUIRED: '請填寫離職日期與離職原因。',
   STAFF_SKILL_REQUIRED: '此技師尚未取得該療程的服務資格，請先在人員檔案啟用療程。',
   STAFF_NOT_AVAILABLE: '此技師不在當日排班內、正在休假或同時段已有其他預約。',
   TOO_EARLY: '尚未到預約時間，無法到店、完成或標記未到。', OWNER_SELF_CHANGE: '不能停用或降級自己的店主帳號。',

@@ -119,6 +119,9 @@ check((await db.query("select count(*) n from spa_audit where action in ('role_p
 
 await db.exec(await readFile(new URL('../supabase/migrations/202610030006_admin_controls.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/202610030007_staff_attribution_roster_payroll.sql',import.meta.url),'utf8'));
+const legacyDemo=(await db.query("select id from spa_staff where name='王詩涵'")).rows[0].id;
+await db.query('update spa_staff set active=false where id=$1',[legacyDemo]);
+await db.exec(await readFile(new URL('../supabase/migrations/202610030008_staff_departure_payroll_scope.sql',import.meta.url),'utf8'));
 const restrictedSession=await call(catalogUser,'spa_session');
 check(restrictedSession.permissions.length===3&&['dashboard.view','appointments.view','reviews.view'].every(permission=>restrictedSession.permissions.includes(permission)),'migration enforces the fixed non-owner permission boundary');
 await rejected(()=>call(catalogUser,'spa_catalog_admin'));
@@ -167,6 +170,13 @@ const linkedPayroll=(await admin('spa_payroll_preview',[bookingDay,bookingDay,nu
 check(linkedPayroll.completed_count===2&&linkedPayroll.service_count===1&&linkedPayroll.unsettled_completed_count===1&&linkedPayroll.service_commission_cents===updatedCommission,'payroll uses actual technician and settled completed orders while flagging unfinished checkout');
 const payrollSource=await admin('spa_payroll_staff_detail',[actualStaff,bookingDay,bookingDay]);
 check(payrollSource.services.length===2&&payrollSource.services.some(row=>row.settlement_status==='settled')&&payrollSource.services.some(row=>row.settlement_status==='unsettled'),'payroll detail traces every settled and unsettled service source');
+check(!(await admin('spa_payroll_preview',[bookingDay,bookingDay,null])).some(row=>row.staff_id===legacyDemo),'inactive legacy seed person with no period activity is excluded from payroll');
+const departedStaff=await admin('spa_staff_profile_save_v2',[{name:'離職薪資測試',name_en:'Former Staff',title:'調理師',specialty:'',bio:'',phone:'',email:'',address:'',birth_date:'',hire_date:today,employment_type_code:'full_time',job_title_id:'',pay_basis:'monthly',base_pay_cents:100000,commission_bps:0,is_bookable:false,website_visible:false,photo_url:'',employment_status:'departed',departed_on:bookingDay,departure_reason:'測試離職流程',services:publicCatalog.services.map(item=>item.id)}]);
+const departedProfile=(await admin('spa_team_os')).staff.find(row=>row.id===departedStaff),departedPayroll=(await admin('spa_payroll_preview',[bookingDay,bookingDay,null])).find(row=>row.staff_id===departedStaff);
+check(departedProfile.employment_status==='departed'&&departedProfile.departed_on===bookingDay&&departedProfile.active===false,'personnel profile records departure date, reason and non-bookable status');
+check(departedPayroll.employment_status==='departed'&&departedPayroll.base_cents===100000,'departed employee remains visible in payroll for the applicable period');
+await rejected(()=>admin('spa_overtime_save',[departedStaff,bookingDay,'weekday',60,'離職後加班']),/STAFF_NOT_ACTIVE/);
+check(await admin('spa_payroll_adjustment_save',[departedStaff,bookingDay,'bonus',5000,'離職結算調整']),'departed employee accepts final payroll adjustments without allowing new overtime');
 
 check((await admin('spa_customers_list')).find(row=>row.id===customer).customer_type==='member','existing wallet or package customers are classified as members');
 const disposableGuest=await admin('spa_customer_save_v2',[null,'可刪消費客人','0911000001','','一般會員','guest test','guest',null]);
@@ -194,7 +204,7 @@ check(orderPreview.counts.orders>=1,'order reset preview uses the selected Taiwa
 await admin('spa_reset_business_data',['orders',today,today,'RESET']);
 check(!(await db.query('select id from spa_orders where id=$1',[sale.id])).rows.length,'order reset removes order, item, inventory and cash links together');
 const masterData=await publicCall('spa_catalog');
-check(masterData.services.length>0&&(await admin('spa_team_os')).staff.length===6,'business resets preserve staff, services and configuration master data');
+check(masterData.services.length>0&&(await admin('spa_team_os')).staff.some(row=>row.id===departedStaff),'business resets preserve active and departed staff, services and configuration master data');
 
 await db.close();
 console.log(`PASS: ${assertions} business operating system assertions`);
