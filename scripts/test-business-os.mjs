@@ -189,6 +189,27 @@ check((await admin('spa_customer_delete',[memberProfile,'DELETE'])).mode==='arch
 await admin('spa_customer_restore',[memberProfile]);
 check(!(await db.query('select archived_at from spa_customers where id=$1',[memberProfile])).rows[0].archived_at,'archived customer profile can be restored');
 
+await db.exec(await readFile(new URL('../supabase/migrations/202610040001_compensation_pos_titles.sql',import.meta.url),'utf8'));
+const upgradedTeam=await admin('spa_team_os');
+check(upgradedTeam.staff.every(row=>row.job_title_id)&&upgradedTeam.compensation_profiles.length>=upgradedTeam.job_titles.length*upgradedTeam.employment_types.length,'every person has a job title and shared compensation profiles cover title and employment combinations');
+const activeProfile=upgradedTeam.staff.find(row=>row.employment_status==='active');
+await admin('spa_compensation_profile_save',[activeProfile.job_title_id,activeProfile.employment_type_code,'monthly',3600000,1200,800,10000,true]);
+const matchingStaff=(await admin('spa_team_os')).staff.filter(row=>row.job_title_id===activeProfile.job_title_id&&row.employment_type_code===activeProfile.employment_type_code);
+check(matchingStaff.every(row=>Number(row.base_pay_cents)===3600000&&Number(row.commission_bps)===1200),'editing one title and employment compensation profile synchronizes all matching personnel');
+const upgradedCatalog=await publicCall('spa_catalog');
+check(upgradedCatalog.staff.every(row=>row.title&&row.title_en),'public therapist choices expose localized job titles');
+const mixedSale=await admin('spa_pos_checkout',[randomUUID(),null,[{item_type:'service',item_id:service.id,quantity:1,staff_id:actualStaff},{item_type:'product',item_id:product.id,quantity:1,staff_id:actualStaff}],0,'cash','服務商品混合測試']);
+const mixedItems=(await db.query('select item_type,staff_id,commission_cents from spa_order_items where order_id=$1 order by item_type',[mixedSale.id])).rows;
+check(mixedItems.length===2&&mixedItems.some(row=>row.item_type==='service'&&row.staff_id===actualStaff)&&mixedItems.some(row=>row.item_type==='product'&&row.staff_id===actualStaff),'POS checks out service and product together with actual staff attribution');
+const mixedPayroll=await admin('spa_payroll_staff_detail',[actualStaff,today,today]);
+check(mixedPayroll.pos_services.some(row=>row.id===mixedSale.id),'POS service appears in the assigned technician payroll source');
+const reportAfterUpgrade=await admin('spa_report',[today,today]);
+check(reportAfterUpgrade.staff.every(row=>row.id!==legacyDemo&&row.job_title_name)&&Number(reportAfterUpgrade.pos_revenue_cents)>=Number(mixedSale.total_cents),'reports exclude inactive personnel and include POS revenue with active job titles');
+const disposableProduct=await admin('spa_product_save',[{sku:'DELETE-ME',name:'可刪商品',name_en:'Disposable',category_id:'',description:'',description_en:'',image_url:'',price_cents:10000,cost_cents:5000,barcode:'',unit_label:'件',unit_label_en:'piece',low_stock_threshold:1,status:'draft',website_visible:false,store_visible:false,display_order:999}]);
+await rejected(()=>admin('spa_catalog_delete',['product',disposableProduct,'WRONG']),/INVALID_CONFIRMATION/);
+check((await admin('spa_catalog_delete',['product',disposableProduct,'DELETE'])).result==='deleted'&&!(await db.query('select id from spa_products where id=$1',[disposableProduct])).rows.length,'unused catalog item can be permanently deleted after explicit confirmation');
+check((await admin('spa_catalog_delete',['product',product.id,'DELETE'])).result==='archived'&&(await db.query('select status from spa_products where id=$1',[product.id])).rows[0].status==='archived','catalog item with transaction history is safely archived instead of breaking records');
+
 const visibleBookings=await call(catalogUser,'spa_admin_bookings',[bookingDay,bookingDay]);
 check(visibleBookings.some(row=>row.id===appointment.id)&&visibleBookings.every(row=>row.phone===null&&!('manage_token' in row)),'employee schedule covers the store while hiding private booking fields');
 const appointmentPreview=await admin('spa_reset_preview',['appointments',bookingDay,bookingDay]);

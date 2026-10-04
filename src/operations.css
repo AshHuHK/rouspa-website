@@ -26,3 +26,18 @@
 @media(max-width:900px){.ops .os-launcher{grid-template-columns:repeat(2,minmax(0,1fr))}.ops .os-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ops .os-pos{grid-template-columns:1fr}.ops .os-pos>section.card{position:static}}
 @media(max-width:600px){.ops .os-hero,.ops .os-page-title,.ops .os-today-hours{display:block}.ops .os-hero button,.ops .os-page-title>button,.ops .os-today-hours>button{margin-top:14px}.ops .os-launcher,.ops .os-metrics,.ops .os-check-grid,.ops .os-reset-counts{grid-template-columns:1fr}.ops .os-launcher button{padding:16px}.ops .payroll-rule{grid-template-columns:1fr}.ops .os-cart-row{align-items:flex-start;flex-direction:column}.ops .os-main-nav{position:static}.ops .os-hours-row{grid-template-columns:1fr 1fr}.ops .os-hours-row>span{display:none}.ops .os-hours-row select{grid-column:span 1}}
 @media(prefers-reduced-motion:reduce){.ops::before,.ops .card::after{animation:none}.ops button,.ops .card,.ops input,.ops textarea,.ops select{transition:none}}
+
+/* Medium coffee operations theme with copper cyber accents. */
+.ops{--gold:#b48252;--gold-deep:#73533d;--ink:#49392f;--muted:#756457;--paper:#e8ded2;--card:#f5eee6;--line:rgba(111,78,55,.25);background-color:#e8ded2;background-image:linear-gradient(rgba(111,78,55,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(111,78,55,.045) 1px,transparent 1px),radial-gradient(circle at 12% 0,rgba(198,144,87,.22),transparent 34%),radial-gradient(circle at 92% 18%,rgba(116,159,151,.09),transparent 26%);background-size:32px 32px,32px 32px,100% 100%,100% 100%}
+.ops::before{background:linear-gradient(180deg,transparent 0,rgba(255,248,239,.12) 48%,rgba(177,124,75,.13) 50%,transparent 52%);opacity:.55}
+.ops .card{background:linear-gradient(145deg,rgba(251,246,240,.9),rgba(226,210,194,.76));border-color:rgba(111,78,55,.26);box-shadow:0 10px 28px rgba(76,51,36,.075),inset 0 1px rgba(255,255,255,.5)}
+.ops .card::before{content:"";position:absolute;right:0;top:0;width:18px;height:18px;border-top:1px solid rgba(116,159,151,.5);border-right:1px solid rgba(116,159,151,.5);pointer-events:none}
+.ops button,.ops .button{background:rgba(250,244,237,.52);border-color:rgba(111,78,55,.3)}
+.ops button:hover,.ops button.active{background:rgba(180,130,82,.17);box-shadow:0 0 0 1px rgba(180,130,82,.12),0 0 20px rgba(180,130,82,.18)}
+.ops button.primary{background:linear-gradient(135deg,#9c6f49,#6e503c);border-color:#694936;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 7px 20px rgba(91,58,38,.2),0 0 18px rgba(180,130,82,.12)}
+.ops input,.ops textarea,.ops select{background:rgba(255,251,246,.88);border-color:rgba(111,78,55,.27)}
+.ops .os-main-nav{background:linear-gradient(#e8ded2 76%,rgba(232,222,210,0))}
+.ops .os-cart-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
+.ops .os-cart-item>label{grid-column:1/-1;width:100%;margin-top:4px}
+.ops .os-product-button .badge{align-self:flex-start}
+@media(max-width:600px){.ops .os-cart-item{grid-template-columns:1fr}.ops .os-cart-item>label{grid-column:auto}}

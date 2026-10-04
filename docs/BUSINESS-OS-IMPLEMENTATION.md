@@ -44,7 +44,8 @@
 - `spa_employment_types`：全职、兼职、其他聘雇类型，可继续新增和封存。
 - `spa_job_titles`：职称与排序，和后台权限角色分开。
 - `spa_permission_definitions`、`spa_role_profiles`、`spa_role_permissions`：角色权限模型。
-- `spa_staff`：英文名、手机、邮箱、地址、生日、到职日、聘雇类型、职称、薪酬基准、头像、接单和官网显示状态。
+- `spa_staff`：英文名、手机、邮箱、地址、生日、到职日、聘雇类型、职称、头像、接单和官网显示状态；薪资由职称与聘雇类型的共享规则管理。
+- `spa_compensation_profiles`：按「职称 × 聘雇类型」保存基本薪酬、服务提成、商品提成及指定客奖金。
 - `spa_service_categories`、扩充后的 `spa_services`：分类、中英文说明、图片、会员价、草稿/上架/封存、官网和线上预约开关。
 - `spa_product_categories`、`spa_products`、`spa_inventory_entries`：商品与库存流水。
 - `spa_orders`、`spa_order_items`：POS 订单和成交快照。
@@ -131,7 +132,7 @@ React 中原本硬编码的官网疗程文案和 18 项商店商品已移入数�
 - PostgreSQL 预约/会员/储值/套票/结账/退款/评价/改期：92 项通过。
 - 员工权限、薪酬和评价：128 项通过。
 - 员工账号与用户名登录：44 项通过。
-- Business OS、4 床位、RLS、角色、官网同步、排班、薪资版本、倍率、阶梯提成、POS、库存、历史快照和审计：30 项通过。
+- Business OS、4 床位、RLS、角色、官网同步、排班、薪资版本、倍率、阶梯提成、混合 POS、目录删除／封存、库存、历史快照和审计：76 项通过。
 - **合计：320 项断言通过。**
 
 ### 构建与安全

@@ -40,4 +40,6 @@ export function hoursText(settings, lang = 'zh', businessHours = [], todayHours 
 
 export const statusNamesEn = {pending:'Awaiting confirmation',confirmed:'Confirmed',checked_in:'Checked in',completed:'Completed',cancelled:'Cancelled',no_show:'No-show'};
 export const publicName = (item, lang = 'zh') => lang === 'en' ? item?.name_en || item?.name : item?.name;
+export const publicTitle = (item, lang = 'zh') => lang === 'en' ? item?.title_en || item?.therapist_title_en || item?.title || item?.therapist_title : item?.title || item?.therapist_title;
+export const therapistLabel = (item, lang = 'zh') => [publicName(item, lang) || item?.therapist, publicTitle(item, lang)].filter(Boolean).join(' · ');
 export const slotLabel = (label, lang = 'zh') => lang === 'en' ? label?.replace(/^翌日\s*/, 'Next day ') : label;

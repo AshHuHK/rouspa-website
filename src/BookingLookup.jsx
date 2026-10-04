@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { rpc, errorText, dateTime, money, statusNames, taipeiDate, dateAfter } from './lib/spa.js';
 import { isInactiveBooking, canChangeBooking } from './lib/booking-state.js';
 import { useBookingClock } from './lib/useBookingClock.js';
-import { statusNamesEn, publicName, slotLabel } from './lib/public-copy.js';
+import { statusNamesEn, therapistLabel, slotLabel } from './lib/public-copy.js';
 import './booking-lookup.css';
 
 export default function BookingLookup({ lang = 'zh', standalone = false, privateToken = null }) {
@@ -96,7 +96,7 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
       {selected.map(row => <article key={row.id} className={`lookup-card ${isInactiveBooking(row, now) ? 'is-inactive' : ''}`} data-booking-id={row.id}>
         <div className="lookup-card-heading"><h3>{row.service_name}</h3><span className="lookup-status">{(en ? statusNamesEn : statusNames)[row.status]}</span></div>
         <p className="lookup-reference">{row.reference}</p><p>{dateTime(row.starts_at, lang)} → {dateTime(row.ends_at, lang)}</p>
-        <p>{t('服務技師', 'Therapist')}：{row.therapist} · {money(row.price_cents)}</p>
+        <p>{t('服務技師', 'Therapist')}：{therapistLabel(row,lang)} · {money(row.price_cents)}</p>
         {isInactiveBooking(row, now) && !['completed', 'cancelled', 'no_show'].includes(row.status) && <p className="lookup-help">{t('服務時間已過；到店及完成狀態由門店核對。', 'Service time has passed; the store confirms attendance.')}</p>}
         {canChangeBooking(row, now) ? <div className="lookup-actions"><button onClick={() => setEditing({ row, kind: 'reschedule' })}>{t('改期預約', 'Reschedule')}</button><button className="lookup-danger" onClick={() => setEditing({ row, kind: 'cancel' })}>{t('取消預約', 'Cancel booking')}</button></div>
           : !isInactiveBooking(row, now) && <p className="lookup-help">{t('已超過線上修改期限，請聯絡門店。', 'The online change deadline has passed. Please contact the store.')}</p>}
@@ -141,7 +141,7 @@ function BookingChange({ access, row, kind, lang, now, close, changed }) {
     <h4>{kind === 'cancel' ? t('確認取消這筆預約', 'Confirm cancellation') : t('選擇新的日期與時段', 'Choose a new date and time')}</h4>
     {kind === 'reschedule' && <div className="lookup-fields">
       <label>{t('新日期', 'New date')}<input required type="date" min={taipeiDate(new Date(now))} max={dateAfter(catalog?.settings.booking_days || 30, taipeiDate(new Date(now)))} value={date} onChange={e => setDate(e.target.value)} /></label>
-      <label>{t('技師', 'Therapist')}<select value={staff} onChange={e => setStaff(e.target.value)}><option value="">{t('不指定技師', 'Any therapist')}</option>{catalog?.staff.filter(s => catalog.skills.some(sk => sk.staff_id === s.id && sk.service_id === row.service_id)).map(s => <option key={s.id} value={s.id}>{publicName(s, lang)}</option>)}</select></label>
+      <label>{t('技師', 'Therapist')}<select value={staff} onChange={e => setStaff(e.target.value)}><option value="">{t('不指定技師', 'Any therapist')}</option>{catalog?.staff.filter(s => catalog.skills.some(sk => sk.staff_id === s.id && sk.service_id === row.service_id)).map(s => <option key={s.id} value={s.id}>{therapistLabel(s, lang)}</option>)}</select></label>
       <label className="lookup-wide">{t('可用時段', 'Available time')}<select required disabled={loading} value={start} onChange={e => setStart(e.target.value)}><option value="">{loading ? t('時段載入中…', 'Loading…') : t('請選擇時段', 'Choose a time')}</option>{slots.filter(s => s.available).map(s => <option key={s.starts_at} value={s.starts_at}>{slotLabel(s.time_label, lang)}</option>)}</select></label>
       {!loading && !slots.some(s => s.available) && <p className="lookup-help lookup-wide">{t('此日期／技師沒有可用時段，請更換選擇。', 'No available times. Choose another date or therapist.')}</p>}
     </div>}
@@ -156,7 +156,7 @@ function BookingReview({access,row,lang,close,changed}) {
  const [rating,setRating]=useState('5'),[comment,setComment]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const t=(zh,en)=>lang==='en'?en:zh;
  return <form className="lookup-change" onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setError('');try{const result=await rpc('spa_customer_review',{p_access:access,p_appointment:row.id,p_rating:Number(rating),p_comment:comment});await changed(result,'review');}catch(e){setError(errorText(e, lang));}finally{setBusy(false);}}}>
- <h4>{t('評價服務技師','Review therapist')} · {row.therapist}</h4><label>{t('服務評分','Rating')}<select aria-label={t('服務評分','Rating')} value={rating} onChange={e=>setRating(e.target.value)}>{[5,4,3,2,1].map(n=><option key={n} value={n}>{'★'.repeat(n)} {n} / 5</option>)}</select></label>
+ <h4>{t('評價服務技師','Review therapist')} · {therapistLabel(row,lang)}</h4><label>{t('服務評分','Rating')}<select aria-label={t('服務評分','Rating')} value={rating} onChange={e=>setRating(e.target.value)}>{[5,4,3,2,1].map(n=><option key={n} value={n}>{'★'.repeat(n)} {n} / 5</option>)}</select></label>
  <label>{t('您的體驗（最多 1000 字）','Your experience (up to 1000 characters)')}<textarea maxLength={1000} rows={3} value={comment} onChange={e=>setComment(e.target.value)}/></label>
  <p className="lookup-help">{t('每次療程限評價一次。門店審核後可公開，公開內容不顯示您的姓名和手機。','One review per completed visit. Public reviews are moderated and omit your name and phone.')}</p>
  {error&&<p className="lookup-alert" role="alert">{error}</p>}<div className="lookup-actions"><button type="button" disabled={busy} onClick={close}>{t('返回','Back')}</button><button className="lookup-primary" disabled={busy}>{busy?t('提交中…','Submitting…'):t('提交評價','Submit review')}</button></div></form>;

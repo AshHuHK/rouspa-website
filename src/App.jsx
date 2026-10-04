@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import BookingLookup from "./BookingLookup.jsx";
-import { STORE, businessTimeText, hoursText, publicName, slotLabel } from "./lib/public-copy.js";
+import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistLabel, slotLabel } from "./lib/public-copy.js";
 import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 
 // ============================================================
@@ -1402,7 +1402,8 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
                         style={{ padding: "28px 20px", borderRadius: "4px", textAlign: "center" }}>
                         <div style={{ width: "56px", height: "56px", borderRadius: "50%", margin: "0 auto 14px", background: `linear-gradient(135deg, rgba(163,130,63,0.15), rgba(255,255,255,0.5))`, border: "1px solid rgba(163,130,63,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "#a3823f", fontWeight: 600 }}>{m.name.charAt(0)}</div>
                         <div style={{ fontSize: "14px", fontWeight: 600, letterSpacing: "2px", marginBottom: "4px", color: "#4a443a" }}>{publicName(m, lang)}</div>
-                        <div style={{ fontSize: "11px", color: "rgba(74, 68, 58, 0.6)" }}>{lang === "zh" ? m.specialty : m.title === "首席調理師" ? "Lead therapist" : m.title === "資深調理師" ? "Senior therapist" : "Therapist"}</div>
+                        <div style={{ fontSize: "11px", fontWeight: 600, color: "#8a6941" }}>{publicTitle(m, lang)}</div>
+                        {m.specialty&&<div style={{ fontSize: "10px", marginTop: "3px", color: "rgba(74, 68, 58, 0.58)" }}>{m.specialty}</div>}
                       </div>
                     ))}
                   </div>
@@ -1475,7 +1476,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
                     <div style={{ display: "grid", gap: "12px" }}>
                       {[
                         [lang === "zh" ? "服務" : "Service", publicName(services[selectedService], lang)],
-                        [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : publicName(therapists.find(m => m.id === selectedTherapist), lang)],
+                        [lang === "zh" ? "技師" : "Therapist", selectedTherapist === -1 ? t.booking.anyTherapist : therapistLabel(therapists.find(m => m.id === selectedTherapist), lang)],
                         [lang === "zh" ? "日期" : "Date", selectedDate],
                         [lang === "zh" ? "時間" : "Time", slotLabel(bookedSlots.find(s => s.starts_at === selectedTime)?.time_label, lang)],
                         [lang === "zh" ? "費用" : "Price", money(services[selectedService]?.price_cents || 0)],
