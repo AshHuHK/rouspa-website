@@ -28,15 +28,18 @@
 @media(prefers-reduced-motion:reduce){.ops::before,.ops .card::after{animation:none}.ops button,.ops .card,.ops input,.ops textarea,.ops select{transition:none}}
 
 /* Medium coffee operations theme with copper cyber accents. */
-.ops{--gold:#b48252;--gold-deep:#73533d;--ink:#49392f;--muted:#756457;--paper:#e8ded2;--card:#f5eee6;--line:rgba(111,78,55,.25);background-color:#e8ded2;background-image:linear-gradient(rgba(111,78,55,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(111,78,55,.045) 1px,transparent 1px),radial-gradient(circle at 12% 0,rgba(198,144,87,.22),transparent 34%),radial-gradient(circle at 92% 18%,rgba(116,159,151,.09),transparent 26%);background-size:32px 32px,32px 32px,100% 100%,100% 100%}
-.ops::before{background:linear-gradient(180deg,transparent 0,rgba(255,248,239,.12) 48%,rgba(177,124,75,.13) 50%,transparent 52%);opacity:.55}
-.ops .card{background:linear-gradient(145deg,rgba(251,246,240,.9),rgba(226,210,194,.76));border-color:rgba(111,78,55,.26);box-shadow:0 10px 28px rgba(76,51,36,.075),inset 0 1px rgba(255,255,255,.5)}
+.ops{--gold:#a96f45;--gold-deep:#654532;--ink:#3f3028;--muted:#6c5749;--paper:#c7ad94;--card:#dfcbb8;--line:rgba(91,58,39,.32);background-color:#c3a68c;background-image:linear-gradient(rgba(88,55,37,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(88,55,37,.07) 1px,transparent 1px),radial-gradient(circle at 12% 0,rgba(154,98,58,.32),transparent 36%),radial-gradient(circle at 92% 18%,rgba(83,125,116,.10),transparent 27%),linear-gradient(145deg,#cbb39c 0%,#bea086 100%);background-size:32px 32px,32px 32px,100% 100%,100% 100%,100% 100%}
+.ops::before{background:linear-gradient(180deg,transparent 0,rgba(246,224,202,.08) 48%,rgba(122,75,45,.18) 50%,transparent 52%);opacity:.62}
+.ops .card{background:linear-gradient(145deg,rgba(232,216,198,.92),rgba(199,169,142,.82));border-color:rgba(91,58,39,.31);box-shadow:0 12px 30px rgba(67,42,29,.13),inset 0 1px rgba(255,244,232,.38)}
 .ops .card::before{content:"";position:absolute;right:0;top:0;width:18px;height:18px;border-top:1px solid rgba(116,159,151,.5);border-right:1px solid rgba(116,159,151,.5);pointer-events:none}
-.ops button,.ops .button{background:rgba(250,244,237,.52);border-color:rgba(111,78,55,.3)}
+.ops button,.ops .button{background:rgba(229,210,191,.68);border-color:rgba(91,58,39,.34)}
 .ops button:hover,.ops button.active{background:rgba(180,130,82,.17);box-shadow:0 0 0 1px rgba(180,130,82,.12),0 0 20px rgba(180,130,82,.18)}
 .ops button.primary{background:linear-gradient(135deg,#9c6f49,#6e503c);border-color:#694936;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 7px 20px rgba(91,58,38,.2),0 0 18px rgba(180,130,82,.12)}
-.ops input,.ops textarea,.ops select{background:rgba(255,251,246,.88);border-color:rgba(111,78,55,.27)}
-.ops .os-main-nav{background:linear-gradient(#e8ded2 76%,rgba(232,222,210,0))}
+.ops input,.ops textarea,.ops select{background:rgba(239,224,208,.92);border-color:rgba(91,58,39,.31)}
+.ops .os-main-nav{background:linear-gradient(#c7ad94 76%,rgba(199,173,148,0))}
+.ops .os-hero{background:linear-gradient(135deg,rgba(157,101,63,.23),rgba(228,208,188,.58))}
+.ops .os-launcher button{background:linear-gradient(145deg,rgba(231,214,196,.82),rgba(202,174,149,.68));box-shadow:0 8px 22px rgba(67,42,29,.1)}
+.ops th{background:rgba(232,214,196,.42)}
 .ops .os-cart-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
 .ops .os-cart-item>label{grid-column:1/-1;width:100%;margin-top:4px}
 .ops .os-product-button .badge{align-self:flex-start}

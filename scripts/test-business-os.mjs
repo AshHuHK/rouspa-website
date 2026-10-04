@@ -238,16 +238,19 @@ check((await admin('spa_catalog_delete',['product',product.id,'DELETE'])).result
 
 await db.exec(await readFile(new URL('../supabase/migrations/202610040004_duration_catalog_payroll_versions.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/202610040005_payroll_adjustment_reconciliation.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/202610040006_service_addons.sql',import.meta.url),'utf8'));
 const durationCatalog=await admin('spa_catalog_admin');
-const durationCategories=durationCatalog.service_categories.filter(row=>row.active);
-check(durationCategories.length===4&&['duration_45','duration_60','duration_90','duration_120'].every(code=>durationCategories.some(row=>row.code===code)),'service master data exposes exactly four active duration categories');
-check(durationCatalog.services.every(row=>row.category_id===durationCategories.find(category=>category.code===`duration_${row.duration_minutes}`)?.id),'existing services are migrated into the matching duration category');
-const duration60=durationCategories.find(row=>row.code==='duration_60');
-await rejected(()=>admin('spa_service_save_v2',[{name:'分類不一致測試',name_en:'Mismatch',code:'mismatch-test',category_id:duration60.id,description:'',description_en:'',duration_minutes:90,buffer_minutes:15,price_cents:10000,member_price_cents:'',image_url:'',status:'draft',online_booking_enabled:false,website_visible:false,display_order:998,website_content:{}}]),/SERVICE_DURATION_CATEGORY_MISMATCH/);
-const durationService=await admin('spa_service_save_v2',[{name:'60 分鐘測試服務',name_en:'60-minute test',code:'duration-test',category_id:duration60.id,description:'測試服務',description_en:'Test service',duration_minutes:60,buffer_minutes:15,price_cents:10000,member_price_cents:'',image_url:'',status:'active',online_booking_enabled:true,website_visible:true,display_order:998,website_content:{}}]);
+const durationCategories=durationCatalog.service_categories.filter(row=>row.active&&/^duration_/.test(row.code));
+const addonCategory=durationCatalog.service_categories.find(row=>row.active&&row.code==='add_on');
+check(durationCategories.length===3&&['duration_45','duration_90','duration_120'].every(code=>durationCategories.some(row=>row.code===code))&&!durationCatalog.service_categories.find(row=>row.code==='duration_60').active,'service master data exposes only the three fixed main treatment categories');
+check(durationCatalog.services.filter(row=>row.category_code!=='add_on').every(row=>row.category_id===durationCategories.find(category=>category.code===`duration_${row.duration_minutes}`)?.id),'existing main services stay in their matching fixed duration category');
+await rejected(()=>admin('spa_service_save_v2',[{name:'未指定歸屬測試',name_en:'Missing target',code:'missing-target-test',category_id:addonCategory.id,target_category_ids:[],description:'',description_en:'',duration_minutes:60,buffer_minutes:0,price_cents:10000,member_price_cents:'',image_url:'',status:'draft',online_booking_enabled:true,website_visible:false,display_order:998,website_content:{}}]),/SERVICE_ADDON_TARGET_REQUIRED/);
+const durationService=await admin('spa_service_save_v2',[{name:'60 分鐘測試加購',name_en:'60-minute add-on',code:'duration-test',category_id:durationCategories[0].id,target_category_ids:durationCategories.slice(0,2).map(row=>row.id),description:'測試加購',description_en:'Test add-on',duration_minutes:60,buffer_minutes:0,price_cents:10000,member_price_cents:'',image_url:'',status:'active',online_booking_enabled:true,website_visible:true,display_order:998,website_content:{}}]);
+const savedAddon=(await admin('spa_catalog_admin')).services.find(row=>row.id===durationService);
+check(savedAddon.category_code==='add_on'&&savedAddon.online_booking_enabled===false&&savedAddon.target_category_ids.length===2,'every newly created service is forced to an add-on and linked to selected main treatments');
 const groupedPublicCatalog=await publicCall('spa_catalog');
-check(groupedPublicCatalog.service_categories.length===4&&groupedPublicCatalog.website_services.find(row=>row.id===durationService)?.category_code==='duration_60','public catalog returns four duration categories and category metadata for automatic grouping');
-check((await admin('spa_catalog_delete',['service',durationService,'DELETE'])).result==='deleted','unused duration service remains safely deletable');
+check(groupedPublicCatalog.service_categories.length===3&&!groupedPublicCatalog.services.some(row=>row.id===durationService)&&groupedPublicCatalog.website_addons.find(row=>row.id===durationService)?.target_category_codes.length===2,'public catalog returns three main categories and displays add-ons only beneath their selected parents');
+check((await admin('spa_catalog_delete',['service',durationService,'DELETE'])).result==='deleted','unused add-on service remains safely deletable');
 
 await admin('spa_payroll_adjustment_save',[actualStaff,bookingDay,'allowance',2345,'跨日期範圍測試']);
 const adjustmentRange=await admin('spa_payroll_admin',[today,bookingDay,null]);
