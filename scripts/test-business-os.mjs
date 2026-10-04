@@ -191,6 +191,7 @@ check(!(await db.query('select archived_at from spa_customers where id=$1',[memb
 
 await db.exec(await readFile(new URL('../supabase/migrations/202610040001_compensation_pos_titles.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/202610040002_payroll_policy_engine.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/202610040003_payroll_document_rule_version.sql',import.meta.url),'utf8'));
 const upgradedTeam=await admin('spa_team_os');
 check(upgradedTeam.staff.every(row=>row.job_title_id)&&upgradedTeam.compensation_profiles.length>=upgradedTeam.job_titles.length*upgradedTeam.employment_types.length,'every person has a job title and shared compensation profiles cover title and employment combinations');
 const activeProfile=upgradedTeam.staff.find(row=>row.employment_status==='active');
@@ -199,6 +200,9 @@ await admin('spa_compensation_profile_save_v2',[activeProfile.job_title_id,activ
 const matchingStaff=(await admin('spa_team_os')).staff.filter(row=>row.job_title_id===activeProfile.job_title_id&&row.employment_type_code===activeProfile.employment_type_code);
 check(matchingStaff.every(row=>Number(row.base_pay_cents)===3600000&&Number(row.commission_bps)===1200),'editing one title and employment compensation profile synchronizes all matching personnel');
 const policyAdmin=await admin('spa_payroll_admin',[today,today,null]);
+const documentRule=policyAdmin.rules.find(row=>row.status==='active');
+const documentFullTimeTiers=policyAdmin.tiers.filter(row=>row.rule_version_id===documentRule.id&&row.employment_type_code==='full_time'&&row.metric==='service_minutes');
+check(documentRule.name==='技師薪資制度（文件版）'&&documentFullTimeTiers.some(row=>Number(row.threshold_from)===3900),'document payroll policy becomes a new active version and starts full-time tiers after 65 service hours');
 const policyProfile=policyAdmin.compensation_profiles.find(row=>row.job_title_id===activeProfile.job_title_id&&row.employment_type_code===activeProfile.employment_type_code);
 check(Number(policyProfile.designated_client_bonus_bps)===500&&Number(policyProfile.commission_start_service_minutes)===3900,'job title policy stores proportional designated bonus and editable service-hour threshold');
 await admin('spa_time_entry_save',[null,activeProfile.id,today,`${today}T10:00:00+08:00`,`${today}T18:00:00+08:00`,60,'薪資制度測試']);
