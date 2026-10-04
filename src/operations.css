@@ -145,3 +145,17 @@
  .ops .payroll-kpis article{min-height:auto}
  .ops .payroll-tabs button{padding:10px 13px}
 }
+
+/* Catalog presentation editor: the same structured content drives every public service card. */
+.ops .catalog-presentation-editor{display:grid;gap:14px;margin:22px 0;padding:18px;border:1px solid var(--line);border-radius:9px;background:linear-gradient(145deg,rgba(255,251,246,.7),rgba(214,190,164,.2))}
+.ops .catalog-presentation-editor h3{margin:0 0 4px;color:var(--gold-deep)}
+.ops .catalog-presentation-editor details{border:1px solid var(--line);border-radius:7px;background:rgba(255,251,246,.55);overflow:hidden}
+.ops .catalog-presentation-editor summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;cursor:pointer;font-weight:650;color:var(--ink)}
+.ops .catalog-presentation-list{display:grid;gap:12px;padding:0 12px 12px}
+.ops .catalog-presentation-list>.card{padding:14px;box-shadow:none}
+.ops .catalog-presentation-title{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.ops .catalog-presentation-title button{padding:7px 10px}
+@media(max-width:700px){
+ .ops .catalog-presentation-editor{padding:14px}
+ .ops .catalog-presentation-title{align-items:flex-start}
+}

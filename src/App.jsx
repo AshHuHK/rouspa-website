@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import BookingLookup from "./BookingLookup.jsx";
 import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistLabel, slotLabel } from "./lib/public-copy.js";
 import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
+import { serviceCardVariant, servicePresentationCards } from "./lib/catalog-presentation.js";
 
 // ============================================================
 // 🔧 CONFIGURATION
@@ -181,21 +182,25 @@ const SealLogo = ({ size = 44, variant = "mark" }) => (
 // 圓圈章印（清・養・通）+ 展開式方子卡片
 function FormulaCard({ stamp, name, sub, steps, isOpen, onToggle, variant = "v90" }) {
   const panelId = useId();
+  const expandable = steps.length > 0;
+  const heading = <>
+    {stamp && (
+      <span className={`seal-stamp seal-${variant}`}>
+        <span className="seal-char">{stamp}</span>
+      </span>
+    )}
+    <span className={stamp ? "formula-title" : "formula-title formula-title-center"}>
+      <span className="formula-name">{name}</span>
+      {sub && <span className="formula-sub">{sub}</span>}
+    </span>
+    {expandable && <span className="formula-toggle" aria-hidden="true">⌄</span>}
+  </>;
   return (
     <div className={`service-card formula-card ${variant} ${isOpen ? "open" : ""}`}>
-      <button type="button" className="formula-head" aria-expanded={isOpen} aria-controls={panelId} onClick={onToggle}>
-        {stamp && (
-          <span className={`seal-stamp seal-${variant}`}>
-            <span className="seal-char">{stamp}</span>
-          </span>
-        )}
-        <span className={stamp ? "formula-title" : "formula-title formula-title-center"}>
-          <span className="formula-name">{name}</span>
-          {sub && <span className="formula-sub">{sub}</span>}
-        </span>
-        <span className="formula-toggle" aria-hidden="true">⌄</span>
-      </button>
-      <div id={panelId} className="formula-body" hidden={!isOpen}>
+      {expandable
+        ? <button type="button" className="formula-head" aria-expanded={isOpen} aria-controls={panelId} onClick={onToggle}>{heading}</button>
+        : <div className="formula-head formula-head-static">{heading}</div>}
+      <div id={panelId} className="formula-body" hidden={!expandable || !isOpen}>
         <div className="formula-inner">
           <div className="formula-steps">
             {steps.map((s, i) => (
@@ -502,7 +507,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
 
   // 官網療程內容與預約價格共用後台主資料；停用或封存會同步從前台移除。
   const websiteServices = catalog?.website_services || services;
-  const serviceRituals = service => service.website_content?.[lang] || service.website_content?.zh || [];
+  const serviceRituals = service => servicePresentationCards(service, lang);
 
   return (
     <div className="public-home" data-language={lang} style={{ fontFamily: "var(--public-font)", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "clip" }}>
@@ -934,6 +939,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           width: 100%; border: 0; background: transparent; text-align: left; color: inherit; font: inherit; cursor: pointer;
           padding: 22px 26px;
         }
+        .formula-head-static { cursor: default; }
         /* 圓圈章印：清・養・通 */
         .seal-stamp {
           position: relative;
@@ -1283,8 +1289,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
             return <div key={service.id} style={{marginBottom:groupIndex===websiteServices.length-1?'40px':'70px'}} className={`service-group ${isAnimated("services")?`animate-in-delay-${Math.min(groupIndex+1,4)}`:""}`}>
               <div className="service-heading"><h3 className="service-name">{publicName(service,lang)}</h3><span className="service-price">{money(service.price_cents)}</span></div>
               <div className="service-vertical-list formula-list" style={{maxWidth:"520px",margin:"0 auto"}}>
-                {rituals.map((ritual,index)=>{const key=`${service.code}-${index}`;return <FormulaCard key={key} stamp={ritual.stamp} name={ritual.name} sub={ritual.sub} steps={ritual.steps||[]} variant={service.duration_minutes>=120?'v120':''} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;})}
-                {!rituals.length&&<p className="service-contact">{lang==='zh'?(service.description||'療程內容請洽門店'):(service.description_en||'Contact us for treatment details')}</p>}
+                {rituals.map((ritual,index)=>{const key=`${service.code}-${index}`;return <FormulaCard key={key} stamp={ritual.stamp} name={ritual.name} sub={ritual.sub} steps={ritual.steps||[]} variant={serviceCardVariant(service)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;})}
               </div>
             </div>;
           })}

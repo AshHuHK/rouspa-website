@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { STORE } from "./lib/public-copy.js";
 import { rpc, errorText, money } from "./lib/spa.js";
+import { productPresentationMark } from "./lib/catalog-presentation.js";
 
-const categoryIcons = { tea_cake: "茶", shampoo_bar: "髮", essential_oil: "香", tea_bag: "飲" };
-
-function ProductArtwork({ product, category }) {
-  const icon = categoryIcons[category?.code] || "柔";
+function ProductArtwork({ product, category, lang }) {
+  const icon = productPresentationMark(product, category, lang);
   return <div className="product-artwork" style={product.image_url ? { backgroundImage:`url(${product.image_url})` } : undefined}>
     {!product.image_url && <><span>{icon}</span><small>ROU SPA</small></>}
   </div>;
@@ -50,7 +49,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
         </div>
         {!visible.length&&<div className="shop-state">{isZh?"此分類目前沒有上架商品。":"No published products in this category."}</div>}
         <div className="product-grid">{visible.map(p=>{const category=categories.find(c=>c.id===p.category_id),soldOut=Number(p.inventory)<=0;return <article className="product-card" key={p.id}>
-          <ProductArtwork product={p} category={category}/><div className="product-copy"><h2>{name(p)}</h2><p>{description(p)}</p><div className="product-meta"><div><div className="product-price">{money(p.price_cents)}</div><div className="product-unit">{isZh?p.unit_label:(p.unit_label_en||p.unit_label)}</div></div><span className={`stock ${soldOut?'out':''}`}>{soldOut?(isZh?"售罄":"Sold out"):(isZh?"門市有貨":"In stock")}</span></div></div>
+          <ProductArtwork product={p} category={category} lang={lang}/><div className="product-copy"><h2>{name(p)}</h2><p>{description(p)}</p><div className="product-meta"><div><div className="product-price">{money(p.price_cents)}</div><div className="product-unit">{isZh?p.unit_label:(p.unit_label_en||p.unit_label)}</div></div><span className={`stock ${soldOut?'out':''}`}>{soldOut?(isZh?"售罄":"Sold out"):(isZh?"門市有貨":"In stock")}</span></div></div>
         </article>})}</div>
       </>}
       <section className="shop-visit"><h2>{isZh?"歡迎到店選購":"Available in store"}</h2><p>{isZh?STORE.ADDRESS_ZH:STORE.ADDRESS_EN}<br/><a href={`tel:${STORE.PHONE}`}>{STORE.PHONE}</a></p></section>
