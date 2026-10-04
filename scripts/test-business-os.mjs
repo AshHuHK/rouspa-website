@@ -236,6 +236,26 @@ await rejected(()=>admin('spa_catalog_delete',['product',disposableProduct,'WRON
 check((await admin('spa_catalog_delete',['product',disposableProduct,'DELETE'])).result==='deleted'&&!(await db.query('select id from spa_products where id=$1',[disposableProduct])).rows.length,'unused catalog item can be permanently deleted after explicit confirmation');
 check((await admin('spa_catalog_delete',['product',product.id,'DELETE'])).result==='archived'&&(await db.query('select status from spa_products where id=$1',[product.id])).rows[0].status==='archived','catalog item with transaction history is safely archived instead of breaking records');
 
+await db.exec(await readFile(new URL('../supabase/migrations/202610040004_duration_catalog_payroll_versions.sql',import.meta.url),'utf8'));
+const durationCatalog=await admin('spa_catalog_admin');
+const durationCategories=durationCatalog.service_categories.filter(row=>row.active);
+check(durationCategories.length===4&&['duration_45','duration_60','duration_90','duration_120'].every(code=>durationCategories.some(row=>row.code===code)),'service master data exposes exactly four active duration categories');
+check(durationCatalog.services.every(row=>row.category_id===durationCategories.find(category=>category.code===`duration_${row.duration_minutes}`)?.id),'existing services are migrated into the matching duration category');
+const duration60=durationCategories.find(row=>row.code==='duration_60');
+await rejected(()=>admin('spa_service_save_v2',[{name:'分類不一致測試',name_en:'Mismatch',code:'mismatch-test',category_id:duration60.id,description:'',description_en:'',duration_minutes:90,buffer_minutes:15,price_cents:10000,member_price_cents:'',image_url:'',status:'draft',online_booking_enabled:false,website_visible:false,display_order:998,website_content:{}}]),/SERVICE_DURATION_CATEGORY_MISMATCH/);
+const durationService=await admin('spa_service_save_v2',[{name:'60 分鐘測試服務',name_en:'60-minute test',code:'duration-test',category_id:duration60.id,description:'測試服務',description_en:'Test service',duration_minutes:60,buffer_minutes:15,price_cents:10000,member_price_cents:'',image_url:'',status:'active',online_booking_enabled:true,website_visible:true,display_order:998,website_content:{}}]);
+const groupedPublicCatalog=await publicCall('spa_catalog');
+check(groupedPublicCatalog.service_categories.length===4&&groupedPublicCatalog.website_services.find(row=>row.id===durationService)?.category_code==='duration_60','public catalog returns four duration categories and category metadata for automatic grouping');
+check((await admin('spa_catalog_delete',['service',durationService,'DELETE'])).result==='deleted','unused duration service remains safely deletable');
+
+const createdRule=await admin('spa_payroll_rule_create',['版本管理測試',today,240,true,2760,3240,8280]);
+const versionAdmin=await admin('spa_payroll_admin',[today,today,createdRule]);
+check(versionAdmin.rules.find(row=>row.id===createdRule)?.status==='active'&&versionAdmin.rules.find(row=>row.id===activePolicyRule.id)?.status==='archived','new payroll version activates and archives the previous version');
+await rejected(()=>admin('spa_payroll_rule_delete',[createdRule,'DELETE']),/PAYROLL_RULE_ACTIVE/);
+await rejected(()=>admin('spa_payroll_rule_delete',[activePolicyRule.id,'WRONG']),/PAYROLL_RULE_DELETE_CONFIRMATION_REQUIRED/);
+await admin('spa_payroll_rule_delete',[activePolicyRule.id,'DELETE']);
+check(!(await db.query('select id from spa_payroll_rule_versions where id=$1',[activePolicyRule.id])).rows.length,'unused archived payroll version can be deleted with explicit confirmation');
+
 const visibleBookings=await call(catalogUser,'spa_admin_bookings',[bookingDay,bookingDay]);
 check(visibleBookings.some(row=>row.id===appointment.id)&&visibleBookings.every(row=>row.phone===null&&!('manage_token' in row)),'employee schedule covers the store while hiding private booking fields');
 const appointmentPreview=await admin('spa_reset_preview',['appointments',bookingDay,bookingDay]);

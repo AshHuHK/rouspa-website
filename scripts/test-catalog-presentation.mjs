@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { productPresentationMark, serviceCardVariant, servicePresentationCards } from '../src/lib/catalog-presentation.js';
+import { productPresentationMark, serviceCardVariant, serviceDurationGroups, servicePresentationCards } from '../src/lib/catalog-presentation.js';
 
 const legacy = servicePresentationCards({
   name: '90分方子',
@@ -23,6 +23,17 @@ assert.equal(fallback[0].name, '按摩項目', 'new services use their public de
 assert.equal(fallback[0].sub, '120 分鐘療程');
 assert.equal(serviceCardVariant(added), 'v120');
 assert.equal(serviceCardVariant({ duration_minutes: 90 }), 'v90');
+
+const groups = serviceDurationGroups([
+  { id: 'a', duration_minutes: 45, category_code: 'duration_45' },
+  { id: 'b', duration_minutes: 60, category_code: 'duration_60' },
+  { id: 'c', duration_minutes: 60, category_code: 'duration_60' },
+], [
+  { id: '45', code: 'duration_45', name: '45 分鐘', display_order: 45 },
+  { id: '60', code: 'duration_60', name: '60 分鐘', display_order: 60 },
+  { id: '90', code: 'duration_90', name: '90 分鐘', display_order: 90 },
+]);
+assert.deepEqual(groups.map(group => [group.code, group.services.length]), [['duration_45', 1], ['duration_60', 2]], 'services group into the four fixed durations and empty groups stay hidden');
 
 assert.equal(productPresentationMark({ name: '身體乳' }, { code: 'body_care', name: '身體保養' }), '身', 'new product categories derive a stable artwork mark');
 assert.equal(productPresentationMark({ name: '普洱茶' }, { code: 'tea_cake', name: '茶餅' }), '茶', 'known product categories keep their brand mark');

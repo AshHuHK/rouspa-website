@@ -36,7 +36,12 @@ const errors = {
   REQUEST_CONFLICT: '此操作編號已用於其他記錄，請重新整理。',
   STAFF_PERMISSION_LIMIT: '員工角色只能使用營運首頁、預約與日程、評價及自己的薪資與績效。',
   RESET_CONFIRMATION_REQUIRED: '請輸入 RESET 才能執行資料重設。',
-  CUSTOMER_DELETE_CONFIRMATION_REQUIRED: '請輸入 DELETE 才能刪除或封存顧客檔案。'
+  CUSTOMER_DELETE_CONFIRMATION_REQUIRED: '請輸入 DELETE 才能刪除或封存顧客檔案。',
+  SERVICE_CATEGORY_REQUIRED: '服務必須選擇 45、60、90 或 120 分鐘分類。',
+  SERVICE_DURATION_CATEGORY_MISMATCH: '服務時間必須與所選時間分類一致。',
+  PAYROLL_RULE_DELETE_CONFIRMATION_REQUIRED: '請輸入 DELETE 才能刪除薪資制度版本。',
+  PAYROLL_RULE_ACTIVE: '目前啟用中的薪資版本不能刪除；請先建立並啟用新版本。',
+  PAYROLL_RULE_IN_USE: '此版本已有薪資結算記錄，必須保留以供核對。'
 };
 const publicErrorsEn = {
   BOOKING_ACCESS_EXPIRED: 'Your booking access has expired. Search again or reopen your private link.',

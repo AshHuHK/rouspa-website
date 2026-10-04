@@ -5,6 +5,8 @@ const productMarks = {
   tea_bag: '飲',
 };
 
+export const serviceDurationCodes = ['duration_45', 'duration_60', 'duration_90', 'duration_120'];
+
 function localized(row, field, lang) {
   if (lang === 'en') return row?.[`${field}_en`] || row?.[field] || '';
   return row?.[field] || '';
@@ -28,6 +30,23 @@ export function serviceMark(text, lang = 'zh') {
 
 export function serviceCardVariant(service) {
   return Number(service?.duration_minutes) >= 120 ? 'v120' : 'v90';
+}
+
+export function serviceDurationGroups(services = [], categories = [], lang = 'zh') {
+  return serviceDurationCodes.map((code, index) => {
+    const minutes = Number(code.replace('duration_', ''));
+    const category = categories.find(item => item.code === code);
+    const items = services.filter(service => service.category_code === code
+      || (category?.id && service.category_id === category.id)
+      || (!service.category_code && Number(service.duration_minutes) === minutes));
+    return {
+      code,
+      minutes,
+      name: localized(category, 'name', lang) || (lang === 'en' ? `${minutes} minutes` : `${minutes} 分鐘`),
+      displayOrder: Number(category?.display_order ?? index),
+      services: items,
+    };
+  }).filter(group => group.services.length).sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
 export function servicePresentationCards(service, lang = 'zh') {

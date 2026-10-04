@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import BookingLookup from "./BookingLookup.jsx";
 import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistLabel, slotLabel } from "./lib/public-copy.js";
 import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
-import { serviceCardVariant, servicePresentationCards } from "./lib/catalog-presentation.js";
+import { serviceCardVariant, serviceDurationGroups, servicePresentationCards } from "./lib/catalog-presentation.js";
 
 // ============================================================
 // 🔧 CONFIGURATION
@@ -508,6 +508,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   // 官網療程內容與預約價格共用後台主資料；停用或封存會同步從前台移除。
   const websiteServices = catalog?.website_services || services;
   const serviceRituals = service => servicePresentationCards(service, lang);
+  const websiteServiceGroups = serviceDurationGroups(websiteServices, catalog?.service_categories || [], lang);
 
   return (
     <div className="public-home" data-language={lang} style={{ fontFamily: "var(--public-font)", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "clip" }}>
@@ -940,6 +941,13 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           padding: 22px 26px;
         }
         .formula-head-static { cursor: default; }
+        .service-duration-group { max-width: 620px; margin: 0 auto 72px; }
+        .service-duration-heading { display: flex; align-items: center; gap: 18px; margin: 0 auto 28px; padding-bottom: 14px; border-bottom: 1px solid rgba(163,130,63,0.24); }
+        .service-duration-heading > span { min-width: 74px; color: #9a793e; font-family: 'Cormorant Garamond', serif; font-size: 42px; line-height: 1; text-align: right; }
+        .service-duration-heading h3 { margin: 0; color: #4a443a; font-size: 18px; font-weight: 550; letter-spacing: 2px; }
+        .service-duration-heading small { display: block; margin-top: 4px; color: rgba(74,68,58,0.5); font-size: 10px; letter-spacing: 2px; }
+        .service-category-services { display: grid; gap: 28px; }
+        .service-entry .service-heading { margin-bottom: 14px; }
         /* 圓圈章印：清・養・通 */
         .seal-stamp {
           position: relative;
@@ -1033,6 +1041,11 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           .formula-inner { padding: 18px 20px 22px; }
           .formula-steps { grid-template-columns: 1fr; gap: 11px; }
           .formula-step { font-size: 14px; }
+          .service-duration-group { margin-bottom: 52px; }
+          .service-duration-heading { gap: 13px; margin-bottom: 22px; }
+          .service-duration-heading > span { min-width: 58px; font-size: 34px; }
+          .service-duration-heading h3 { font-size: 16px; }
+          .service-category-services { gap: 24px; }
         }
       `}</style>
 
@@ -1284,15 +1297,13 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
             </p>
           </div>
 
-          {websiteServices.map((service,groupIndex)=>{
-            const rituals=serviceRituals(service);
-            return <div key={service.id} style={{marginBottom:groupIndex===websiteServices.length-1?'40px':'70px'}} className={`service-group ${isAnimated("services")?`animate-in-delay-${Math.min(groupIndex+1,4)}`:""}`}>
-              <div className="service-heading"><h3 className="service-name">{publicName(service,lang)}</h3><span className="service-price">{money(service.price_cents)}</span></div>
-              <div className="service-vertical-list formula-list" style={{maxWidth:"520px",margin:"0 auto"}}>
-                {rituals.map((ritual,index)=>{const key=`${service.code}-${index}`;return <FormulaCard key={key} stamp={ritual.stamp} name={ritual.name} sub={ritual.sub} steps={ritual.steps||[]} variant={serviceCardVariant(service)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;})}
-              </div>
-            </div>;
-          })}
+          {websiteServiceGroups.map((group,groupIndex)=><section key={group.code} className={`service-duration-group ${isAnimated("services")?`animate-in-delay-${Math.min(groupIndex+1,4)}`:""}`}>
+            <header className="service-duration-heading"><span>{group.minutes}</span><div><h3>{lang==='zh'?'分鐘療程':'MINUTE TREATMENTS'}</h3><small>{lang==='zh'?`${group.services.length} 項療程`:`${group.services.length} treatment${group.services.length===1?'':'s'}`}</small></div></header>
+            <div className="service-category-services">{group.services.map(service=>{const rituals=serviceRituals(service);return <article className="service-entry" key={service.id}>
+              <div className="service-heading"><h4 className="service-name">{publicName(service,lang)}</h4><span className="service-price">{money(service.price_cents)}</span></div>
+              <div className="service-vertical-list formula-list" style={{maxWidth:"520px",margin:"0 auto"}}>{rituals.map((ritual,index)=>{const key=`${service.id}-${index}`;return <FormulaCard key={key} stamp={ritual.stamp} name={ritual.name} sub={ritual.sub} steps={ritual.steps||[]} variant={serviceCardVariant(service)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;})}</div>
+            </article>;})}</div>
+          </section>)}
           <p className="service-contact"><a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer">{lang === "zh" ? "療程諮詢 · 聯絡 LINE" : "Questions about treatments? Contact us on LINE"} ↗</a></p>
         </div>
       </section>
