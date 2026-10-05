@@ -20,7 +20,7 @@ function Router() {
   const [lang, setLang] = useState(() => { try { return localStorage.getItem('rouspa-language') === 'en' ? 'en' : 'zh'; } catch { return 'zh'; } });
   useEffect(() => {
     try { localStorage.setItem('rouspa-language', lang); } catch {}
-    const chineseOnly = ['#admin', '#member'].includes(route);
+    const chineseOnly = ['#admin'].includes(route);
     document.documentElement.lang = !chineseOnly && lang === 'en' ? 'en' : 'zh-Hant';
     document.title = !chineseOnly && lang === 'en' ? 'ROU SPA | Head therapy · Meridian relaxation' : '柔療髮浴 | 東方頭療 · 經絡舒緩';
   }, [lang, route]);
@@ -39,7 +39,7 @@ function Router() {
   };
 
   if (route === "#lookup") return <BookingLookup standalone lang={lang} />;
-  if (route === "#member") return <Member />;
+  if (route === "#member") return <Member lang={lang} />;
   if (route.startsWith("#manage/")) return <BookingPortal token={route.slice(8)} lang={lang} />;
   if (route.startsWith("#review/")) return <BookingPortal token={route.slice(8)} review lang={lang} />;
   if (route === "#admin") {

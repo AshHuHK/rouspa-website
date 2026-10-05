@@ -1517,6 +1517,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
                   <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "40px" }}>
                     <input value={formName} onChange={e => setFormName(e.target.value)} maxLength={80} aria-label={t.booking.name} autoComplete="name" placeholder={lang === "zh" ? "您的姓名" : t.booking.name} />
                     <input value={formPhone} onChange={e => setFormPhone(e.target.value)} type="tel" maxLength={25} aria-label={t.booking.phone} autoComplete="tel" placeholder={lang === "zh" ? "您的手機號碼" : t.booking.phone} />
+                    <p style={{ margin: "-10px 2px 0", color: "rgba(74,68,58,.68)", fontSize: "12px", lineHeight: 1.7 }}>{lang === "zh" ? "首次預約會以姓名與手機號碼自動建立會員資料，無需 Email 或另外註冊；之後可查詢訂單、評價技師與查看優惠券。" : "Your first booking automatically creates a member profile using your name and phone. No email or separate registration is needed."}</p>
                     <textarea value={formNote} onChange={e => setFormNote(e.target.value)} maxLength={1000} rows={3} aria-label={t.booking.note} placeholder={t.booking.note} />
                   </div>
                   <div style={{ display: "flex", justifyContent: "center", gap: "20px" }}>
@@ -1534,7 +1535,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         </div>
       </section>
 
-      <div style={{ textAlign: "center", padding: 20, background: "#f2ede4" }}><a href="#member" style={{ color: "#a3823f", fontSize: 13 }}>{lang === "zh" ? "會員中心 · 查看儲值餘額與療程記錄" : "Member centre · Balance and visit history (Chinese)"}</a></div>
+      <div style={{ textAlign: "center", padding: 20, background: "#f2ede4" }}><a href="#member" style={{ color: "#a3823f", fontSize: 13 }}>{lang === "zh" ? "會員中心 · 訂單、療程記錄與優惠券" : "Member centre · Orders, visits and coupons"}</a></div>
 
       {/* ========== FEEDBACK（匿名意見回饋） ========== */}
       <FeedbackSection t={t} />

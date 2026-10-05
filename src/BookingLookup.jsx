@@ -67,7 +67,7 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
     request.current++; // Discard any list response fetched before this mutation succeeded.
     setRows(previous => previous.map(row => row.id === result.id ? result : row));
     setEditing(null);setView(['cancel','review'].includes(kind) ? 'inactive' : 'active');
-    setNotice(kind === 'review' ? t('謝謝您的評價，已提交給門店及服務技師。', 'Thank you. Your review has been submitted.') : kind === 'cancel' ? t('預約已取消，門店後台已同步。', 'Booking cancelled and saved to the store system.')
+    setNotice(kind === 'review' ? t('謝謝您的評價，NT$50 優惠券已發放到會員中心。', 'Thank you. Your NT$50 coupon is now in your member centre.') : kind === 'cancel' ? t('預約已取消，門店後台已同步。', 'Booking cancelled and saved to the store system.')
       : result.status === 'pending' ? t('改期已送出，等待門店確認；後台已同步。', 'Reschedule saved; awaiting store confirmation.')
       : t('預約已改期，門店後台已同步。', 'Booking rescheduled and saved to the store system.'));
     await refresh();
@@ -101,7 +101,7 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
         {canChangeBooking(row, now) ? <div className="lookup-actions"><button onClick={() => setEditing({ row, kind: 'reschedule' })}>{t('改期預約', 'Reschedule')}</button><button className="lookup-danger" onClick={() => setEditing({ row, kind: 'cancel' })}>{t('取消預約', 'Cancel booking')}</button></div>
           : !isInactiveBooking(row, now) && <p className="lookup-help">{t('已超過線上修改期限，請聯絡門店。', 'The online change deadline has passed. Please contact the store.')}</p>}
         {row.review_submitted && <p className="lookup-success">{t('已評價，謝謝您的回饋。', 'Review submitted. Thank you.')}</p>}
-        {row.can_review && !row.review_submitted && <div className="lookup-actions"><button className="lookup-primary" onClick={() => setEditing({row,kind:'review'})}>{t('評價服務技師', 'Review therapist')}</button></div>}
+        {row.can_review && !row.review_submitted && <div className="lookup-actions"><button className="lookup-primary" onClick={() => setEditing({row,kind:'review'})}>{t('評價技師 · 領 NT$50 優惠券', 'Review therapist · Get NT$50')}</button></div>}
         {isInactiveBooking(row,now) && !['completed','cancelled','no_show'].includes(row.status) && <p className="lookup-help">{t('待門店確認完成療程後，即可評價服務技師。', 'You can review your therapist once the store confirms completion.')}</p>}
         {editing?.row.id === row.id && editing.kind === 'review' && <BookingReview key={row.id} access={access} row={row} lang={lang} close={() => setEditing(null)} changed={changed}/>}
         {editing?.row.id === row.id && editing.kind !== 'review' && <BookingChange key={`${row.id}-${editing.kind}`} access={access} row={row} kind={editing.kind} lang={lang} now={now} close={() => setEditing(null)} changed={changed} />}
@@ -158,6 +158,6 @@ function BookingReview({access,row,lang,close,changed}) {
  return <form className="lookup-change" onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setError('');try{const result=await rpc('spa_customer_review',{p_access:access,p_appointment:row.id,p_rating:Number(rating),p_comment:comment});await changed(result,'review');}catch(e){setError(errorText(e, lang));}finally{setBusy(false);}}}>
  <h4>{t('評價服務技師','Review therapist')} · {therapistLabel(row,lang)}</h4><label>{t('服務評分','Rating')}<select aria-label={t('服務評分','Rating')} value={rating} onChange={e=>setRating(e.target.value)}>{[5,4,3,2,1].map(n=><option key={n} value={n}>{'★'.repeat(n)} {n} / 5</option>)}</select></label>
  <label>{t('您的體驗（最多 1000 字）','Your experience (up to 1000 characters)')}<textarea maxLength={1000} rows={3} value={comment} onChange={e=>setComment(e.target.value)}/></label>
- <p className="lookup-help">{t('每次療程限評價一次。門店審核後可公開，公開內容不顯示您的姓名和手機。','One review per completed visit. Public reviews are moderated and omit your name and phone.')}</p>
- {error&&<p className="lookup-alert" role="alert">{error}</p>}<div className="lookup-actions"><button type="button" disabled={busy} onClick={close}>{t('返回','Back')}</button><button className="lookup-primary" disabled={busy}>{busy?t('提交中…','Submitting…'):t('提交評價','Submit review')}</button></div></form>;
+ <p className="lookup-help">{t('提交後立即發放 NT$50 優惠券到會員中心；每次療程限評價和領取一次。門店審核後可公開，公開內容不顯示姓名和手機。','An NT$50 coupon is issued to your member centre immediately. One review and reward per completed visit. Public reviews omit your name and phone.')}</p>
+ {error&&<p className="lookup-alert" role="alert">{error}</p>}<div className="lookup-actions"><button type="button" disabled={busy} onClick={close}>{t('返回','Back')}</button><button className="lookup-primary" disabled={busy}>{busy?t('提交中…','Submitting…'):t('提交評價並領券','Submit and get coupon')}</button></div></form>;
 }
