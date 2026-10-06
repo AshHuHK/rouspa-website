@@ -8,6 +8,7 @@ export default defineConfig({
     rolldownOptions: {
       input: {
         main: resolve(process.cwd(), 'index.html'),
+        services: resolve(process.cwd(), 'services/index.html'),
         shop: resolve(process.cwd(), 'shop/index.html'),
         contact: resolve(process.cwd(), 'contact/index.html'),
       },

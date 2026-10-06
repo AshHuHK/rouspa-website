@@ -6,6 +6,7 @@ import { applySeo, routeFromLocation } from './lib/seo.js';
 import './responsive.css';
 import './public-theme.css';
 const Admin = React.lazy(() => import('./Admin.jsx'));
+const Services = React.lazy(() => import('./Services.jsx'));
 const Shop = React.lazy(() => import('./Shop.jsx'));
 const Contact = React.lazy(() => import('./Contact.jsx'));
 const Member = React.lazy(() => import('./Member.jsx'));
@@ -52,6 +53,7 @@ function Router() {
   if (route === 'admin') {
     return <Admin />;
   }
+  if (route === 'services') return <Services lang={lang} />;
   if (route === 'shop') {
     return <Shop lang={lang} onNavigateHome={() => navigateTo('/')} />;
   }

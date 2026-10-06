@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import BookingLookup from "./BookingLookup.jsx";
 import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistLabel, slotLabel } from "./lib/public-copy.js";
 import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
+import { updateBusinessSeo } from './lib/seo.js';
 import { serviceAddonGroup, serviceCardVariant, serviceDurationGroups, servicePresentationCards } from "./lib/catalog-presentation.js";
 
 // ============================================================
@@ -167,6 +168,8 @@ const SealLogo = ({ size = 44, variant = "mark" }) => (
   <img
     src={variant === "hero" ? "/logo-hero-white.png" : "/logo-mark.png"}
     alt="柔療髮浴 ROU SPA"
+    width={variant === "hero" ? 759 : 739}
+    height={variant === "hero" ? 1236 : 1216}
     style={{
       height: size, width: "auto", maxWidth: "100%", objectFit: "contain",
       display: "block", userSelect: "none",
@@ -175,6 +178,7 @@ const SealLogo = ({ size = 44, variant = "mark" }) => (
         ? "drop-shadow(0 1px 2px rgba(58,44,18,0.55)) drop-shadow(0 3px 14px rgba(70,56,28,0.45))"
         : "none"
     }}
+    decoding="async"
     draggable={false}
   />
 );
@@ -448,6 +452,30 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
       });
     }
   };
+  useEffect(() => {
+    // Catalog cards and the local font change section heights after mount.
+    // Position cross-page anchors only once those layouts are ready.
+    if (!catalog && !catalogError) return;
+    let frame, cancelled = false;
+    const followAnchor = async () => {
+      const target = window.location.hash.slice(1);
+      if (target !== 'booking' && target !== 'services') return;
+      await document.fonts.ready;
+      if (cancelled || window.location.hash !== `#${target}`) return;
+      frame = requestAnimationFrame(() => {
+        if (target === 'booking') { setBookingMode('new'); alignBooking(); }
+        else {
+          const section = sectionRefs.services.current;
+          if (section) window.scrollTo({ top: Math.max(0, section.getBoundingClientRect().top + window.scrollY - (navRef.current?.getBoundingClientRect().height || 64)), behavior: 'instant' });
+        }
+      });
+    };
+    followAnchor();
+    window.addEventListener('hashchange', followAnchor);
+    return () => { cancelled = true; cancelAnimationFrame(frame); window.removeEventListener('hashchange', followAnchor); };
+  }, [catalog, catalogError]);
+  useEffect(() => { if (catalog) updateBusinessSeo(catalog, 'home', lang); }, [catalog, lang]);
+
   useLayoutEffect(() => {
     if (!bookingMounted.current) { bookingMounted.current = true;return; }
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -1155,11 +1183,12 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         position: "relative",
         overflow: "hidden",
         padding: "5vh 20px 7vh",
-        backgroundImage: "url('/hero-bg.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat"
+        background: "#d5c9b5"
       }}>
+        <picture className="hero-background">
+          <source media="(max-width: 650px)" srcSet="/hero-960.jpg" />
+          <img src="/hero-1920.jpg" alt={lang === 'zh' ? '柔療髮浴的頭療與髮浴服務' : 'Hair-bathing care at ROU SPA'} width="1920" height="1920" fetchPriority="high" decoding="async" />
+        </picture>
         {/* 米白色遮罩：上方淡（露出照片、襯托白字 logo），往下漸濃（內文清楚可讀） */}
         <div style={{
           position: "absolute",
@@ -1214,6 +1243,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
 
           {/* 棕色加粗副標：掃光 1.6 秒，停留 5 秒後再次由左至右掃過 */}
           <h1 className="animate-in-delay-1 hero-brand-block">
+            <span className="hero-local-heading">{lang === "zh" ? "嘉義頭療 · 柔療髮浴 ROU SPA" : "Head care in Chiayi · ROU SPA"}</span>
             <span className="hero-fancy">{t.brandSub}</span>
             <span className="hero-fancy">{t.hero.title}</span>
           </h1>
@@ -1251,14 +1281,14 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
               background: "rgba(163,130,63,0.4)",
               flexShrink: 0
             }} />
-            <h2 style={{
+            <p style={{
               fontSize: "16px",
               fontWeight: 500,
               letterSpacing: "6px",
               color: "#a3823f",
               fontFamily: "var(--public-font)",
               whiteSpace: lang === "zh" ? "nowrap" : "normal", textAlign: "center"
-            }}>{lang === "zh" ? "五感療癒" : "Care for the senses"}</h2>
+            }}>{lang === "zh" ? "五感療癒" : "Care for the senses"}</p>
             <div className="hero-subtitle-line" style={{
               width: "40px",
               height: "1px",
@@ -1277,7 +1307,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
             fontWeight: 400,
             textAlign: "center"
           }}>
-            {lang === "zh" ? <>香和其息，音靜其神，觸柔其體，<span className="mobile-break"><br /></span>境緩其意，養歸於心。</> : <>Aroma, sound and a gentle touch.<br />A calm space to unwind.</>}
+            {lang === "zh" ? <>頭皮養護、頭肩頸按摩與髮浴，<span className="mobile-break"><br /></span>在嘉義，留一段時間給自己。</> : <>Scalp care, head massage and hair bathing.<br />A calm space to unwind in Chiayi.</>}
           </p>
 
           {/* CTA 按鈕 */}
@@ -1294,20 +1324,21 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
       </section>
 
       {/* ========== SERVICES ========== */}
-      <section ref={sectionRefs.services} className="services-section" style={{
+      <section id="services" ref={sectionRefs.services} className="services-section" style={{
         padding: "120px 30px", position: "relative", overflow: "hidden",
         background: "rgba(255,255,255,0.2)"
       }}>
         <div style={{ maxWidth: "900px", margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: "80px" }} className={`services-intro ${isAnimated("services") ? "animate-in" : ""}`}>
             <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>SERVICES</div>
-            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.services.title}</h2>
+            <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{lang === "zh" ? "頭療與髮浴療程" : "Head-care treatments"}</h2>
             <GoldDivider />
             <p style={{ fontSize: "12px", letterSpacing: "2px", color: "rgba(74,68,58,0.5)", marginTop: "4px" }}>
               {lang === "zh" ? "點擊療程，查看完整內容" : "Tap a therapy to see the full ritual"}
             </p>
           </div>
 
+          <p className="service-page-intro">{lang === 'zh' ? '依照想放鬆的時間，選擇45、90或120分鐘頭療；完整步驟與加購內容如下。' : 'Choose a 45, 90 or 120-minute head-care visit. Explore the care steps and add-ons below.'}<br /><a href="/services/">{lang === 'zh' ? '認識頭療服務與預約常見問題' : 'About our head-care treatments and booking'} →</a></p>
           {websiteServiceGroups.map((group,groupIndex)=><section key={group.code} className={`service-duration-group ${isAnimated("services")?`animate-in-delay-${Math.min(groupIndex+1,4)}`:""}`}>
             <header className="service-duration-heading"><span>{group.minutes}</span><div><h3>{lang==='zh'?'分鐘療程':'MINUTE TREATMENTS'}</h3><small>{lang==='zh'?`${group.services.length} 項療程`:`${group.services.length} treatment${group.services.length===1?'':'s'}`}</small></div></header>
             <div className="service-category-services">{group.services.map(service=>{const rituals=serviceRituals(service);return <article className="service-entry" key={service.id}>
@@ -1573,7 +1604,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
               </div>
             </div>
             <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(163,130,63,0.1)", height: "300px" }}>
-              <iframe src="https://www.google.com/maps?q=嘉義市西區蘭井街421號&output=embed" width="100%" height="100%" style={{ border: 0, filter: "sepia(20%) contrast(1.1) brightness(1.05)" }} allowFullScreen="" loading="lazy" title="map" />
+              <iframe src="https://www.google.com/maps?q=嘉義市西區蘭井街421號&output=embed" width="100%" height="100%" style={{ border: 0, filter: "sepia(20%) contrast(1.1) brightness(1.05)" }} allowFullScreen="" loading="lazy" title={lang === "zh" ? "柔療髮浴嘉義門店位置" : "ROU SPA Chiayi store location"} />
             </div>
           </div>
         </div>
@@ -1583,6 +1614,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
       <footer style={{ padding: "44px 30px 38px", borderTop: "1px solid rgba(163,130,63,0.1)", textAlign: "center" }}>
         {/* textIndent 補掉字距在尾字後的空隙，字串才會真正對齊中軸 */}
         <div style={{ fontSize: "16px", fontWeight: 600, color: "#a3823f", letterSpacing: "6px", textIndent: "6px" }}>{t.brand}</div>
+        <p className="public-footer-links"><a href="/services/">{lang === 'zh' ? '頭療服務' : 'Treatments'}</a><a href="/shop/">{lang === 'zh' ? '柔療好物' : 'Products'}</a><a href="/contact/">{lang === 'zh' ? '聯繫我們' : 'Contact'}</a></p>
         <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", letterSpacing: "1px", textIndent: "1px", marginTop: "18px" }}>{t.footer.copyright}</div>
       </footer>
     </div>

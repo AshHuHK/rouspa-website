@@ -5,7 +5,8 @@ import { productPresentationMark } from "./lib/catalog-presentation.js";
 
 function ProductArtwork({ product, category, lang }) {
   const icon = productPresentationMark(product, category, lang);
-  return <div className="product-artwork" style={product.image_url ? { backgroundImage:`url(${product.image_url})` } : undefined}>
+  return <div className="product-artwork">
+    {product.image_url && <img src={product.image_url} alt={lang === "en" ? product.name_en || product.name : product.name} loading="lazy" decoding="async" width="600" height="480" style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}} />}
     {!product.image_url && <><span>{icon}</span><small>ROU SPA</small></>}
   </div>;
 }
@@ -38,7 +39,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
       <a href="/" className="public-brand-link shop-brand" onClick={event=>{event.preventDefault();onNavigateHome();}}><strong>{isZh?"柔療髮浴":"ROU SPA"}</strong><span>{isZh?"特色產品":"Products"}</span></a>
       <a href="/" className="shop-back" onClick={event=>{event.preventDefault();onNavigateHome();}}>{isZh?"← 返回首頁":"← Back"}</a>
     </nav>
-    <header className="shop-hero"><small>COLLECTIONS</small><h1>{isZh?"柔療·好物選":"Curated wellness"}</h1><p>{isZh?"商品、價格與庫存由門店後台統一管理；下架或售罄狀態會同步更新。":"Products, prices and availability are managed from the same store system."}</p></header>
+    <header className="shop-hero"><small>COLLECTIONS</small><h1>{isZh?"柔療·好物選":"Curated wellness"}</h1><p>{isZh?"把柔和的養護帶回日常，探索門店精選好物。查看目前價格與供貨狀態，歡迎到店選購。":"Bring gentle care into your daily routine. Explore our curated products and view current store pricing and availability."}</p></header>
     <main className="shop-main">
       {error&&<div className="shop-state" role="alert">{error}</div>}
       {!catalog&&!error&&<div className="shop-state">{isZh?"正在載入商品…":"Loading products…"}</div>}

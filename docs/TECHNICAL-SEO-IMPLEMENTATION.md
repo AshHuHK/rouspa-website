@@ -1,5 +1,7 @@
 # ROU SPA 技術 SEO 上線說明
 
+2026-10-05更新：本次在地服務SEO與完整驗證請參閱 [嘉義頭療 SEO 更新報告](LOCAL-SEO-UPGRADE.md)。
+
 ## 已建立的公開抓取文件
 
 - `https://www.rouspa.tw/sitemap.xml`
@@ -10,6 +12,7 @@ Sitemap 只列出可以公開索引的正式網址：
 1. `https://www.rouspa.tw/`
 2. `https://www.rouspa.tw/shop/`
 3. `https://www.rouspa.tw/contact/`
+4. `https://www.rouspa.tw/services/`
 
 商品與聯絡頁原本使用 `#shop`、`#contact`。網址片段不適合作為 Sitemap 頁面，因此已新增 `/shop/` 和 `/contact/` 正式網址；舊網址仍可開啟並會在瀏覽器內轉成正式網址。
 
@@ -23,11 +26,11 @@ Sitemap 只列出可以公開索引的正式網址：
 - 顧客私人改期／取消連結
 - 顧客私人評價連結
 
-`robots.txt` 也保留對應 Clean URL 的禁止規則。Hash 後面的內容不會傳送給伺服器，所以實際 Hash 私人頁由網站執行時的 Robots Meta 保護。
+`robots.txt` 也保留對應 Clean URL 的禁止規則。Hash 後面的內容不會傳送給伺服器，所以實際 Hash 私人頁由網站執行時的 Robots Meta 設定禁止索引；這不是資料存取控制。
 
 ## 頁面 Metadata
 
-首頁、商品頁和聯絡頁各自具備：
+首頁、頭療服務頁、商品頁和聯絡頁各自具備：
 
 - 獨立 Title
 - 獨立 Description
@@ -37,7 +40,7 @@ Sitemap 只列出可以公開索引的正式網址：
 - Twitter Large Image Card
 - 正確的 `zh-Hant`／`en` 語言標記
 
-首頁、商品頁和聯絡頁在伺服器回傳的原始 HTML 就包含各自的 Metadata；不執行 JavaScript 的搜尋與分享機器人也能直接讀取。網站切換語言、頁面或使用瀏覽器上一頁時，Metadata 會繼續同步更新。
+首頁、頭療服務頁、商品頁和聯絡頁在伺服器回傳的原始 HTML 就包含各自的 Metadata；不執行 JavaScript 的搜尋與分享機器人也能直接讀取。網站切換語言、頁面或使用瀏覽器上一頁時，Metadata 會繼續同步更新。
 
 ## LocalBusiness 結構化資料
 
@@ -48,11 +51,11 @@ Sitemap 只列出可以公開索引的正式網址：
 - `+886978918737`
 - 公開聯絡信箱
 - 正式網站與品牌圖片
-- 新台幣價格範圍
-- 每日 10:00 至翌日 02:00 的目前每週營業設定
+- 從公開主療程計算的新台幣價格範圍
+- 從後台每週營業與今日臨時休假設定產生的營業資料
 - LINE 官方帳號
 
-每日臨時休假仍由網站前台與預約系統即時顯示；結構化資料表示門店目前的固定每週營業設定。
+可變動的價格與營業時間在前台取得公開目錄後產生，不在原始HTML寫死舊值；臨時休假也反映於特殊營業資料。
 
 ## 社群分享圖片
 
@@ -63,12 +66,12 @@ Sitemap 只列出可以公開索引的正式網址：
 自動檢查包含：
 
 - Sitemap XML 格式正確。
-- 只列出三個公開 Canonical URL。
+- 只列出四個公開 Canonical URL。
 - Sitemap 不含 `#`、後台、會員、查詢或私人連結。
 - Robots 指向正式 Sitemap。
 - Canonical、OG、Twitter Metadata 完整。
 - LocalBusiness JSON-LD 可以解析且地址、電話、營業時間正確。
-- 正式建置會產生 `/shop/index.html` 與 `/contact/index.html`，讓 Vercel 直接提供兩個公開網址及其獨立 Metadata。
+- 正式建置會產生 `/services/index.html`、`/shop/index.html` 與 `/contact/index.html`，讓 Vercel 提供各公開網址及其獨立 Metadata。
 - 舊 Hash 路由和所有私人路由繼續可用。
 - 中文精簡字體已重新產生，新增 SEO 文案不會缺字。
 
@@ -79,7 +82,7 @@ Sitemap 只列出可以公開索引的正式網址：
 1. `https://www.rouspa.tw/sitemap.xml`
 2. `https://www.rouspa.tw/robots.txt`
 
-確認都回傳 HTTP 200，再回 Google Search Console 的 Sitemap 頁面重新提交：
+確認都回傳 HTTP 200。已提交過的 Sitemap 不必反覆重送；維持以下已提交網址，等待 Google 重新處理：
 
 `https://www.rouspa.tw/sitemap.xml`
 

@@ -1,41 +1,6 @@
-const ORIGIN = 'https://www.rouspa.tw';
-const IMAGE = `${ORIGIN}/og-image.jpg`;
+import { ORIGIN, SEO_IMAGE as IMAGE, PAGE_SEO as COPY, buildStructuredData } from './seo-content.js';
 
-const COPY = {
-  home: {
-    zh: {
-      title: '柔療髮浴 ROU SPA｜嘉義東方頭療・經絡舒緩',
-      description: '柔療髮浴 ROU SPA 位於嘉義市西區蘭井街421號，提供東方頭療、經絡舒緩與養生髮浴。查看療程、技師與營業資訊，立即線上預約。',
-    },
-    en: {
-      title: 'ROU SPA Chiayi | Head therapy and meridian relaxation',
-      description: 'Head therapy, meridian relaxation and wellness hair bathing in West District, Chiayi. View treatments, therapists and opening information, then book online.',
-    },
-    canonical: '/',
-  },
-  shop: {
-    zh: {
-      title: '柔療好物選｜柔療髮浴 ROU SPA 嘉義',
-      description: '瀏覽柔療髮浴門店精選養生、頭皮與居家保養商品；價格、分類與門店庫存即時更新。',
-    },
-    en: {
-      title: 'Curated wellness products | ROU SPA Chiayi',
-      description: 'Browse wellness, scalp-care and home-care products curated by ROU SPA, with current store pricing and availability.',
-    },
-    canonical: '/shop/',
-  },
-  contact: {
-    zh: {
-      title: '聯繫柔療髮浴｜嘉義頭療預約與門店資訊',
-      description: '柔療髮浴 ROU SPA 位於嘉義市西區蘭井街421號。查看電話、LINE、營業時間與交通資訊。',
-    },
-    en: {
-      title: 'Contact ROU SPA | Chiayi store information',
-      description: 'Find ROU SPA at No. 421, Lanjing St., West District, Chiayi City. View phone, LINE, opening hours and directions.',
-    },
-    canonical: '/contact/',
-  },
-};
+let publicCatalog = null;
 
 const PRIVATE_TITLES = {
   admin: { zh: '門店管理後台｜柔療髮浴', en: 'Store administration | ROU SPA' },
@@ -81,6 +46,7 @@ export function routeFromLocation(location = window.location) {
   const path = (location.pathname || '/').replace(/\/+$/, '') || '/';
   if (path === '/shop') return 'shop';
   if (path === '/contact') return 'contact';
+  if (path === '/services') return 'services';
   return 'home';
 }
 
@@ -92,9 +58,11 @@ export function applySeo(route, lang = 'zh') {
     upsertMeta('meta[name="robots"]', { name: 'robots', content: 'noindex, nofollow, noarchive' });
     upsertMeta('meta[name="googlebot"]', { name: 'googlebot', content: 'noindex, nofollow, noarchive' });
     removeCanonical();
+    document.getElementById('rouspa-structured-data')?.remove();
     return;
   }
 
+  setStructuredData(route, lang);
   const page = COPY[route] || COPY.home;
   const copy = page[lang] || page.zh;
   const canonical = `${ORIGIN}${page.canonical}`;
@@ -108,8 +76,21 @@ export function applySeo(route, lang = 'zh') {
   upsertMeta('meta[property="og:description"]', { property: 'og:description', content: copy.description });
   upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonical });
   upsertMeta('meta[property="og:image"]', { property: 'og:image', content: IMAGE });
+  upsertMeta('meta[property="og:image:alt"]', { property: 'og:image:alt', content: lang === 'en' ? 'Hair-bathing care at ROU SPA' : '柔療髮浴的頭療與髮浴服務' });
   upsertMeta('meta[property="og:locale"]', { property: 'og:locale', content: lang === 'en' ? 'en_US' : 'zh_TW' });
   upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: copy.title });
   upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: copy.description });
   upsertMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: IMAGE });
+  upsertMeta('meta[name="twitter:image:alt"]', { name: 'twitter:image:alt', content: lang === 'en' ? 'Hair-bathing care at ROU SPA' : '柔療髮浴的頭療與髮浴服務' });
+}
+
+function setStructuredData(route, lang) {
+  let script = document.getElementById('rouspa-structured-data');
+  if (!script) { script = document.createElement('script'); script.type = 'application/ld+json'; script.id = 'rouspa-structured-data'; document.head.appendChild(script); }
+  script.textContent = JSON.stringify(buildStructuredData(route, publicCatalog, lang));
+}
+
+export function updateBusinessSeo(catalog, route, lang = 'zh') {
+  publicCatalog = catalog;
+  if (!PRIVATE_TITLES[routeFromLocation()] && routeFromLocation() === route) setStructuredData(route, lang);
 }
