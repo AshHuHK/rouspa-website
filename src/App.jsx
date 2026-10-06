@@ -388,7 +388,6 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   const therapists = (catalog?.staff || []).filter(st => selectedService === null || catalog.skills.some(sk => sk.staff_id === st.id && sk.service_id === services[selectedService]?.id));
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotError, setSlotError] = useState("");
-  const [scrollY, setScrollY] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [animatedSections, setAnimatedSections] = useState(new Set());
   const [lineHover, setLineHover] = useState(false);
@@ -399,12 +398,6 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
 
   const t = i18n[lang];
   const sectionRefs = { home: useRef(), services: useRef(), booking: useRef(), location: useRef() };
-
-  useEffect(() => {
-    const h = () => setScrollY(window.scrollY || 0);
-    window.addEventListener("scroll", h);
-    return () => window.removeEventListener("scroll", h);
-  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -531,13 +524,23 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   };
 
   const isAnimated = (s) => animatedSections.has(s);
-  const navOpacity = Math.min(scrollY / 300, 0.98);
 
   // 官網療程內容與預約價格共用後台主資料；停用或封存會同步從前台移除。
   const websiteServices = catalog?.website_services || services;
   const serviceRituals = service => servicePresentationCards(service, lang);
   const websiteServiceGroups = serviceDurationGroups(websiteServices, catalog?.service_categories || [], lang);
   const websiteAddonGroup = serviceAddonGroup(catalog?.website_addons || [], lang);
+
+  const switchLanguage = () => setLang(lang === 'zh' ? 'en' : 'zh');
+  const navigationItems = Object.entries(t.nav).map(([key, label]) => {
+    const className = `public-nav-link${key === 'booking' ? ' public-nav-booking' : ''}`;
+    if (key === 'shop' || key === 'contact') return <a key={key} className={className} href={`/${key}/`} onClick={event => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault(); setMenuOpen(false);
+      key === 'shop' ? onNavigateShop?.() : onNavigateContact?.();
+    }}>{label}</a>;
+    return <button key={key} type="button" className={className} onClick={() => scrollTo(key)}>{label}</button>;
+  });
 
   return (
     <div className="public-home" data-language={lang} style={{ fontFamily: "var(--public-font)", color: "#4a443a", background: "#f2ede4", minHeight: "100vh", overflowX: "clip" }}>
@@ -789,11 +792,6 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         .step-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(163,130,63,0.3); transition: all 0.4s; }
         .step-dot.active { background: #a3823f; border-color: #a3823f; box-shadow: 0 0 12px rgba(163,130,63,0.4); }
         .step-dot.completed { background: rgba(163,130,63,0.4); border-color: rgba(163,130,63,0.4); }
-
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .mobile-menu-btn { display: flex !important; }
-        }
 
         /* 技師卡片響應式布局 */
         .team-grid {
@@ -1081,63 +1079,21 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
       `}</style>
 
       {/* ========== NAV ========== */}
-      <nav ref={navRef} className="public-nav" style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: `rgba(242, 237, 228, ${navOpacity})`,
-        backdropFilter: navOpacity > 0.1 ? "blur(20px)" : "none",
-        borderBottom: navOpacity > 0.3 ? "1px solid rgba(163,130,63,0.1)" : "none",
-        transition: "all 0.3s"
-      }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          {/* 頁眉左上角 logo 與文字已移除 */}
-          <div />
-          <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
-            {Object.entries(t.nav).map(([key, label]) => ["shop", "contact"].includes(key) ? (
-              <a className="public-nav-link" key={key} href={`/${key}/`} onClick={event => { event.preventDefault(); key === "shop" ? onNavigateShop?.() : onNavigateContact?.(); }} style={{
-                cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
-                color: key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)",
-                transition: "color 0.3s", fontWeight: 400, textDecoration: "none"
-              }}
-              onMouseEnter={e => e.target.style.color = "#a3823f"}
-              onMouseLeave={e => e.target.style.color = "rgba(74, 68, 58, 0.7)"}
-              >{label}</a>
-            ) : (
-              <button type="button" className="public-nav-link" key={key} onClick={() => scrollTo(key)} style={{
-                cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
-                color: key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)",
-                transition: "color 0.3s", fontWeight: key === "booking" ? 600 : 400
-              }} onMouseEnter={e => e.target.style.color = "#a3823f"} onMouseLeave={e => e.target.style.color = key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)"}>{label}</button>
-            ))}
-            <button type="button" className="public-nav-link" onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); }} style={{
-              cursor: "pointer", fontSize: "12px", letterSpacing: "2px", padding: "5px 14px",
-              border: "1px solid rgba(163,130,63,0.3)", color: "#a3823f", borderRadius: "2px", transition: "all 0.3s"
-            }}
-            onMouseEnter={e => e.target.style.background = "rgba(163,130,63,0.1)"}
-            onMouseLeave={e => e.target.style.background = "transparent"}
-            >{t.langSwitch}</button>
+      <nav ref={navRef} className="public-nav" aria-label={lang === 'zh' ? '主要導覽' : 'Main navigation'}>
+        <div className="public-nav-inner">
+          <div className="desktop-nav">{navigationItems}
+            <button type="button" className="public-nav-link public-language-switch" onClick={switchLanguage}>{t.langSwitch}</button>
           </div>
-          <button type="button" aria-label={lang === "zh" ? "開啟導覽選單" : "Open navigation menu"} aria-expanded={menuOpen} className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)} style={{
-            cursor: "pointer", display: "none", flexDirection: "column", gap: "5px", padding: "4px"
-          }}>
-            <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translateY(6px)" : "none" }} />
-            <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
-            <div style={{ width: "24px", height: "1px", background: "#a3823f", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translateY(-6px)" : "none" }} />
+          <button type="button" className="mobile-menu-btn" aria-label={lang === 'zh' ? (menuOpen ? '關閉導覽選單' : '開啟導覽選單') : (menuOpen ? 'Close navigation menu' : 'Open navigation menu')} aria-expanded={menuOpen} aria-controls="rou-public-menu" onClick={() => setMenuOpen(open => !open)}>
+            <span>{lang === 'zh' ? '選單' : 'Menu'}</span>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              {menuOpen ? <path d="M6 6 22 22M22 6 6 22" /> : <path d="M4 7h20M4 14h20M4 21h20" />}
+            </svg>
           </button>
         </div>
-        {menuOpen && (
-          <div className="mobile-nav" style={{
-            background: "rgba(242, 237, 228, 0.98)", backdropFilter: "blur(20px)",
-            padding: "20px 30px 30px", display: "flex", flexDirection: "column", gap: "20px",
-            borderBottom: "1px solid rgba(163,130,63,0.1)"
-          }}>
-            {Object.entries(t.nav).map(([key, label]) => ["shop", "contact"].includes(key) ? (
-              <a className="public-nav-link" key={key} href={`/${key}/`} onClick={event => { event.preventDefault(); key === "shop" ? onNavigateShop?.() : onNavigateContact?.(); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "#4a443a", padding: "8px 0", textDecoration: "none" }}>{label}</a>
-            ) : (
-              <button type="button" className="public-nav-link" key={key} onClick={() => { scrollTo(key); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "#4a443a", padding: "8px 0" }}>{label}</button>
-            ))}
-            <button type="button" className="public-nav-link" onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "13px", letterSpacing: "2px", color: "#a3823f", padding: "8px 0" }}>{t.langSwitch}</button>
-          </div>
-        )}
+        {menuOpen && <div id="rou-public-menu" className="mobile-nav">{navigationItems}
+          <button type="button" className="public-nav-link public-language-switch" onClick={() => { switchLanguage(); setMenuOpen(false); }}>{t.langSwitch}</button>
+        </div>}
       </nav>
 
       {/* ========== LINE FLOATING BUTTON ========== */}

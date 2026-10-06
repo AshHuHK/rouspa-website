@@ -5,6 +5,7 @@ import BookingLookup from './BookingLookup.jsx';
 import { applySeo, routeFromLocation } from './lib/seo.js';
 import './responsive.css';
 import './public-theme.css';
+import './public-navigation.css';
 const Admin = React.lazy(() => import('./Admin.jsx'));
 const Services = React.lazy(() => import('./Services.jsx'));
 const Shop = React.lazy(() => import('./Shop.jsx'));

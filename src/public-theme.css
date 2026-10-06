@@ -4,9 +4,6 @@
 button, input, select, textarea { font-family: inherit; }
 button, [role=button], a { -webkit-tap-highlight-color: transparent; }
 :where(button, a, input, select, textarea, [role=button]):focus-visible { outline: 2px solid #9b763c; outline-offset: 4px; }
-.public-nav button { border: 0; background: transparent; font-family: inherit; }
-.public-nav .public-nav-link { min-height: 44px; }
-.public-nav .mobile-menu-btn { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
 .public-home[data-language=en] .hero-fancy { white-space: normal; letter-spacing: 1px !important; overflow-wrap: normal; max-width: 100%; }
 .public-home[data-language=en] .hero-brand-block { max-width: 100%; }
 .public-home[data-language=en] .formula-name, .public-home[data-language=en] .formula-sub,
