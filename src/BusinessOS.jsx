@@ -1,6 +1,6 @@
 import { AttendanceManager } from './Attendance.jsx';
 import { useEffect, useState } from 'react';
-import { cents, dateAfter, dateTime, errorText, exportCSV, money, rpc, taipeiDate } from './lib/spa.js';
+import { cents, dateAfter, dateTime, errorText, exportCSV, money, rpc, statusNames, taipeiDate } from './lib/spa.js';
 import { Empty, Field, Modal, MutationForm } from './OperationsShared.jsx';
 import { StaffAccountForm, StaffArchiveForm, staffRoleNames } from './StaffPortal.jsx';
 import { exportPayrollXlsx } from './lib/payroll-xlsx.js';
@@ -35,10 +35,36 @@ export function DashboardOS({data,onNavigate,allowed,onReload}){
   <section className="os-hero"><div><p className="eyebrow">BUSINESS OPERATING SYSTEM</p><h2>今天的門店，一頁掌握</h2><p className="muted">{data.date} · Asia/Taipei · 所有數字直接來自正式營運資料</p></div><button className="primary" onClick={()=>onNavigate('bookings')}>開啟今日工作台</button></section>
   <div className="grid os-metrics">{metrics.map(([label,value])=><article className="card" key={label}><p className="muted">{label}</p><div className="metric">{value}</div></article>)}</div>
   <section className={`card os-today-hours ${today.is_open?'is-open':'is-closed'}`}><div><p className="eyebrow">TODAY · LIVE</p><h2>{today.is_open?'今日營業':'今日休假'}</h2><p>{today.is_open?`${minuteLabel(today.opening_minute)}–${minuteLabel(today.closing_minute)}`:'官網今日不提供新預約時段'}{today.note?` · ${today.note}`:''}</p><p className="muted">{today.source==='override'?'今日特殊設定，已即時同步官網與預約空檔。':'目前使用每週營業時間。'}</p></div>{allowed('settings')&&<button className="primary" onClick={()=>setHoursModal(true)}>設定今日營業／休假</button>}</section>
+  <MonthlyOperationsCalendar today={data.date} refreshToken={data} onNavigate={onNavigate}/>
   <h2>系統直通車</h2><div className="os-launcher">{cards.map(([id,title,desc,icon])=><button key={id} onClick={()=>onNavigate(id)}><span className="os-icon">{icon}</span><span><strong>{title}</strong><small>{desc}</small></span></button>)}</div>
   <div className="split os-dashboard-lower"><section className="card"><h2>接下來的預約</h2>{!data.next_appointments.length&&<Empty>今天目前沒有有效預約。</Empty>}{data.next_appointments.map(row=><button className="os-list-button" key={row.id} onClick={()=>onNavigate('bookings')}><span><strong>{dateTime(row.starts_at)}</strong><small>{row.customer_name} · {row.service_name}</small></span><span>{row.staff_name}<br/><small>{row.resource_name}</small></span></button>)}</section><section className="card"><h2>今日提醒</h2><p>{data.pending?`還有 ${data.pending} 筆預約等待確認。`:'待確認預約已清空。'}</p><p>{data.cancelled?`今日取消或未到 ${data.cancelled} 筆。`:'今日沒有取消或未到。'}</p>{data.low_stock!=null&&<p>{data.low_stock?`${data.low_stock} 項商品已達低庫存門檻。`:'目前沒有低庫存提醒。'}</p>}<p>目前啟用 {data.rooms_active} 個服務床位。</p></section></div>
   {hoursModal&&<Modal title="今日營業狀態" onClose={()=>setHoursModal(false)}><DayOverrideForm date={data.date} value={today} saved={saved}/></Modal>}
  </>;
+}
+
+function MonthlyOperationsCalendar({today,refreshToken,onNavigate}){
+ const initialMonth=today.slice(0,7),[month,setMonth]=useState(initialMonth),[selected,setSelected]=useState(today),[calendar,setCalendar]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
+ useEffect(()=>{let live=true;setLoading(true);setError('');rpc('spa_monthly_operations',{p_month:`${month}-01`}).then(result=>{if(live){setCalendar(result);setLoading(false);}}).catch(e=>{if(live){setError(errorText(e));setLoading(false);}});return()=>{live=false;};},[month,refreshToken]);
+ const changeMonth=step=>{const next=moveMonth(month,step);setMonth(next);setSelected(next===initialMonth?today:`${next}-01`);};
+ const days=calendar?.month===month?(calendar.days||[]):[],byDate=new Map(days.map(day=>[day.date,day])),cells=monthCells(month),day=byDate.get(selected)||days[0];
+ const leaveIds=new Set((day?.leaves||[]).map(row=>row.staff_id)),visibleRests=(day?.rests||[]).filter(row=>!leaveIds.has(row.staff_id));
+ const label=calendarMonthLabel(month),hours=day?.store_hours||{};
+ return <section className="card operations-calendar" aria-labelledby="operations-calendar-title">
+  <div className="operations-calendar-heading"><div><p className="eyebrow">MONTHLY OPERATIONS</p><h2 id="operations-calendar-title">當月營運總表</h2><p className="muted">班表、休假、預約與實際服務技師、床位會在同一張日曆即時對應。</p></div><div className="operations-calendar-nav" aria-label="切換月份"><button onClick={()=>changeMonth(-1)} aria-label="上一個月">‹</button><strong>{label}</strong><button onClick={()=>changeMonth(1)} aria-label="下一個月">›</button><button onClick={()=>{setMonth(initialMonth);setSelected(today);}}>本月</button></div></div>
+  {error&&<p className="alert" role="alert">月曆載入失敗：{error}</p>}
+  <div className={`operations-calendar-grid ${loading?'is-loading':''}`} role="grid" aria-label={`${label}營運月曆`}>
+   {['一','二','三','四','五','六','日'].map(name=><span className="operations-weekday" role="columnheader" key={name}>週{name}</span>)}
+   {cells.map(date=>{const current=date.startsWith(month),item=byDate.get(date);if(!current)return <span className="operations-day outside" aria-hidden="true" key={date}/>;const closed=item?.store_hours?.is_open===false;return <button key={date} role="gridcell" aria-selected={selected===date} aria-label={operationsDayAria(item,date)} className={`operations-day ${selected===date?'selected':''} ${date===today?'today':''} ${closed?'closed':''}`} onClick={()=>setSelected(date)}><span className="operations-date">{Number(date.slice(-2))}{date===today&&<em>今</em>}</span>{closed?<strong className="operations-closed">店休</strong>:<div className="operations-day-counts"><small><b>{item?.appointment_count||0}</b> 約</small><small><b>{item?.shift_count||0}</b> 班</small><small><b>{item?.off_count||0}</b> 休</small></div>}</button>;})}
+  </div>
+  {loading&&calendar?.month!==month?<div className="empty" role="status">正在讀取 {label} 的班表與預約…</div>:day&&<section className="operations-day-detail" aria-label={`${selected} 營運明細`}>
+   <div className="operations-detail-heading"><div><p className="eyebrow">SELECTED DAY</p><h2>{selectedDateLabel(selected)}</h2><p className="muted">{hours.is_open?`營業 ${minuteLabel(hours.opening_minute)}–${minuteLabel(hours.closing_minute)}`:'門店休假'}{hours.note?` · ${hours.note}`:''}</p></div><div className="operations-summary"><span><b>{day.shift_count}</b> 人上班</span><span><b>{day.off_count}</b> 人休班／休假</span><span><b>{day.appointment_count}</b> 筆預約</span><span><b>{day.room_count}</b>／{calendar.active_room_count} 床使用</span></div></div>
+   <div className="operations-detail-grid">
+    <section><div className="operations-section-title"><h3>上班時段</h3><span>{day.shifts.length} 人</span></div>{!day.shifts.length&&<Empty>當日沒有排班。</Empty>}<div className="operations-person-list">{day.shifts.map(row=><article key={row.staff_id}><div><strong>{row.staff_name}</strong><small>{row.staff_title}</small></div><span>{minuteLabel(row.start_minute)}–{minuteLabel(row.end_minute)}</span>{leaveIds.has(row.staff_id)&&<em>另有休假</em>}{row.note&&<small>{row.note}</small>}</article>)}</div></section>
+    <section><div className="operations-section-title"><h3>休班／休假</h3><span>{day.off_count} 人</span></div>{!day.leaves.length&&!visibleRests.length&&<Empty>當日沒有人休班或休假。</Empty>}<div className="operations-person-list">{day.leaves.map(row=><article className="leave" key={row.id}><div><strong>{row.staff_name}</strong><small>{row.staff_title}</small></div><span>休假 · {leaveTimeLabel(row,selected)}</span>{row.reason&&<small>{row.reason}</small>}</article>)}{visibleRests.map(row=><article key={row.staff_id}><div><strong>{row.staff_name}</strong><small>{row.staff_title}</small></div><span>當日休班</span>{row.note&&<small>{row.note}</small>}</article>)}</div></section>
+    <section className="operations-appointments"><div className="operations-section-title"><h3>預約排程</h3><div><span>{day.appointments.length} 筆</span><button onClick={()=>onNavigate('bookings',selected)}>開啟工作台</button></div></div>{!day.appointments.length&&<Empty>當日沒有有效預約。</Empty>}<div className="operations-appointment-list">{day.appointments.map(row=><article key={row.id}><time>{clockTime(row.starts_at)}<small>至 {clockTime(row.ends_at)}</small></time><div><strong>{row.customer_name}</strong><span>{row.service_name}</span><small>{row.reference}</small></div><div><span>{row.staff_name} · {row.staff_title}</span><strong>{row.room_name}</strong><small>{statusNames[row.status]||row.status}</small></div></article>)}</div></section>
+   </div>
+  </section>}
+ </section>;
 }
 
 export function TeamOS({data,catalog,canManage,canAccounts,onReload}){
@@ -75,6 +101,12 @@ function moveMonth(value,months){const [y,m]=value.split('-').map(Number),date=n
 function datesBetween(first,last){let start=first,end=last;if(start>end)[start,end]=[end,start];const result=[];for(let value=start;value<=end;value=moveDate(value,1))result.push(value);return result;}
 function monthCells(month){const first=`${month}-01`,date=utcDate(first),pad=(date.getUTCDay()+6)%7,start=moveDate(first,-pad),last=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0)),count=pad+last.getUTCDate(),cells=count>35?42:35;return Array.from({length:cells},(_,i)=>moveDate(start,i));}
 function dateWeekday(value){return utcDate(value).getUTCDay();}
+function calendarMonthLabel(month){const [year,value]=month.split('-').map(Number);return `${year} 年 ${value} 月`;}
+function selectedDateLabel(value){const date=utcDate(value),week='日一二三四五六'[date.getUTCDay()];return `${date.getUTCMonth()+1} 月 ${date.getUTCDate()} 日 · 星期${week}`;}
+function clockTime(value){return new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));}
+function taipeiValueDate(value){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(value)),take=type=>parts.find(part=>part.type===type)?.value;return `${take('year')}-${take('month')}-${take('day')}`;}
+function leaveTimeLabel(row,selected){const endDate=taipeiValueDate(new Date(new Date(row.ends_at).getTime()-1));return taipeiValueDate(row.starts_at)===selected&&endDate===selected?`${clockTime(row.starts_at)}–${clockTime(row.ends_at)}`:`${dateTime(row.starts_at)}–${dateTime(row.ends_at)}`;}
+function operationsDayAria(item,date){if(!item)return date;const hours=item.store_hours?.is_open===false?'店休':`${item.shift_count} 人上班`;return `${date}，${hours}，${item.appointment_count} 筆預約，${item.off_count} 人休班或休假`;}
 
 function SmartRoster({data,staffId,setStaffId,canManage,onReload}){
  const staff=data.staff.find(s=>s.id===staffId)||data.staff.find(s=>(s.employment_status||(s.active?'active':'inactive'))==='active'&&!s.archived_at);
