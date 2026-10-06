@@ -1064,15 +1064,21 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           {/* 頁眉左上角 logo 與文字已移除 */}
           <div />
           <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: "36px" }}>
-            {Object.entries(t.nav).map(([key, label]) => (
-              <button type="button" className="public-nav-link" key={key} onClick={() => key === "shop" ? onNavigateShop?.() : key === "contact" ? onNavigateContact?.() : scrollTo(key)} style={{
+            {Object.entries(t.nav).map(([key, label]) => ["shop", "contact"].includes(key) ? (
+              <a className="public-nav-link" key={key} href={`/${key}/`} onClick={event => { event.preventDefault(); key === "shop" ? onNavigateShop?.() : onNavigateContact?.(); }} style={{
+                cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
+                color: key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)",
+                transition: "color 0.3s", fontWeight: 400, textDecoration: "none"
+              }}
+              onMouseEnter={e => e.target.style.color = "#a3823f"}
+              onMouseLeave={e => e.target.style.color = "rgba(74, 68, 58, 0.7)"}
+              >{label}</a>
+            ) : (
+              <button type="button" className="public-nav-link" key={key} onClick={() => scrollTo(key)} style={{
                 cursor: "pointer", fontSize: "13px", letterSpacing: "2px",
                 color: key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)",
                 transition: "color 0.3s", fontWeight: key === "booking" ? 600 : 400
-              }}
-              onMouseEnter={e => e.target.style.color = "#a3823f"}
-              onMouseLeave={e => e.target.style.color = key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)"}
-              >{label}</button>
+              }} onMouseEnter={e => e.target.style.color = "#a3823f"} onMouseLeave={e => e.target.style.color = key === "booking" ? "#a3823f" : "rgba(74, 68, 58, 0.7)"}>{label}</button>
             ))}
             <button type="button" className="public-nav-link" onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); }} style={{
               cursor: "pointer", fontSize: "12px", letterSpacing: "2px", padding: "5px 14px",
@@ -1096,8 +1102,10 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
             padding: "20px 30px 30px", display: "flex", flexDirection: "column", gap: "20px",
             borderBottom: "1px solid rgba(163,130,63,0.1)"
           }}>
-            {Object.entries(t.nav).map(([key, label]) => (
-              <button type="button" className="public-nav-link" key={key} onClick={() => { if (key === "shop") { onNavigateShop?.(); } else if (key === "contact") { onNavigateContact?.(); } else { scrollTo(key); } setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "#4a443a", padding: "8px 0" }}>{label}</button>
+            {Object.entries(t.nav).map(([key, label]) => ["shop", "contact"].includes(key) ? (
+              <a className="public-nav-link" key={key} href={`/${key}/`} onClick={event => { event.preventDefault(); key === "shop" ? onNavigateShop?.() : onNavigateContact?.(); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "#4a443a", padding: "8px 0", textDecoration: "none" }}>{label}</a>
+            ) : (
+              <button type="button" className="public-nav-link" key={key} onClick={() => { scrollTo(key); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "15px", letterSpacing: "3px", color: "#4a443a", padding: "8px 0" }}>{label}</button>
             ))}
             <button type="button" className="public-nav-link" onClick={() => { const newLang = lang === "zh" ? "en" : "zh"; setLang(newLang); onLangChange?.(newLang); setMenuOpen(false); }} style={{ cursor: "pointer", fontSize: "13px", letterSpacing: "2px", color: "#a3823f", padding: "8px 0" }}>{t.langSwitch}</button>
           </div>

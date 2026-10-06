@@ -24,8 +24,8 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
     <style>{`
       .shop-page{font-family:var(--public-font);color:#4a443a;background:#f2ede4;min-height:100vh}
       .shop-nav{position:fixed;inset:0 0 auto;z-index:100;background:rgba(242,237,228,.96);backdrop-filter:blur(20px);border-bottom:1px solid rgba(163,130,63,.14);padding:14px clamp(16px,4vw,30px);display:flex;justify-content:space-between;align-items:center;gap:16px}
-      .shop-brand{display:flex;align-items:center;gap:14px;min-width:0;border:0;background:transparent;padding:0;cursor:pointer;font:inherit}.shop-brand strong{color:#8b6a31;letter-spacing:3px;font-size:17px}.shop-brand span{font-size:12px;letter-spacing:2px;color:#746b5d}
-      .shop-back{min-height:44px;padding:8px 16px;border:1px solid rgba(163,130,63,.35);background:transparent;color:#85662f;border-radius:6px;cursor:pointer;font:inherit}
+      .shop-brand{display:flex;align-items:center;gap:14px;min-width:0;border:0;background:transparent;padding:0;cursor:pointer;font:inherit;text-decoration:none}.shop-brand strong{color:#8b6a31;letter-spacing:3px;font-size:17px}.shop-brand span{font-size:12px;letter-spacing:2px;color:#746b5d}
+      .shop-back{min-height:44px;padding:8px 16px;border:1px solid rgba(163,130,63,.35);background:transparent;color:#85662f;border-radius:6px;cursor:pointer;font:inherit;text-decoration:none;display:inline-flex;align-items:center}
       .shop-hero{padding:142px 24px 68px;text-align:center;background:linear-gradient(180deg,#f2ede4,#e8e1d5)}.shop-hero small{letter-spacing:6px;color:#9a793e}.shop-hero h1{font-size:clamp(30px,5vw,46px);font-weight:500;letter-spacing:6px;margin:18px 0}.shop-hero p{max-width:620px;margin:auto;line-height:1.9;color:#6c6458}
       .shop-main{max-width:1200px;margin:auto;padding:48px 24px 100px}.category-tabs{display:flex;gap:10px;overflow:auto;padding:0 0 18px;margin-bottom:36px;justify-content:center}.category-tabs button{white-space:nowrap;min-height:44px;padding:8px 20px;border:1px solid rgba(163,130,63,.24);background:transparent;border-radius:30px;color:#4a443a;font:inherit;cursor:pointer}.category-tabs button.active{background:#9a793e;color:#fff}
       .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:24px}.product-card{background:#fff;border:1px solid rgba(163,130,63,.13);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(74,55,29,.05)}
@@ -35,8 +35,8 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
       @media(max-width:640px){.shop-brand span{display:none}.shop-hero{padding-top:120px}.category-tabs{justify-content:flex-start}.product-copy p{min-height:0}}
     `}</style>
     <nav className="shop-nav">
-      <button className="public-brand-link shop-brand" onClick={onNavigateHome}><strong>{isZh?"柔療髮浴":"ROU SPA"}</strong><span>{isZh?"特色產品":"Products"}</span></button>
-      <button className="shop-back" onClick={onNavigateHome}>{isZh?"← 返回首頁":"← Back"}</button>
+      <a href="/" className="public-brand-link shop-brand" onClick={event=>{event.preventDefault();onNavigateHome();}}><strong>{isZh?"柔療髮浴":"ROU SPA"}</strong><span>{isZh?"特色產品":"Products"}</span></a>
+      <a href="/" className="shop-back" onClick={event=>{event.preventDefault();onNavigateHome();}}>{isZh?"← 返回首頁":"← Back"}</a>
     </nav>
     <header className="shop-hero"><small>COLLECTIONS</small><h1>{isZh?"柔療·好物選":"Curated wellness"}</h1><p>{isZh?"商品、價格與庫存由門店後台統一管理；下架或售罄狀態會同步更新。":"Products, prices and availability are managed from the same store system."}</p></header>
     <main className="shop-main">

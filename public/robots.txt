@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /member/
+Disallow: /lookup/
+Disallow: /manage/
+Disallow: /review/
+
+Sitemap: https://www.rouspa.tw/sitemap.xml

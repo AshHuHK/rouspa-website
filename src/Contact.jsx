@@ -104,7 +104,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
           padding: 8px 20px; border: 1px solid rgba(163,130,63,0.3); background: transparent;
           color: #a3823f; cursor: pointer; border-radius: 4px; font-family: inherit;
           font-size: 13px; letter-spacing: 1px; transition: all 0.3s;
-          display: flex; align-items: center; gap: 8px; font-weight: 500;
+          display: flex; align-items: center; gap: 8px; font-weight: 500; text-decoration: none;
         }
         .back-btn:hover { background: rgba(163,130,63,0.08); border-color: #a3823f; }
 
@@ -120,19 +120,19 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
         padding: "16px 30px", display: "flex", justifyContent: "space-between", alignItems: "center"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <button className="public-brand-link" onClick={onNavigateHome} style={{ cursor: "pointer" }}>
+          <a href="/" className="public-brand-link" onClick={event=>{event.preventDefault();onNavigateHome();}} style={{ cursor: "pointer" }}>
             <span style={{ fontSize: "18px", color: "#a3823f", letterSpacing: "4px", fontWeight: 700 }}>
               {isZh ? "柔療髮浴" : "ROU SPA"}
             </span>
-          </button>
+          </a>
           <span style={{ color: "rgba(163,130,63,0.2)" }}>|</span>
           <span style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px", fontWeight: 500 }}>
             {t.title}
           </span>
         </div>
-        <button className="back-btn" onClick={onNavigateHome}>
+        <a href="/" className="back-btn" onClick={event=>{event.preventDefault();onNavigateHome();}}>
           {isZh ? "← 返回首頁" : "← Back"}
-        </button>
+        </a>
       </nav>
 
       {/* HERO */}
