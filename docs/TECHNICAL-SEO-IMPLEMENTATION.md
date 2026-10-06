@@ -37,7 +37,7 @@ Sitemap 只列出可以公開索引的正式網址：
 - Twitter Large Image Card
 - 正確的 `zh-Hant`／`en` 語言標記
 
-網站切換語言、頁面或使用瀏覽器上一頁時，Metadata 會同步更新。
+首頁、商品頁和聯絡頁在伺服器回傳的原始 HTML 就包含各自的 Metadata；不執行 JavaScript 的搜尋與分享機器人也能直接讀取。網站切換語言、頁面或使用瀏覽器上一頁時，Metadata 會繼續同步更新。
 
 ## LocalBusiness 結構化資料
 
@@ -68,7 +68,7 @@ Sitemap 只列出可以公開索引的正式網址：
 - Robots 指向正式 Sitemap。
 - Canonical、OG、Twitter Metadata 完整。
 - LocalBusiness JSON-LD 可以解析且地址、電話、營業時間正確。
-- Vercel 可以提供 `/shop/` 與 `/contact/`。
+- 正式建置會產生 `/shop/index.html` 與 `/contact/index.html`，讓 Vercel 直接提供兩個公開網址及其獨立 Metadata。
 - 舊 Hash 路由和所有私人路由繼續可用。
 - 中文精簡字體已重新產生，新增 SEO 文案不會缺字。
 

@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/build-seo-pages.mjs && vite build",
     "preview": "vite preview",
-    "test": "node scripts/test-public-fonts.mjs && node scripts/test-seo.mjs && node scripts/test-catalog-presentation.mjs && node scripts/test-date-range.mjs && node scripts/test-booking-state.mjs && node scripts/test-database.mjs && node scripts/test-staff-portal.mjs && node scripts/test-staff-auth.mjs && node scripts/test-business-os.mjs"
+    "test": "node scripts/build-seo-pages.mjs && node scripts/test-public-fonts.mjs && node scripts/test-seo.mjs && node scripts/test-catalog-presentation.mjs && node scripts/test-date-range.mjs && node scripts/test-booking-state.mjs && node scripts/test-database.mjs && node scripts/test-staff-portal.mjs && node scripts/test-staff-auth.mjs && node scripts/test-business-os.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
