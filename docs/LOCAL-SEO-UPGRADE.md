@@ -102,7 +102,20 @@ Sitemap 列出四個正式公開網址：
 - 常見問題可以展開；切換英文後正文、Title、HTML語言及Canonical一致。
 - 私人會員頁 `noindex, nofollow, noarchive`，移除Canonical及公開Schema；回到公開頁恢復索引設定。
 
-正式部署驗證結果在完成後補於本報告。
+### 正式部署驗證
+
+- 功能提交：[339ce25](https://github.com/AshHuHK/rouspa-website/commit/339ce25)，已推送 `main`。
+- GitHub的Vercel狀態：`success`，描述 `Deployment has completed`。
+- [正式部署記錄](https://vercel.com/ashhuhks-projects/rouspa-website/BSAX35PC5j65SxQEpSBdu6zFT5Vp)。
+- `/`、`/services/`、`/shop/`、`/contact/`均HTTP200，獨立Title與Canonical正確。
+- `/services/`原始HTML包含服務正文與H1；正式站React取得目錄後顯示當前療程價格。
+- `/sitemap.xml`：HTTP200，Content-Type `application/xml`，包含四個公開網址，直接訪問沒有轉址。
+- `/robots.txt`：HTTP200，Content-Type `text/plain; charset=utf-8`，指向正式Sitemap。
+- 手機及桌面JPEG資產均HTTP200，實際下載155,496及421,613 bytes。
+- 正式站390px手機瀏覽器驗證：無橫向溢出、單一H1、目前三檔價格與Schema一致；「線上預約」跳至 `/#booking`，定位在導覽列下方16px。
+- 以Googlebot User-Agent從本機檢查Sitemap也回傳HTTP200；這只验证该請求頭未被網站拒絕，不代表真實Googlebot或Search Console已抓取成功。
+
+Search Console未重送或重建；Google帳戶內的抓取、索引、排名狀態不在本次驗證範圍。
 
 ## 後續觀察
 
