@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, rpc, errorText, money, dateTime } from './lib/spa.js';
 import { Field, MutationForm, Empty } from './OperationsShared.jsx';
+import { AttendanceEmployee } from './Attendance.jsx';
 
 export const staffRoleNames = {owner:'店主',manager:'主管',receptionist:'櫃台',therapist:'技師'};
 export const payBasisNames = {monthly:'月薪',hourly:'時薪',session:'每堂薪酬'};
@@ -42,10 +43,10 @@ export function StaffArchiveForm({row,saved}) {
  <p>{row.name}</p><p>{archived?'恢復後預設不接單、不可登入，請再設定排班、接單與登入權限。':'封存後停止接單並停用後台登入。歷史療程、薪酬設定、提成與評價保留。已有未結束預約時，請先處理預約。'}</p>
  <Field label="處理原因"><textarea required maxLength={1000} value={reason} onChange={e=>setReason(e.target.value)}/></Field></MutationForm>;
 }
-export function StaffSelf({data}) {
+export function StaffSelf({data,from,to}) {
  if (!data.profile) return <Empty>此帳號尚未綁定人員資料，請由店主在「人員管理」配置登入帳號。</Empty>;
  const s=data.profile,m=data.metrics;
- return <><div className="card"><h2>{s.name}</h2><p>{s.title} · {s.employment_type} · {payLabel(s)}</p><p>基本服務提成 {(Number(s.commission_bps)/100).toFixed(2)}% · 商品銷售提成 {(Number(s.product_commission_bps)/100).toFixed(2)}% · 指定客服務加成 {(Number(s.designated_client_bonus_bps||0)/100).toFixed(2)}%</p><p className="muted">薪酬依職稱與聘僱類型規則套用；服務階梯依薪資規則版本計算。累計完成 {data.lifetime_completed} 堂；以下為所選期間的業績與薪資試算。</p></div>
+ return <><AttendanceEmployee from={from} to={to}/><div className="card"><h2>{s.name}</h2><p>{s.title} · {s.employment_type} · {payLabel(s)}</p><p>基本服務提成 {(Number(s.commission_bps)/100).toFixed(2)}% · 商品銷售提成 {(Number(s.product_commission_bps)/100).toFixed(2)}% · 指定客服務加成 {(Number(s.designated_client_bonus_bps||0)/100).toFixed(2)}%</p><p className="muted">薪酬依職稱與聘僱類型規則套用；服務階梯依薪資規則版本計算。累計完成 {data.lifetime_completed} 堂；以下為所選期間的業績與薪資試算。</p></div>
  <div className="grid">{[['實際完成療程',m.completed],['已結帳／待結帳',`${m.settled_completed} / ${m.unsettled_completed}`],['已結帳服務分鐘',m.minutes],['已結帳提成',money(m.commission_cents)],['平均評分／評價數',`${m.rating??'—'} / ${m.reviews}`]].map(([label,value])=><div className="card" key={label}><p className="muted">{label}</p><div className="metric">{value}</div></div>)}</div>
  <p className="muted">完成堂數、提成與評價均依門店最後確認的實際服務技師計入。提成只計算已結帳且未退款的療程。</p>
  <h2>我的評價</h2>{!data.reviews.length&&<Empty>這段期間尚未收到評價。</Empty>}{data.reviews.map((r,i)=><article className="card" key={i} style={{marginTop:12}}><h3>{'★'.repeat(r.rating)} · {r.service_name}</h3><p className="muted">{r.reference} · {dateTime(r.created_at)} · {{pending:'待審核',published:'已公開',hidden:'未公開'}[r.status]}</p><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{r.comment || '僅評分'}</p>{r.reply&&<p>店家回覆：{r.reply}</p>}</article>)}

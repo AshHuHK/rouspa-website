@@ -1,0 +1,9 @@
+export const attendanceStatuses={open:'上班中',pending:'待審核',approved:'已核准工時',rejected:'未核准'};
+export const attendanceFlags={location_unavailable:'無法取得定位',low_accuracy:'定位誤差過大',outside_store:'超出門店範圍',boundary_uncertain:'定位靠近範圍邊界',no_roster:'當日未排班',time_off:'休假期間',early_arrival:'提早超過一小時',late:'遲到',early_departure:'早退',long_shift:'跨日未下班／工時過長',manual_request:'補打卡'};
+export function attendanceMinutes(row){if(!row.effective_start||!row.effective_end)return 0;return Math.max(0,Math.floor((Date.parse(row.effective_end)-Date.parse(row.effective_start))/60000)-Number(row.break_minutes||0));}
+export function taipeiInput(value){if(!value)return '';return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(value)).replace(' ','T');}
+export function attendanceStamp(value,original){if(original&&value===taipeiInput(original))return original;return value?`${value}${value.length===16?':00':''}+08:00`:null;}
+export function getPunchLocation(){return new Promise(resolve=>{
+ if(!globalThis.isSecureContext||!navigator.geolocation){resolve({error:'unsupported',message:'此裝置無法定位，請使用 HTTPS 或申請補打卡。'});return;}
+ navigator.geolocation.getCurrentPosition(position=>resolve({latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy}),error=>resolve({error:({1:'permission_denied',2:'position_unavailable',3:'timeout'})[error.code]||'unavailable',message:({1:'定位權限未開啟。可在瀏覽器允許定位後重試，或填寫原因送出異常打卡。',2:'目前無法取得位置。請靠近窗邊重試，或填寫原因送出異常打卡。',3:'定位逾時。請重試，或填寫原因送出異常打卡。'})[error.code]}),{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+});}

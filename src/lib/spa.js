@@ -7,6 +7,16 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } }
 );
 const errors = {
+  ATTENDANCE_ALREADY_IN: '已有未結束的上班卡，請先打下班卡或申請更正。',
+  ATTENDANCE_NOT_IN: '尚未打上班卡，請重新整理或申請補打卡。',
+  ATTENDANCE_TOO_SHORT: '打卡間隔太短，或休息時間超過本次工時，請核對後再送出。',
+  ATTENDANCE_REASON_REQUIRED: '定位、範圍或班表有異常。請填寫異常原因後再次打卡，交由店主審核。',
+  ATTENDANCE_REQUEST_PENDING: '此出勤已有待審核的更正申請，請等待店主處理。',
+  ATTENDANCE_OVERLAP: '此時段與已有核准工時重疊，請核對薪資工時，避免重複計薪。',
+  ATTENDANCE_STALE: '出勤紀錄已被更新。請重新整理後審核；過期的申請可退回後重新申請。',
+  ATTENDANCE_LINKED_ENTRY: '此工時由打卡產生，請到「人員與排班 → 出勤審核」修改。',
+  INVALID_LOCATION: '定位資料不完整或無效，請重新取得位置。',
+  PAYROLL_LOCKED: '此期間薪資已結算，請先重新開啟薪資結算後再更正工時。',
   ACCOUNT_AUTH_SYNC_REQUIRED: '後台存取權限已儲存，但登入系統尚未同步；請重新執行啟用／停用，或聯絡店主。',
   ACCOUNT_LINK_CLEANUP_REQUIRED: '帳號綁定失敗且清理未完成，請由店主核對登入系統後再重試。',
   INVALID_USERNAME: '使用者名稱需為 3～32 字元的英文字母、數字、點、底線或連字號。',
