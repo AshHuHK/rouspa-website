@@ -38,6 +38,10 @@ const errors = {
   CANCELLATION_CUTOFF: '已超過線上取消期限，請聯絡門店。', NOT_FOUND: '找不到這筆記錄。',
   RATE_LIMIT: '提交次數較多，請稍後再試或聯絡門店。', REVIEW_NOT_ELIGIBLE: '療程完成後才能評價。',
   EXISTING_BOOKINGS: '此時段已有預約，請先改期再設定休假。', REASON_REQUIRED: '請填寫原因。',
+  SCHEDULE_LOCKED: '下月員工自助排班已於台灣時間 8 日鎖定，請改送更動申請。',
+  SCHEDULE_EDIT_OPEN: '目前仍在 1–7 日開放編輯期，請直接修改下月班表並按完成。',
+  INVALID_SCHEDULE: '班表資料不完整，請重新載入整個月份後再提交。',
+  OFF_LIMIT: '當天休班人數已達門店上限，請改選其他日期或聯絡店主。',
   SAME_STAFF: '所選技師與目前實際技師相同。', STAFF_NOT_ACTIVE: '此人員已停用或封存，無法排班或接受療程。',
   DEPARTURE_DETAILS_REQUIRED: '請填寫離職日期與離職原因。',
   STAFF_SKILL_REQUIRED: '此技師尚未取得該療程的服務資格，請先在人員檔案啟用療程。',
@@ -68,7 +72,10 @@ const publicErrorsEn = {
   REVIEW_NOT_ELIGIBLE: 'Reviews are available after the store confirms your treatment is completed.',
   REASON_REQUIRED: 'Please enter a reason.',
   INVALID_TRANSITION: 'This booking cannot be changed in its current state. Please refresh.',
-  REQUEST_CONFLICT: 'Please refresh before trying again.'
+  REQUEST_CONFLICT: 'Please refresh before trying again.',
+  SCHEDULE_LOCKED: 'Next month’s roster is locked. Submit a change request instead.',
+  SCHEDULE_EDIT_OPEN: 'Self-scheduling is still open. Edit next month and submit the complete roster.',
+  OFF_LIMIT: 'The maximum number of staff off that day has been reached.'
 };
 export function errorText(error, lang = 'zh') {
   const message = error?.message || String(error);

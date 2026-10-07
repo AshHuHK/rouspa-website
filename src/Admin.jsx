@@ -5,7 +5,7 @@ import { isInactiveBooking } from './lib/booking-state.js';
 import { useBookingClock } from './lib/useBookingClock.js';
 import { useSession, Login, Field, Modal, Empty, Method, MutationForm, PrivateLink } from './OperationsShared.jsx';
 import { StaffSelf, StaffAccountForm, StaffArchiveForm, EmployeeCustomer, staffRoleNames, payLabel, payBasisNames } from './StaffPortal.jsx';
-import { AccessOS, CatalogOS, DashboardOS, PayrollOS, PosOS, SettingsOS, TeamOS, moduleName } from './BusinessOS.jsx';
+import { AccessOS, CatalogOS, DashboardOS, MonthlyOperationsCalendar, PayrollOS, PosOS, SettingsOS, TeamOS, moduleName } from './BusinessOS.jsx';
 
 export default function Admin() {
  const session=useSession(),[access,setAccess]=useState(null),[tab,setTab]=useState('dashboard'),[range,setRange]=useState(sevenDayRange);
@@ -52,7 +52,7 @@ export default function Admin() {
  {tab==='bookings'&&<Bookings rows={activeData} catalog={catalog} front={front} manager={manager} open={setModal}/>}
  {tab==='customers'&&<Customers rows={activeData} owner={has('customers.manage')} open={setModal}/>}
  {tab==='pos'&&<PosOS catalog={activeData.store} customers={activeData.customers} onReload={load}/>}
- {tab==='self'&&<StaffSelf data={activeData} from={from} to={to}/>}
+ {tab==='self'&&<><StaffSelf data={activeData} from={from} to={to}/><MonthlyOperationsCalendar today={taipeiDate()} refreshToken={activeData}/></>}
  {tab==='team'&&<TeamOS data={activeData} catalog={catalog} canManage={has('team.manage')} canAccounts={role==='owner'} onReload={load}/>}
  {tab==='payroll'&&<PayrollOS data={activeData} staff={activeData.staff} from={from} to={to} canManage={has('payroll.manage')} onReload={load}/>}
  {tab==='catalog'&&<CatalogOS data={activeData} canManage={has('catalog.manage')} onReload={load}/>}

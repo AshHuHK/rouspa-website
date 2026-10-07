@@ -1,5 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import BookingLookup from "./BookingLookup.jsx";
+import PublicBookingExperience from "./PublicBookingExperience.jsx";
 import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistLabel, slotLabel } from "./lib/public-copy.js";
 import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 import { updateBusinessSeo } from './lib/seo.js';
@@ -1328,7 +1329,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           </div>
 
           <div className="booking-mode" role="tablist" aria-label={lang === 'zh' ? '預約功能' : 'Booking options'}><button role="tab" aria-selected={bookingMode === 'new'} onClick={() => setBookingMode('new')}>{lang === 'zh' ? '新增預約' : 'New booking'}</button><button role="tab" aria-selected={bookingMode === 'lookup'} onClick={() => setBookingMode('lookup')}>{lang === 'zh' ? '查詢預約' : 'Find booking'}</button></div>
-          {bookingMode === 'lookup' ? <BookingLookup lang={lang}/> : <>
+          {bookingMode === 'lookup' ? <BookingLookup lang={lang}/> : <PublicBookingExperience catalog={catalog} catalogError={catalogError} lang={lang}/>} {false && <>
           {(catalogError || slotError) && <p role="alert" style={{ color: "#b5523b", textAlign: "center", marginBottom: 20 }}>{catalogError || slotError}</p>}
           {!catalog && !catalogError && <p style={{ textAlign: "center" }}>{lang === "zh" ? "正在載入預約服務…" : "Loading booking services…"}</p>}
           {!bookingComplete && (

@@ -101,7 +101,8 @@ const monthView=await call(employee,'spa_monthly_operations',['2026-10-27']),mon
 check(monthView.from==='2026-10-01'&&monthView.to==='2026-10-31'&&monthView.days.length===31,'monthly operations normalizes and bounds the selected month');
 check(monthDay.shifts.some(row=>row.staff_id===staff[0].id&&row.source==='daily'&&row.start_minute===600&&row.end_minute===1080),'monthly operations uses dated roster over weekly template');
 check(monthDay.leaves.some(row=>row.staff_id===staff[0].id&&row.reason==='教育訓練')&&monthDay.off_count>=1,'monthly operations shows overlapping leave once in the off count');
-check(monthDay.appointments.some(row=>row.id===appointment&&row.staff_id===staff[0].id&&row.room_id===fixture.room&&row.customer_name==='月曆測試客人'),'monthly operations keeps actual staff, customer and bed attribution');
+check(monthDay.appointments.some(row=>row.id===appointment&&row.staff_id===staff[0].id&&row.room_id===fixture.room&&row.customer_name==='月小姐'),'employee calendar keeps actual staff and bed while reducing customer identity to surname');
+check((await call(owner,'spa_monthly_operations',['2026-10-01'])).days.find(day=>day.date==='2026-10-06').appointments.some(row=>row.id===appointment&&row.customer_name==='月曆測試客人'),'owner calendar retains the full customer name');
 check((await call(owner,'spa_monthly_operations',['2026-02-15'])).days.length===28,'monthly operations handles shorter months');
 await db.query("update spa_appointments set status='cancelled' where id=$1",[appointment]);
 check(!(await call(owner,'spa_monthly_operations',['2026-10-01'])).days.find(day=>day.date==='2026-10-06').appointments.some(row=>row.id===appointment),'cancelled bookings do not occupy the operations calendar');
