@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from './public-config.js';
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
 export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY,
+  supabaseUrl,
+  supabaseKey,
   { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } }
 );
 const errors = {
@@ -93,6 +95,25 @@ export function errorText(error, lang = 'zh') {
 export async function rpc(name, args = {}) {
   const { data, error } = await supabase.rpc(name, args);
   if (error) throw error;
+  return data;
+}
+// Public pages must never inherit a stale employee/owner session from the same
+// browser. Calling PostgREST with the publishable key keeps booking, lookup and
+// member access independent from back-office authentication.
+export async function publicRpc(name, args = {}) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${encodeURIComponent(name)}`, {
+    method: 'POST',
+    headers: { apikey: supabaseKey, authorization: `Bearer ${supabaseKey}`, 'content-type': 'application/json' },
+    body: JSON.stringify(args)
+  });
+  const text = await response.text();
+  let data = null;
+  if (text) { try { data = JSON.parse(text); } catch { data = text; } }
+  if (!response.ok) {
+    const error = new Error(data?.message || text || `HTTP ${response.status}`);
+    if (data && typeof data === 'object') Object.assign(error, data);
+    throw error;
+  }
   return data;
 }
 export function money(cents = 0) {

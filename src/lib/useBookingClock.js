@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { rpc } from './spa.js';
+import { publicRpc } from './spa.js';
 
 // Anchor to server time and advance with a monotonic clock, independent of device timezone/clock.
 export function useBookingClock() {
@@ -15,7 +15,7 @@ export function useBookingClock() {
       syncing = true;
       const start = performance.now();
       try {
-        const value = await rpc('spa_server_time');
+        const value = await publicRpc('spa_server_time');
         const epoch = Date.parse(value), end = performance.now();
         if (live && Number.isFinite(epoch)) { anchor.current = { epoch: epoch + (end - start) / 2, at: end }; tick(); }
       } catch { /* Keep the last successful server anchor while offline. */ }

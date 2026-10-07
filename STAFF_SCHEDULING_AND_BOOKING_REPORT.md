@@ -51,13 +51,17 @@
   3. 不指定技師：由系統自動安排。
 - 月曆會依正式每日班表、固定每週班表、休假、服務資格、既有預約與 4 張床計算「休、已滿、可約技師數」。
 - 時段會顯示當時可約技師數。
-- 不指定技師時，系統依當天已安排的服務分鐘数由少到多派單，降低只比訂單筆數造成的工作量偏差。
+- 不指定技師時，系統依當天已安排的服務分鐘數由少到多派單，降低只比訂單筆數造成的工作量偏差。
 - 預約成功頁會顯示實際安排技師，資料庫同時保留「指定／不指定」與最初指定技師。
 - 顧客改期也受相同的當月／下月範圍限制。
+- 公開預約、查詢、會員、評價與商品資料使用獨立公開連線；即使同一瀏覽器留有過期員工登入資料，也不會再讓官網項目空白或阻斷顧客流程。
 
 ## 資料庫變更
 
-遷移檔：`supabase/migrations/202610070001_staff_schedule_booking_flow.sql`
+遷移檔：
+
+- `supabase/migrations/202610070001_staff_schedule_booking_flow.sql`
+- `supabase/migrations/202610070002_booking_calendar_performance.sql`
 
 - `spa_settings.max_staff_off_per_day`
 - `spa_appointments.requested_staff_id`
@@ -66,6 +70,7 @@
 - `spa_staff_schedule_change_requests`
 - 員工排班提交、申請、審核與管理總覽 RPC
 - 官網雙月日曆、時段人數與可選技師 RPC
+- 雙月日曆改採技師與床位分開計算、找到首個可約時段即停止；增加休假時段索引，避免正式資料量下重複展開技師 × 床位矩陣。
 - 預約與改期日期邊界改為伺服器端強制檢查
 - 營運月曆與首頁顧客姓名依權限遮罩
 
@@ -79,8 +84,9 @@
 - 出勤與月曆測試：61 項通過。
 - 本次新增排班與預約測試：18 項通過。
 - 正式建置成功。
-- 390px 手機寬度完成预约流程视觉检查，无横向溢出；双月日历自动改成上下排列。
-- 1180px 桌面宽度完成指定技师双月日历视觉检查，两个月并排显示。
+- 390px 手機寬度完成預約流程視覺檢查，無橫向溢出；雙月日曆自動改成上下排列。
+- 1180px 桌面寬度完成指定技師雙月日曆視覺檢查，兩個月並排顯示。
+- 正式 Supabase 實測：`spa_booking_calendar` 回傳 31 天約 0.7 秒，`spa_public_slots` 約 0.3 秒；原先超時的整月查詢已排除。
 
 ## 主要修改檔案
 
@@ -94,4 +100,4 @@
 - `src/lib/spa.js`
 - `scripts/test-schedule-booking.mjs`
 - `supabase/migrations/202610070001_staff_schedule_booking_flow.sql`
-
+- `supabase/migrations/202610070002_booking_calendar_performance.sql`

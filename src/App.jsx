@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import BookingLookup from "./BookingLookup.jsx";
 import PublicBookingExperience from "./PublicBookingExperience.jsx";
 import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistLabel, slotLabel } from "./lib/public-copy.js";
-import { rpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
+import { publicRpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 import { updateBusinessSeo } from './lib/seo.js';
 import { serviceAddonGroup, serviceCardVariant, serviceDurationGroups, servicePresentationCards } from "./lib/catalog-presentation.js";
 
@@ -161,7 +161,7 @@ function todayKey() {
 }
 
 async function submitFeedback(message) {
-  try { await rpc("spa_submit_feedback", { p_message: message }); return { success: true }; }
+  try { await publicRpc("spa_submit_feedback", { p_message: message }); return { success: true }; }
   catch { return { success: false }; }
 }
 
@@ -353,7 +353,7 @@ const FeedbackSection = ({ t }) => {
 
 function PublishedReviews({lang}) {
  const [reviews,setReviews]=useState([]);
- useEffect(()=>{let live=true;rpc('spa_public_reviews').then(rows=>{if(live)setReviews(rows);}).catch(()=>{});return()=>{live=false;};},[]);
+ useEffect(()=>{let live=true;publicRpc('spa_public_reviews').then(rows=>{if(live)setReviews(rows);}).catch(()=>{});return()=>{live=false;};},[]);
  if(!reviews.length)return null;
  return <section className="public-reviews" style={{padding:"30px 30px 80px",maxWidth:900,margin:"0 auto"}}><h2 style={{fontWeight:500,textAlign:"center",color:"#a3823f",marginBottom:28}}>{lang==='zh'?'顧客療程評價':'Verified guest reviews'}</h2><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:20}}>{reviews.map((r,i)=><article key={i} style={{padding:24,border:"1px solid rgba(163,130,63,.2)",borderRadius:4}}><p aria-label={`${r.rating} / 5`} style={{color:"#a3823f"}}>{'★'.repeat(r.rating)}{'☆'.repeat(5-r.rating)}</p><p style={{marginTop:12,lineHeight:1.8,whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{r.comment}</p><p style={{fontSize:12,opacity:.7,marginTop:12}}>{r.therapist} · {taipeiDate(new Date(r.created_at))}</p>{r.reply&&<p style={{marginTop:16,lineHeight:1.8,fontSize:13,whiteSpace:"pre-wrap"}}>{lang==='zh'?'門店回覆：':'Our reply: '}{r.reply}</p>}</article>)}</div></section>;
 }
@@ -477,7 +477,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   }, [bookingStep, bookingComplete, bookingMode]);
 
   useEffect(() => {
-    rpc("spa_catalog").then(setCatalog).catch(err => setCatalogError(errorText(err, lang)));
+    publicRpc("spa_catalog").then(setCatalog).catch(err => setCatalogError(errorText(err, lang)));
   }, []);
 
   useEffect(() => {
@@ -485,7 +485,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
     if (!selectedDate || selectedService === null || !services[selectedService]) return;
     let current = true;
     setLoadingSlots(true); setSlotError("");
-    rpc("spa_availability", { p_service: services[selectedService].id, p_date: selectedDate, p_staff: selectedTherapist === -1 ? null : selectedTherapist })
+    publicRpc("spa_availability", { p_service: services[selectedService].id, p_date: selectedDate, p_staff: selectedTherapist === -1 ? null : selectedTherapist })
       .then(slots => { if (current) setBookedSlots(slots); })
       .catch(err => { if (current) setSlotError(errorText(err, lang)); })
       .finally(() => { if (current) setLoadingSlots(false); });
@@ -506,13 +506,13 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
     const fingerprint = JSON.stringify(payload);
     if (bookingRequest.current?.fingerprint !== fingerprint) bookingRequest.current = { fingerprint, id: crypto.randomUUID() };
     try {
-      const result = await rpc("spa_create_booking", { p_request: bookingRequest.current.id, ...payload });
+      const result = await publicRpc("spa_create_booking", { p_request: bookingRequest.current.id, ...payload });
       setReceipt(result); setBookingComplete(true);
     } catch (err) {
       setSlotError(errorText(err, lang));
       if (err.message?.includes("SLOT_TAKEN")) {
         setSelectedTime(""); setBookingStep(2);
-        try { setBookedSlots(await rpc("spa_availability", { p_service: payload.p_service, p_date: selectedDate, p_staff: payload.p_staff })); }
+        try { setBookedSlots(await publicRpc("spa_availability", { p_service: payload.p_service, p_date: selectedDate, p_staff: payload.p_staff })); }
         catch { setBookedSlots([]); }
       }
     } finally { setSubmitting(false); }

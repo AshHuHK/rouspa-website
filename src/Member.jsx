@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { rpc, errorText, money, dateTime, statusNames } from './lib/spa.js';
+import { publicRpc, errorText, money, dateTime, statusNames } from './lib/spa.js';
 import { statusNamesEn, therapistLabel } from './lib/public-copy.js';
 import './booking-lookup.css';
 
@@ -7,8 +7,8 @@ export default function Member({lang='zh'}){
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[access,setAccess]=useState(null),[detail,setDetail]=useState(null);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[reviewing,setReviewing]=useState(null);
  const en=lang==='en',t=(zh,english)=>en?english:zh;
- async function login(event){event.preventDefault();if(busy)return;setBusy(true);setError('');setNotice('');try{const result=await rpc('spa_member_login',{p_phone:phone.trim(),p_name:name.trim()});if(!result?.member){setDetail(null);setAccess(null);setError(t('找不到相符的會員資料，請確認姓名與手機和預約時完全一致。','No matching member profile. Use the exact name and phone number from your booking.'));return;}setAccess(result.access_token);setDetail(result.member);}catch(e){setError(errorText(e,lang));}finally{setBusy(false);}}
- async function refresh(token=access){if(!token)return;const next=await rpc('spa_member_detail',{p_access:token});setDetail(next);return next;}
+ async function login(event){event.preventDefault();if(busy)return;setBusy(true);setError('');setNotice('');try{const result=await publicRpc('spa_member_login',{p_phone:phone.trim(),p_name:name.trim()});if(!result?.member){setDetail(null);setAccess(null);setError(t('找不到相符的會員資料，請確認姓名與手機和預約時完全一致。','No matching member profile. Use the exact name and phone number from your booking.'));return;}setAccess(result.access_token);setDetail(result.member);}catch(e){setError(errorText(e,lang));}finally{setBusy(false);}}
+ async function refresh(token=access){if(!token)return;const next=await publicRpc('spa_member_detail',{p_access:token});setDetail(next);return next;}
  function logout(){setAccess(null);setDetail(null);setReviewing(null);setNotice('');setError('');}
  const coupons=detail?.coupons||[],usable=coupons.filter(item=>item.status==='active'),appointments=detail?.appointments||[],orders=detail?.orders||[],packages=detail?.packages||[];
  return <main className="lookup-page member-page"><div className="booking-lookup member-shell">
@@ -30,6 +30,6 @@ function MemberSection({title,subtitle,empty,rows,render}){return <section class
 
 function MemberReview({access,row,lang,close,saved}){
  const [rating,setRating]=useState('5'),[comment,setComment]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');const t=(zh,en)=>lang==='en'?en:zh;
- async function submit(event){event.preventDefault();if(busy)return;setBusy(true);setError('');try{await rpc('spa_customer_review',{p_access:access,p_appointment:row.id,p_rating:Number(rating),p_comment:comment});await saved();}catch(e){setError(errorText(e,lang));}finally{setBusy(false);}}
+ async function submit(event){event.preventDefault();if(busy)return;setBusy(true);setError('');try{await publicRpc('spa_customer_review',{p_access:access,p_appointment:row.id,p_rating:Number(rating),p_comment:comment});await saved();}catch(e){setError(errorText(e,lang));}finally{setBusy(false);}}
  return <form className="lookup-change" onSubmit={submit}><h4>{t('評價實際服務技師','Review your actual therapist')} · {therapistLabel(row,lang)}</h4><label>{t('服務評分','Rating')}<select value={rating} onChange={e=>setRating(e.target.value)}>{[5,4,3,2,1].map(value=><option value={value} key={value}>{'★'.repeat(value)} {value} / 5</option>)}</select></label><label>{t('您的體驗（最多 1000 字）','Your experience (up to 1,000 characters)')}<textarea rows={3} maxLength={1000} value={comment} onChange={e=>setComment(e.target.value)}/></label><p className="lookup-help">{t('提交成功後會立即發放 NT$50 優惠券。每次療程限評價和領取一次。','An NT$50 coupon is issued immediately after submission. One review and reward per treatment.')}</p>{error&&<p className="lookup-alert">{error}</p>}<div className="lookup-actions"><button type="button" disabled={busy} onClick={close}>{t('返回','Back')}</button><button className="lookup-primary" disabled={busy}>{busy?t('提交中…','Submitting…'):t('提交評價並領券','Submit and get coupon')}</button></div></form>;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { rpc, errorText, dateTime, money, statusNames, taipeiDate, dateAfter } from './lib/spa.js';
+import { publicRpc, errorText, dateTime, money, statusNames, taipeiDate, dateAfter } from './lib/spa.js';
 import { isInactiveBooking, canChangeBooking } from './lib/booking-state.js';
 import { useBookingClock } from './lib/useBookingClock.js';
 import { statusNamesEn, therapistLabel, slotLabel } from './lib/public-copy.js';
@@ -18,7 +18,7 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
     const sequence = request.current;
     inFlight.current = true;
     try {
-      const next = await rpc('spa_customer_booking_list', { p_access: token });
+      const next = await publicRpc('spa_customer_booking_list', { p_access: token });
       if (sequence === request.current) { setRows(next); setError(''); }
     } catch (e) {
       if (sequence === request.current) {
@@ -31,7 +31,7 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
     if (!privateToken) return;
     let live = true;
     setBusy(true);setError('');
-    rpc('spa_booking_link_access', { p_token: privateToken }).then(result => {
+    publicRpc('spa_booking_link_access', { p_token: privateToken }).then(result => {
       if (!live) return;
       if (!result) { setError(t('此私人預約連結無效。', 'This private booking link is invalid.')); return; }
       setAccess(result.access_token);setRows(result.appointments);setSearched(true);
@@ -53,7 +53,7 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
     const sequence = ++request.current;
     setBusy(true);setAccess(null);setRows([]);setError('');setNotice('');setSearched(false);setEditing(null);
     try {
-      const result = await rpc('spa_lookup_bookings', { p_phone: phone.trim(), p_name: name.trim() });
+      const result = await publicRpc('spa_lookup_bookings', { p_phone: phone.trim(), p_name: name.trim() });
       if (sequence !== request.current) return;
       setRows(result.appointments);setAccess(result.access_token || null);setSearched(true);
       setView(result.appointments.some(a => !isInactiveBooking(a, now)) ? 'active' : 'inactive');
@@ -117,11 +117,11 @@ function BookingChange({ access, row, kind, lang, now, close, changed }) {
   const [date, setDate] = useState(row.business_date), [staff, setStaff] = useState(row.staff_id), [start, setStart] = useState('');
   const [catalog, setCatalog] = useState(null), [slots, setSlots] = useState([]), [loading, setLoading] = useState(false), [reload, setReload] = useState(0);
   const attempt = useRef(null), en = lang === 'en', t = (zh, english) => en ? english : zh;
-  useEffect(() => { if (kind !== 'reschedule') return;let live = true;rpc('spa_catalog').then(c => { if (live) setCatalog(c); }).catch(e => { if (live) setError(errorText(e, lang)); });return () => { live = false; }; }, [kind]);
+  useEffect(() => { if (kind !== 'reschedule') return;let live = true;publicRpc('spa_catalog').then(c => { if (live) setCatalog(c); }).catch(e => { if (live) setError(errorText(e, lang)); });return () => { live = false; }; }, [kind]);
   useEffect(() => {
     if (kind !== 'reschedule' || !date) return;
     let live = true;setStart('');setSlots([]);setError('');setLoading(true);
-    rpc('spa_customer_availability', { p_access: access, p_appointment: row.id, p_date: date, p_staff: staff || null })
+    publicRpc('spa_customer_availability', { p_access: access, p_appointment: row.id, p_date: date, p_staff: staff || null })
       .then(next => { if (live) setSlots(next); }).catch(e => { if (live) setError(errorText(e, lang)); }).finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [access, row.id, kind, date, staff, reload]);
@@ -132,7 +132,7 @@ function BookingChange({ access, row, kind, lang, now, close, changed }) {
     if (attempt.current?.fingerprint !== fingerprint) attempt.current = { fingerprint, id: crypto.randomUUID() };
     setBusy(true);setError('');
     try {
-      const result = await rpc(kind === 'cancel' ? 'spa_customer_cancel' : 'spa_customer_reschedule', { ...payload, p_request: attempt.current.id });
+      const result = await publicRpc(kind === 'cancel' ? 'spa_customer_cancel' : 'spa_customer_reschedule', { ...payload, p_request: attempt.current.id });
       await changed(result, kind);
     } catch (e) { setError(errorText(e, lang));if (e.message?.includes('SLOT_TAKEN')) { setStart('');setReload(n => n + 1); } }
     finally { setBusy(false); }
@@ -155,7 +155,7 @@ function BookingChange({ access, row, kind, lang, now, close, changed }) {
 function BookingReview({access,row,lang,close,changed}) {
  const [rating,setRating]=useState('5'),[comment,setComment]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const t=(zh,en)=>lang==='en'?en:zh;
- return <form className="lookup-change" onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setError('');try{const result=await rpc('spa_customer_review',{p_access:access,p_appointment:row.id,p_rating:Number(rating),p_comment:comment});await changed(result,'review');}catch(e){setError(errorText(e, lang));}finally{setBusy(false);}}}>
+ return <form className="lookup-change" onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setError('');try{const result=await publicRpc('spa_customer_review',{p_access:access,p_appointment:row.id,p_rating:Number(rating),p_comment:comment});await changed(result,'review');}catch(e){setError(errorText(e, lang));}finally{setBusy(false);}}}>
  <h4>{t('評價服務技師','Review therapist')} · {therapistLabel(row,lang)}</h4><label>{t('服務評分','Rating')}<select aria-label={t('服務評分','Rating')} value={rating} onChange={e=>setRating(e.target.value)}>{[5,4,3,2,1].map(n=><option key={n} value={n}>{'★'.repeat(n)} {n} / 5</option>)}</select></label>
  <label>{t('您的體驗（最多 1000 字）','Your experience (up to 1000 characters)')}<textarea maxLength={1000} rows={3} value={comment} onChange={e=>setComment(e.target.value)}/></label>
  <p className="lookup-help">{t('提交後立即發放 NT$50 優惠券到會員中心；每次療程限評價和領取一次。門店審核後可公開，公開內容不顯示姓名和手機。','An NT$50 coupon is issued to your member centre immediately. One review and reward per completed visit. Public reviews omit your name and phone.')}</p>

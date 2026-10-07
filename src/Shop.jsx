@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { STORE } from "./lib/public-copy.js";
-import { rpc, errorText, money } from "./lib/spa.js";
+import { publicRpc, errorText, money } from "./lib/spa.js";
 import { productPresentationMark } from "./lib/catalog-presentation.js";
 
 function ProductArtwork({ product, category, lang }) {
@@ -14,7 +14,7 @@ function ProductArtwork({ product, category, lang }) {
 export default function Shop({ lang = "zh", onNavigateHome }) {
   const [catalog,setCatalog]=useState(null),[activeCategory,setActiveCategory]=useState("all"),[error,setError]=useState("");
   const isZh=lang==="zh";
-  useEffect(()=>{let live=true;rpc("spa_store_catalog").then(data=>{if(live)setCatalog(data);}).catch(e=>{if(live)setError(errorText(e,lang));});return()=>{live=false;};},[lang]);
+  useEffect(()=>{let live=true;publicRpc("spa_store_catalog").then(data=>{if(live)setCatalog(data);}).catch(e=>{if(live)setError(errorText(e,lang));});return()=>{live=false;};},[lang]);
   const categories=catalog?.categories||[],allProducts=catalog?.products||[];
   const products=useMemo(()=>allProducts.filter(p=>activeCategory==="all"||p.category_id===activeCategory),[allProducts,activeCategory]);
   const zeroBehavior=catalog?.settings?.zero_stock_behavior||"sold_out";
