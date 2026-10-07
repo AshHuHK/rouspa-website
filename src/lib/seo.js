@@ -69,19 +69,19 @@ export function applySeo(route, lang = 'zh') {
   document.title = copy.title;
   document.documentElement.lang = lang === 'en' ? 'en' : 'zh-Hant';
   setCanonical(page.canonical);
-  upsertMeta('meta[name="description"]', { name: 'description', content: copy.description });
+  upsertMeta('meta[name="description"]', { name: 'description', content: copy.metaDescription || copy.description });
   upsertMeta('meta[name="robots"]', { name: 'robots', content: 'index, follow, max-image-preview:large' });
   upsertMeta('meta[name="googlebot"]', { name: 'googlebot', content: 'index, follow, max-image-preview:large' });
   upsertMeta('meta[property="og:title"]', { property: 'og:title', content: copy.title });
   upsertMeta('meta[property="og:description"]', { property: 'og:description', content: copy.description });
   upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonical });
   upsertMeta('meta[property="og:image"]', { property: 'og:image', content: IMAGE });
-  upsertMeta('meta[property="og:image:alt"]', { property: 'og:image:alt', content: lang === 'en' ? 'Hair-bathing care at ROU SPA' : '柔療髮浴的頭療與髮浴服務' });
+  upsertMeta('meta[property="og:image:alt"]', { property: 'og:image:alt', content: lang === 'en' ? 'ROU SPA brand logo' : '柔療髮浴 ROU SPA 品牌標誌' });
   upsertMeta('meta[property="og:locale"]', { property: 'og:locale', content: lang === 'en' ? 'en_US' : 'zh_TW' });
   upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: copy.title });
   upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: copy.description });
   upsertMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: IMAGE });
-  upsertMeta('meta[name="twitter:image:alt"]', { name: 'twitter:image:alt', content: lang === 'en' ? 'Hair-bathing care at ROU SPA' : '柔療髮浴的頭療與髮浴服務' });
+  upsertMeta('meta[name="twitter:image:alt"]', { name: 'twitter:image:alt', content: lang === 'en' ? 'ROU SPA brand logo' : '柔療髮浴 ROU SPA 品牌標誌' });
 }
 
 function setStructuredData(route, lang) {

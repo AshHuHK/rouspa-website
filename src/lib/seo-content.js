@@ -1,11 +1,15 @@
 import { STORE } from './public-copy.js';
 
 export const ORIGIN = 'https://www.rouspa.tw';
-export const SEO_IMAGE = `${ORIGIN}/og-image.jpg`;
+export const SEO_IMAGE = `${ORIGIN}/rou-spa-logo.jpg`;
 export const PAGE_SEO = {
   home: {
     canonical: '/',
-    zh: { title: '嘉義頭療｜柔療髮浴 ROU SPA・頭皮養護與髮浴', description: '柔療髮浴 ROU SPA 位於嘉義市西區蘭井街421號，以東方頭療結合頭皮清潔、頭肩頸按摩與養生髮浴。查看45、90、120分鐘療程、技師排班與今日營業時間，線上預約。' },
+    zh: {
+      title: '嘉義頭療｜柔療髮浴 ROU SPA・頭皮養護與髮浴',
+      description: '柔療髮浴 ROU SPA 位於嘉義市西區蘭井街421號，以東方頭療結合頭皮清潔、頭肩頸按摩與養生髮浴。查看45、90、120分鐘療程、技師排班與今日營業時間，線上預約。',
+      metaDescription: '柔療髮浴位於嘉義市西區，主打「中式頭療」，提供頭皮養護與肌膚調理、頭部按摩、肩頸放鬆。溫和水療洗護潔淨頭皮、舒緩疲勞，滿足日常保養與放鬆需求。立即查看療程與線上預約。',
+    },
     en: { title: 'ROU SPA Chiayi | Head massage, scalp care & hair bathing', description: 'Discover Eastern-inspired head massage, scalp cleansing and wellness hair bathing at ROU SPA in Chiayi. Explore 45, 90 and 120-minute treatments, opening hours and online booking.' },
   },
   services: {
@@ -44,14 +48,21 @@ export function buildStructuredData(route = 'home', catalog = null, lang = 'zh')
   const copy = page[lang] || page.zh;
   const businessId = `${ORIGIN}/#business`;
   const business = {
-    '@type': ['DaySpa', 'HealthAndBeautyBusiness'], '@id': businessId,
-    name: '柔療髮浴 ROU SPA', url: `${ORIGIN}/`, image: SEO_IMAGE, logo: `${ORIGIN}/logo-mark.png`,
-    description: lang === 'en' ? 'Eastern-inspired head massage, scalp care and hair bathing in Chiayi.' : '嘉義市的東方頭療、頭皮養護、頭肩頸舒緩與養生髮浴門店。',
+    '@type': ['LocalBusiness', 'DaySpa', 'HealthAndBeautyBusiness'], '@id': businessId,
+    name: '柔療髮浴 ROU SPA', url: `${ORIGIN}/`, image: SEO_IMAGE, logo: SEO_IMAGE,
+    description: lang === 'en' ? 'Chinese-style head therapy, scalp care and hair bathing in Chiayi.' : '柔療髮浴位於嘉義市西區，提供嘉義中式頭療、頭皮養護、頭部按摩與肩頸放鬆。',
     telephone: '+886978918737', email: STORE.EMAIL, currenciesAccepted: 'TWD',
     address: { '@type': 'PostalAddress', streetAddress: '蘭井街421號', addressLocality: '西區', addressRegion: '嘉義市', addressCountry: 'TW' },
-    sameAs: [STORE.LINE_URL], hasMap: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(STORE.ADDRESS_ZH),
+    sameAs: [
+      'https://www.facebook.com/share/19Wj9WjiiY/',
+      'https://www.instagram.com/rouliao__spa/',
+      STORE.LINE_URL,
+    ],
+    hasMap: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(STORE.ADDRESS_ZH),
   };
-  const hours = (catalog?.business_hours || []).filter(row => DAYS[row.weekday] && (row.is_open === false || validWindow(row)));
+  // Keep the LocalBusiness weekly hours at the official SEO value supplied by
+  // the store. Same-day closures/special hours can still override one date.
+  const hours = DAYS.map((_, weekday) => ({ weekday, is_open: true, opening_minute: 600, closing_minute: 1320 }));
   if (hours.length) business.openingHoursSpecification = hours.map(row => ({
     '@type': 'OpeningHoursSpecification', dayOfWeek: DAYS[row.weekday],
     opens: row.is_open ? clock(row.opening_minute) : '00:00', closes: row.is_open ? clock(row.closing_minute) : '00:00',

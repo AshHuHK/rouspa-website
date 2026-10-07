@@ -12,7 +12,7 @@ function pageHtml(route, page) {
     .replace(/<script type="application\/ld\+json" id="rouspa-structured-data">[\s\S]*?<\/script>/,
       `<script type="application/ld+json" id="rouspa-structured-data">${JSON.stringify(buildStructuredData(route)).replace(/</g, '\\u003c')}</script>`);
   for (const [attribute, name, value] of [
-    ['name', 'description', copy.description], ['property', 'og:title', copy.title], ['property', 'og:description', copy.description],
+    ['name', 'description', copy.metaDescription || copy.description], ['property', 'og:title', copy.title], ['property', 'og:description', copy.description],
     ['property', 'og:url', `${ORIGIN}${page.canonical}`], ['name', 'twitter:title', copy.title], ['name', 'twitter:description', copy.description],
   ]) html = html.replace(new RegExp(`<meta ${attribute}="${name}" content="[^"]*"\\s*\\/>`), `<meta ${attribute}="${name}" content="${escapeHtml(value)}" />`);
   if (route === 'services') {

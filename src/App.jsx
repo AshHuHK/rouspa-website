@@ -1199,11 +1199,11 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           </div>
 
           {/* 棕色加粗副標：掃光 1.6 秒，停留 5 秒後再次由左至右掃過 */}
-          <h1 className="animate-in-delay-1 hero-brand-block">
-            <span className="hero-local-heading">{lang === "zh" ? "嘉義頭療 · 柔療髮浴 ROU SPA" : "Head care in Chiayi · ROU SPA"}</span>
+          <div className="animate-in-delay-1 hero-brand-block">
+            <h1 className="hero-local-heading" aria-label={lang === "zh" ? "嘉義中式頭療｜柔療髮浴 ROU SPA" : "Chinese head therapy in Chiayi | ROU SPA"}>{lang === "zh" ? "嘉義頭療 · 柔療髮浴 ROU SPA" : "Head care in Chiayi · ROU SPA"}</h1>
             <span className="hero-fancy">{t.brandSub}</span>
             <span className="hero-fancy">{t.hero.title}</span>
-          </h1>
+          </div>
 
           {/* 裝飾線 */}
           <div className="animate-in-delay-2" style={{ marginBottom: "24px" }}>
@@ -1297,7 +1297,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
 
           <p className="service-page-intro">{lang === 'zh' ? '依照想放鬆的時間，選擇45、90或120分鐘頭療；完整步驟與加購內容如下。' : 'Choose a 45, 90 or 120-minute head-care visit. Explore the care steps and add-ons below.'}<br /><a href="/services/">{lang === 'zh' ? '認識頭療服務與預約常見問題' : 'About our head-care treatments and booking'} →</a></p>
           {websiteServiceGroups.map((group,groupIndex)=><section key={group.code} className={`service-duration-group ${isAnimated("services")?`animate-in-delay-${Math.min(groupIndex+1,4)}`:""}`}>
-            <header className="service-duration-heading"><span>{group.minutes}</span><div><h3>{lang==='zh'?'分鐘療程':'MINUTE TREATMENTS'}</h3><small>{lang==='zh'?`${group.services.length} 項療程`:`${group.services.length} treatment${group.services.length===1?'':'s'}`}</small></div></header>
+            <header className="service-duration-heading"><span>{group.minutes}</span><div><h3 aria-label={lang==='zh'?`${group.minutes}分鐘療程`:`${group.minutes}-minute treatments`}>{lang==='zh'?'分鐘療程':'MINUTE TREATMENTS'}</h3><small>{lang==='zh'?`${group.services.length} 項療程`:`${group.services.length} treatment${group.services.length===1?'':'s'}`}</small></div></header>
             <div className="service-category-services">{group.services.map(service=>{const rituals=serviceRituals(service);return <article className="service-entry" key={service.id}>
               <div className="service-heading"><h4 className="service-name">{publicName(service,lang)}</h4><span className="service-price">{money(service.price_cents)}</span></div>
               <div className="service-vertical-list formula-list" style={{maxWidth:"520px",margin:"0 auto"}}>{rituals.map((ritual,index)=>{const key=`${service.id}-${index}`;return <FormulaCard key={key} stamp={ritual.stamp} name={ritual.name} sub={ritual.sub} steps={ritual.steps||[]} variant={serviceCardVariant(service)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;})}</div>

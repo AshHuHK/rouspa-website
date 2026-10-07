@@ -59,7 +59,7 @@ button, [role=button], a { -webkit-tap-highlight-color: transparent; }
 }
 
 .hero-background{position:absolute;inset:0;display:block;pointer-events:none}.hero-background img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
-.hero-local-heading{display:block;font-size:12px;line-height:1.8;letter-spacing:1px;color:#6d5131;font-weight:500;margin-bottom:4px}
+.hero-local-heading{display:block;font-size:12px;line-height:1.8;letter-spacing:1px;color:#6d5131;font-weight:500;margin:0 0 4px}
 .service-page-intro{max-width:620px;margin:-30px auto 42px;text-align:center;font-size:14px;line-height:2;color:#766954;letter-spacing:.5px}.service-page-intro a{display:inline-flex;align-items:center;min-height:44px;color:#80622d;text-underline-offset:4px}
 .public-footer-links{display:flex;justify-content:center;gap:12px 24px;flex-wrap:wrap;margin:18px auto 0}.public-footer-links a{color:#80622d;font-size:13px;min-height:44px;display:inline-flex;align-items:center;text-underline-offset:4px}
 @media(max-width:768px){.service-page-intro{margin:0 auto 30px}.hero-local-heading{font-size:11px;letter-spacing:.6px}}

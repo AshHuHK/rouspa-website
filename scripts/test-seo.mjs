@@ -9,7 +9,7 @@ const check = (condition, message) => {
   if (!condition) throw new Error(`SEO test failed: ${message}`);
 };
 
-const [index, shop, contact, services, sitemap, robots, vercel] = await Promise.all([
+const [index, shop, contact, services, sitemap, robots, vercel, app] = await Promise.all([
   readFile(new URL('../index.html', import.meta.url), 'utf8'),
   readFile(new URL('../shop/index.html', import.meta.url), 'utf8'),
   readFile(new URL('../contact/index.html', import.meta.url), 'utf8'),
@@ -17,6 +17,7 @@ const [index, shop, contact, services, sitemap, robots, vercel] = await Promise.
   readFile(new URL('../public/sitemap.xml', import.meta.url), 'utf8'),
   readFile(new URL('../public/robots.txt', import.meta.url), 'utf8'),
   readFile(new URL('../vercel.json', import.meta.url), 'utf8'),
+  readFile(new URL('../src/App.jsx', import.meta.url), 'utf8'),
 ]);
 
 const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
@@ -31,15 +32,23 @@ check(/Sitemap: https:\/\/www\.rouspa\.tw\/sitemap\.xml/.test(robots), 'robots.t
 for (const path of ['admin', 'member', 'lookup', 'manage', 'review']) check(robots.includes(`Disallow: /${path}/`), `robots.txt blocks the ${path} clean path`);
 
 check(index.includes('<link rel="canonical" href="https://www.rouspa.tw/"'), 'homepage has a canonical URL');
-check(index.includes('property="og:image" content="https://www.rouspa.tw/og-image.jpg"'), 'homepage has an absolute social image');
+check(index.includes('<title>嘉義頭療｜柔療髮浴 ROU SPA・頭皮養護與髮浴</title>'), 'homepage title remains unchanged');
+check(index.includes('<meta name="description" content="柔療髮浴位於嘉義市西區，主打「中式頭療」，提供頭皮養護與肌膚調理、頭部按摩、肩頸放鬆。溫和水療洗護潔淨頭皮、舒緩疲勞，滿足日常保養與放鬆需求。立即查看療程與線上預約。"'), 'homepage uses the approved meta description');
+check(index.includes('property="og:image" content="https://www.rouspa.tw/rou-spa-logo.jpg"'), 'homepage has the supplied logo as its absolute social image');
 check(index.includes('name="twitter:card" content="summary_large_image"'), 'Twitter large-card metadata exists');
 const jsonLd = index.match(/<script type="application\/ld\+json" id="rouspa-structured-data">([\s\S]*?)<\/script>/)?.[1];
 check(Boolean(jsonLd), 'LocalBusiness JSON-LD exists');
 const graph = JSON.parse(jsonLd)['@graph'];
 const business = graph.find(item => Array.isArray(item['@type']) && item['@type'].includes('DaySpa'));
+check(business?.['@type']?.includes('LocalBusiness'), 'business schema explicitly includes LocalBusiness');
 check(business?.address?.streetAddress === '蘭井街421號', 'LocalBusiness contains the public store address');
 check(business?.telephone === '+886978918737', 'LocalBusiness contains a normalized telephone number');
-check(!business.openingHoursSpecification && !business.priceRange, 'static metadata does not freeze mutable prices or opening hours');
+check(business?.logo === 'https://www.rouspa.tw/rou-spa-logo.jpg', 'LocalBusiness logo uses the supplied brand image');
+check(business?.sameAs?.includes('https://www.facebook.com/share/19Wj9WjiiY/') && business.sameAs.includes('https://www.instagram.com/rouliao__spa/'), 'LocalBusiness links the supplied Facebook and Instagram profiles without tracking parameters');
+check(business?.openingHoursSpecification?.length === 7 && business.openingHoursSpecification.every(row => row.opens === '10:00' && row.closes === '22:00'), 'static LocalBusiness hours are 10:00–22:00 every day');
+check(!business.priceRange, 'static metadata does not freeze mutable prices');
+check((app.match(/<h1\b/g) || []).length === 1 && app.includes('aria-label={lang === "zh" ? "嘉義中式頭療｜柔療髮浴 ROU SPA"'), 'homepage has one semantically named H1 while preserving the visible hero copy');
+check(app.includes('<h2 style={{ fontSize: lang === "zh"') && app.includes('<h3 aria-label={lang===\'zh\'?`${group.minutes}分鐘療程`'), 'homepage keeps H2 sections with specifically named H3 treatment groups');
 
 JSON.parse(vercel);
 check(shop.includes('<link rel="canonical" href="https://www.rouspa.tw/shop/"'), 'product HTML has a static product canonical');
@@ -48,6 +57,7 @@ check(contact.includes('<link rel="canonical" href="https://www.rouspa.tw/contac
 check(contact.includes('<title>聯繫柔療髮浴｜嘉義頭療預約與門店資訊</title>'), 'contact HTML has a static contact title');
 check(routeFromLocation({ pathname: '/services/', hash: '' }) === 'services', 'router recognizes the service landing page');
 check(routeFromLocation({ pathname: '/shop/', hash: '' }) === 'shop', 'router recognizes the product clean URL');
+check(routeFromLocation({ pathname: '/shop/', hash: '', search: '?utm_source=facebook' }) === 'shop' && PAGE_SEO.shop.canonical === '/shop/', 'tracking parameters do not change the self-referencing product canonical');
 check(routeFromLocation({ pathname: '/contact/', hash: '' }) === 'contact', 'router recognizes the contact clean URL');
 check(routeFromLocation({ pathname: '/', hash: '#admin' }) === 'admin', 'router keeps the private admin route');
 check(routeFromLocation({ pathname: '/', hash: '#review/private-token' }) === 'review', 'router keeps private review links');
@@ -79,9 +89,7 @@ const liveGraph = buildStructuredData('services', catalog)['@graph'];
 const liveBusiness = liveGraph.find(item => item['@id']?.endsWith('/#business'));
 const service = liveGraph.find(item => item['@type'] === 'Service');
 check(liveBusiness.priceRange === 'NT$1,200–NT$3,200', 'price range converts cents to TWD and excludes hidden/inactive/add-on treatments');
-check(liveBusiness.openingHoursSpecification.length === 2, 'invalid hours are omitted');
-check(liveBusiness.openingHoursSpecification[0].closes === '02:00', 'overnight hours match next-day closing time');
-check(liveBusiness.openingHoursSpecification[1].opens === '00:00' && liveBusiness.openingHoursSpecification[1].closes === '00:00', 'weekly closure is explicit');
+check(liveBusiness.openingHoursSpecification.length === 7 && liveBusiness.openingHoursSpecification.every(row => row.opens === '10:00' && row.closes === '22:00'), 'live LocalBusiness keeps the official weekly SEO hours');
 check(liveBusiness.specialOpeningHoursSpecification[0].opens === '00:00', 'today closure is reflected in special opening hours');
 check(service.hasOfferCatalog.itemListElement.length === 2, 'offers use only currently public main treatments');
 check(service.hasOfferCatalog.itemListElement[0].price === 1200 && service.hasOfferCatalog.itemListElement[0].priceCurrency === 'TWD', 'offer currency/unit matches the visible menu');
@@ -91,7 +99,7 @@ const updated = structuredClone(catalog);
 updated.website_services[0].price_cents = 150000;
 updated.business_hours[0].opening_minute = 660;
 const updatedBusiness = buildStructuredData('home', updated)['@graph'][1];
-check(updatedBusiness.priceRange === 'NT$1,500–NT$3,200' && updatedBusiness.openingHoursSpecification[0].opens === '11:00', 'changed backend values replace old price/hour metadata');
+check(updatedBusiness.priceRange === 'NT$1,500–NT$3,200' && updatedBusiness.openingHoursSpecification[0].opens === '10:00', 'changed backend prices update metadata while official SEO hours remain stable');
 check(!JSON.stringify(liveGraph).includes('aggregateRating'), 'no invented ratings');
 check(servicePageHtml('en', catalog).includes('Head care in Chiayi') && buildStructuredData('services', catalog, 'en')['@graph'][2].inLanguage === 'en', 'English article and metadata use the selected language');
 check(!servicePageHtml('zh', {website_services:[{name:'<img src=x onerror=alert(1)>',status:'active',duration_minutes:45,price_cents:100}]}).includes('<img src=x'), 'backend text is escaped in the service article');
