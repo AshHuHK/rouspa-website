@@ -20,6 +20,7 @@ await check('authenticated owner reads fresh allowed state and receives content 
  assert.equal(seen.provider[0].url,'https://api.kimi.com/coding/v1/chat/completions');assert.equal(seen.provider[0].body.model,'k3');assert.equal(seen.provider[0].body.reasoning_effort,'high');
  assert.equal(seen.provider[0].init.headers['User-Agent'],'ROU-SPA-Steward/1.0'); assert.equal(seen.provider[0].init.headers.Authorization,'Bearer SECRET_SERVER_ONLY');assert.equal(JSON.stringify(res).includes('SECRET_SERVER_ONLY'),false);
  assert.match(seen.provider[0].body.messages[0].content,/完整操作手冊/); assert.equal(res.headers['Cache-Control'],'no-store, private');
+ assert.match(seen.provider[0].body.messages[0].content,/姓名全部是技師／職員/);assert.match(seen.provider[0].body.messages[0].content,/不能因現金流入/);
 });
 await check('unauthenticated request cannot reach database or Kimi',async()=>{const {res,seen}=await scenario({overrides:{headers:{'content-type':'application/json'}}});assert.equal(res.statusCode,401);assert.equal(seen.rpc.length,0);assert.equal(seen.provider.length,0);});
 await check('a public customer token is not a backend identity',async()=>{const {res,seen}=await scenario({session:{role:null,permissions:[]}});assert.equal(res.statusCode,403);assert.equal(seen.provider.length,0);});
