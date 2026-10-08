@@ -1,9 +1,9 @@
 {
-  "reviewed_at": "2026-10-08T20:19:40.070Z",
-  "manual_sha256": "48be94f71dc51e825a9204e927abfe3d1bfb1e15991919137b36ec19cafdbf26",
+  "reviewed_at": "2026-10-08T20:24:48.882Z",
+  "manual_sha256": "742dbab2e557ef392517ba6adf4dc1f254b7df66ec96db4d87e4c16f6ba4a791",
   "sources": {
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
-    "server/ask-steward.mjs": "7e4b5634847405358a5e10b89fa52e93b3481b90d53f7a72b0c698f77075fec1",
+    "server/ask-steward.mjs": "689be66b6d44dc681bd68c02b42b05095133ccd08b1ee1e56e7082cfff475e80",
     "server/steward-context.mjs": "bcd4288aa16a585663a381ba8fe1bd0eae3fd12872f56f11b1c10289d08f4874",
     "src/Admin.jsx": "61ced123336b5d43f03bd919c929b77e3a0901521f76b6ca0e8a1a2d3cf1df36",
     "src/App.jsx": "414aac371689c20d3bd45e45a59d2ff5e3aecd759a445d15237c7e9a66b517d7",
