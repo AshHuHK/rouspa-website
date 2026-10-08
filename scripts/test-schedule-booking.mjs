@@ -10,8 +10,8 @@ for(const file of (await readdir(directory)).sort()){
  let sql=await readFile(new URL(file,directory),'utf8');
  if(file==='202610070001_staff_schedule_booking_flow.sql'){
   await db.exec(`create table public.schedule_test_clock(at_time timestamptz);insert into public.schedule_test_clock values('2026-10-05T10:00:00+08:00');create function spa_private.schedule_test_now() returns timestamptz language sql stable as $$select at_time from public.schedule_test_clock$$;`);
-  sql=sql.replaceAll('now()','spa_private.schedule_test_now()');
  }
+ if(file>='202610070001_staff_schedule_booking_flow.sql')sql=sql.replaceAll('now()','spa_private.schedule_test_now()');
  await db.exec(sql);
 }
 const owner=randomUUID(),employee=randomUUID(),staff=(await db.query("select id from spa_staff where active and employment_status='active' order by display_order limit 2")).rows;

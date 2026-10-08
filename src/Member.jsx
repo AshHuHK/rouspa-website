@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { publicRpc, errorText, money, dateTime, statusNames } from './lib/spa.js';
 import { statusNamesEn, therapistLabel } from './lib/public-copy.js';
 import './booking-lookup.css';
@@ -6,10 +6,13 @@ import './booking-lookup.css';
 export default function Member({lang='zh'}){
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[access,setAccess]=useState(null),[detail,setDetail]=useState(null);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[reviewing,setReviewing]=useState(null);
+ const sequence=useRef(0),reading=useRef(false),signingIn=useRef(false);
  const en=lang==='en',t=(zh,english)=>en?english:zh;
- async function login(event){event.preventDefault();if(busy)return;setBusy(true);setError('');setNotice('');try{const result=await publicRpc('spa_member_login',{p_phone:phone.trim(),p_name:name.trim()});if(!result?.member){setDetail(null);setAccess(null);setError(t('找不到相符的會員資料，請確認姓名與手機和預約時完全一致。','No matching member profile. Use the exact name and phone number from your booking.'));return;}setAccess(result.access_token);setDetail(result.member);}catch(e){setError(errorText(e,lang));}finally{setBusy(false);}}
- async function refresh(token=access){if(!token)return;const next=await publicRpc('spa_member_detail',{p_access:token});setDetail(next);return next;}
- function logout(){setAccess(null);setDetail(null);setReviewing(null);setNotice('');setError('');}
+ async function login(event){event.preventDefault();if(signingIn.current)return;signingIn.current=true;const request=++sequence.current;setBusy(true);setError('');setNotice('');try{const result=await publicRpc('spa_member_login',{p_phone:phone.trim(),p_name:name.trim()});if(request!==sequence.current)return;if(!result?.member){setDetail(null);setAccess(null);setError(t('找不到相符的會員資料，請確認姓名與手機和預約時完全一致。','No matching member profile. Use the exact name and phone number from your booking.'));return;}setAccess(result.access_token);setDetail(result.member);}catch(e){if(request===sequence.current)setError(errorText(e,lang));}finally{signingIn.current=false;if(request===sequence.current)setBusy(false);}}
+ async function refresh(token=access){if(!token||reading.current)return;const request=sequence.current;reading.current=true;try{const next=await publicRpc('spa_member_detail',{p_access:token});if(request===sequence.current){setDetail(next);setError('');}return next;}catch(e){if(request===sequence.current){setError(errorText(e,lang));if(e.message?.includes('BOOKING_ACCESS_EXPIRED')){sequence.current++;setAccess(null);setDetail(null);setReviewing(null);}}}finally{reading.current=false;}}
+ function logout(){sequence.current++;setAccess(null);setDetail(null);setReviewing(null);setNotice('');setError('');}
+ useEffect(()=>{if(!access||reviewing)return;const update=()=>{if(document.visibilityState==='visible'&&navigator.onLine!==false)refresh(access);};const timer=window.setInterval(update,15000);window.addEventListener('focus',update);window.addEventListener('online',update);document.addEventListener('visibilitychange',update);return()=>{window.clearInterval(timer);window.removeEventListener('focus',update);window.removeEventListener('online',update);document.removeEventListener('visibilitychange',update);};},[access,reviewing]);
+ useEffect(()=>()=>{sequence.current++;},[]);
  const coupons=detail?.coupons||[],usable=coupons.filter(item=>item.status==='active'),appointments=detail?.appointments||[],orders=detail?.orders||[],packages=detail?.packages||[];
  return <main className="lookup-page member-page"><div className="booking-lookup member-shell">
   <header className="lookup-header"><div><p className="lookup-eyebrow">ROU SPA · MEMBER</p><h1>{t('會員中心','Member centre')}</h1></div><div className="member-header-actions"><a href="#">{t('返回首頁','Home')}</a>{detail&&<button onClick={logout}>{t('登出','Sign out')}</button>}</div></header>

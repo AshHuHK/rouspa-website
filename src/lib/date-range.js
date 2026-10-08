@@ -6,6 +6,10 @@ export function dateAfter(days, base = taipeiDate()) {
   d.setUTCDate(d.getUTCDate() + days);
   return taipeiDate(d);
 }
+export function nextMonthEnd(base = taipeiDate()) {
+  const [year, month] = base.slice(0, 7).split('-').map(Number);
+  return taipeiDate(new Date(Date.UTC(year, month + 1, 0)));
+}
 export function sevenDayRange(base = taipeiDate()) {
   return { from: base, to: dateAfter(6, base) };
 }

@@ -3,7 +3,7 @@ import {PGlite} from '@electric-sql/pglite';
 import {readFile,readdir,writeFile,mkdir} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import assert from 'node:assert/strict';
-import {attendanceMinutes,taipeiInput,attendanceStamp} from '../src/lib/attendance.js';
+import {attendanceMinutes,taipeiInput,attendanceStamp,canPunch,validPunchLocation,getPunchLocation} from '../src/lib/attendance.js';
 const db=new PGlite();let checks=0;const check=(ok,label)=>{assert.ok(ok,label);checks++;};const reject=async(fn,pattern=/FORBIDDEN|permission denied/)=>{await assert.rejects(fn,pattern);checks++;};
 await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;grant usage on schema auth to anon,authenticated;grant execute on function auth.uid(),auth.jwt() to anon,authenticated;`);
 const directory=new URL('../supabase/migrations/',import.meta.url);
@@ -33,11 +33,16 @@ const punch=(user,id,kind,location=loc,reason='',err='',rest=0)=>call(user,'spa_
 await reject(()=>punch(employee,randomUUID(),'out'),/ATTENDANCE_NOT_IN/);
 await reject(()=>punch(employee,randomUUID(),'in',[NaN,120,8]),/INVALID_LOCATION/);
 await reject(()=>punch(employee,randomUUID(),'in',[null,null,null]),/INVALID_LOCATION/);
+await reject(()=>punch(employee,randomUUID(),'in',[null,null,null],'定位拒絕','permission_denied'),/INVALID_LOCATION/);
+check((await call(employee,'spa_attendance_self',range)).open===null,'missing location cannot create an open session even with an exception reason');
 await reject(()=>punch(employee,randomUUID(),'in',[24,121,8]),/ATTENDANCE_REASON_REQUIRED/);
 await reject(()=>punch(employee,randomUUID(),'in',[...loc.slice(0,2),90]),/ATTENDANCE_REASON_REQUIRED/);
 const request=randomUUID(),first=await punch(employee,request,'in');
 check(first.status==='open'&&Date.parse(first.clock_in)===Date.parse('2026-10-06T10:00:00+08:00'),'clock-in records server time');
 check((await punch(employee,request,'in')).id===first.id,'network retry is idempotent');
+await clock('2026-10-06T10:05:00+08:00');
+await reject(()=>punch(employee,randomUUID(),'out',[null,null,null],'定位逾時','timeout'),/INVALID_LOCATION/);
+check((await call(employee,'spa_attendance_self',range)).open?.id===first.id,'failed clock-out keeps the same working session open');
 await reject(()=>punch(other,request,'in'),/REQUEST_CONFLICT/);await reject(()=>punch(employee,request,'out'),/REQUEST_CONFLICT/);
 await reject(()=>punch(employee,randomUUID(),'in'),/ATTENDANCE_ALREADY_IN/);
 check((await call(other,'spa_attendance_self',range)).rows.length===0,'another employee cannot read attendance or location');
@@ -71,10 +76,10 @@ await reject(()=>call(owner,'spa_time_entry_save',[null,staff[1].id,'2026-10-06'
 await db.exec("update spa_payroll_runs set status='draft'");
 await call(owner,'spa_attendance_review',[row.id,row.version,false,null,null,0,'撤回測試']);
 check((await db.query('select status from spa_time_entries where id=$1',[row.time_entry_id])).rows[0].status==='rejected','withdrawal stops salary inclusion and keeps history');
-// Location failures and uncertain boundaries remain evidence, not approved pay.
+// Actual coordinates with anomalies remain evidence, not approved pay.
 await clock('2026-10-07T10:00:00+08:00');await db.query("insert into spa_daily_shifts(staff_id,business_date,is_working,start_minute,end_minute) values($1,'2026-10-07',false,600,1080)",[staff[0].id]);
-const exception=await punch(employee,randomUUID(),'in',[null,null,null],'室內定位失敗','permission_denied');
-check(exception.flags.includes('location_unavailable')&&exception.flags.includes('no_roster'),'location denial + unrostered shift captured as anomalies');
+const exception=await punch(employee,randomUUID(),'in',loc,'臨時調班');
+check(exception.flags.includes('no_roster')&&!exception.flags.includes('location_unavailable'),'unrostered punch still requires real coordinates and records the anomaly');
 await clock('2026-10-07T11:00:00+08:00');await punch(employee,randomUUID(),'out',[24,121,8],'臨時外出');
 const evidence=(await call(employee,'spa_attendance_self',range)).events;
 check(evidence.some(e=>e.flags.includes('outside_store')&&e.distance_m>100),'server computes outside distance');
@@ -112,4 +117,15 @@ check(attendanceMinutes({effective_start:'2026-10-06T10:00:00Z',effective_end:'2
 check(taipeiInput('2026-10-06T16:15:00Z')==='2026-10-07T00:15'&&attendanceStamp('2026-10-07T00:15')==='2026-10-07T00:15:00+08:00','client conversion independent of host timezone');
 check(attendanceStamp('2026-10-07T00:15','2026-10-06T16:15:59.500Z')==='2026-10-06T16:15:59.500Z','unchanged review fields preserve original seconds');
 check((await db.query("select count(*)::int n from spa_audit where action like 'attendance.%'")).rows[0]?.n>0,'attendance changes have audit history');
+check(canPunch('in',{open:null})&&!canPunch('out',{open:null}),'not working enables only clock-in');
+check(!canPunch('in',{open:first})&&canPunch('out',{open:first}),'working enables only clock-out');
+for(const state of [{open:first,loading:true},{open:null,busy:true},{open:first,error:'offline'}])check(!canPunch('in',state)&&!canPunch('out',state),'loading, submitting and stale state disable both actions');
+check(!canPunch('invalid',{})&&validPunchLocation({latitude:23,longitude:120,accuracy:8})&&!validPunchLocation({latitude:NaN,longitude:120,accuracy:8})&&!validPunchLocation({latitude:23,longitude:120,accuracy:0}),'invalid action/location is rejected');
+const navigatorDescriptor=Object.getOwnPropertyDescriptor(globalThis,'navigator'),secureDescriptor=Object.getOwnPropertyDescriptor(globalThis,'isSecureContext');
+Object.defineProperty(globalThis,'isSecureContext',{value:true,configurable:true});let locationCalls=0,locationOptions;
+Object.defineProperty(globalThis,'navigator',{value:{geolocation:{getCurrentPosition(success,_error,options){locationCalls++;locationOptions=options;success({coords:{latitude:23,longitude:120,accuracy:8}});}}},configurable:true});
+await getPunchLocation();await getPunchLocation();check(locationCalls===2&&locationOptions.maximumAge===0&&locationOptions.enableHighAccuracy,'both actions request fresh geolocation rather than a cached coordinate');
+Object.defineProperty(globalThis,'navigator',{value:{geolocation:{getCurrentPosition(_success,error){error({code:1});}}},configurable:true});check((await getPunchLocation()).error==='permission_denied','permission denial returns a failure, never coordinates');
+Object.defineProperty(globalThis,'navigator',{value:{geolocation:{getCurrentPosition(success){success({coords:{latitude:null,longitude:120,accuracy:8}});}}},configurable:true});check((await getPunchLocation()).error==='invalid_location','browser-invalid coordinates cannot be submitted');
+for(const [key,descriptor] of [['navigator',navigatorDescriptor],['isSecureContext',secureDescriptor]]){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}
 console.log(`Attendance checks passed: ${checks}`);await db.close();

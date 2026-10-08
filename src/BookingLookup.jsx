@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { publicRpc, errorText, dateTime, money, statusNames, taipeiDate, dateAfter } from './lib/spa.js';
 import { isInactiveBooking, canChangeBooking } from './lib/booking-state.js';
 import { useBookingClock } from './lib/useBookingClock.js';
+import { nextMonthEnd } from './lib/date-range.js';
 import { statusNamesEn, therapistLabel, slotLabel } from './lib/public-copy.js';
 import './booking-lookup.css';
 
@@ -23,14 +24,14 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
     } catch (e) {
       if (sequence === request.current) {
         setError(errorText(e, lang));
-        if (e.message?.includes('BOOKING_ACCESS_EXPIRED')) setAccess(null);
+        if (e.message?.includes('BOOKING_ACCESS_EXPIRED')) {request.current++;setAccess(null);setRows([]);setSearched(false);setEditing(null);}
       }
     } finally { inFlight.current = false; }
   }
   useEffect(() => {
     if (!privateToken) return;
     let live = true;
-    setBusy(true);setError('');
+    setBusy(true);setError('');setAccess(null);setRows([]);setSearched(false);setEditing(null);
     publicRpc('spa_booking_link_access', { p_token: privateToken }).then(result => {
       if (!live) return;
       if (!result) { setError(t('此私人預約連結無效。', 'This private booking link is invalid.')); return; }
@@ -140,7 +141,7 @@ function BookingChange({ access, row, kind, lang, now, close, changed }) {
   return <form className="lookup-change" onSubmit={submit}>
     <h4>{kind === 'cancel' ? t('確認取消這筆預約', 'Confirm cancellation') : t('選擇新的日期與時段', 'Choose a new date and time')}</h4>
     {kind === 'reschedule' && <div className="lookup-fields">
-      <label>{t('新日期', 'New date')}<input required type="date" min={taipeiDate(new Date(now))} max={dateAfter(catalog?.settings.booking_days || 30, taipeiDate(new Date(now)))} value={date} onChange={e => setDate(e.target.value)} /></label>
+      <label>{t('新日期', 'New date')}<input required type="date" min={taipeiDate(new Date(now))} max={nextMonthEnd(taipeiDate(new Date(now)))} value={date} onChange={e => setDate(e.target.value)} /></label>
       <label>{t('技師', 'Therapist')}<select value={staff} onChange={e => setStaff(e.target.value)}><option value="">{t('不指定技師', 'Any therapist')}</option>{catalog?.staff.filter(s => catalog.skills.some(sk => sk.staff_id === s.id && sk.service_id === row.service_id)).map(s => <option key={s.id} value={s.id}>{therapistLabel(s, lang)}</option>)}</select></label>
       <label className="lookup-wide">{t('可用時段', 'Available time')}<select required disabled={loading} value={start} onChange={e => setStart(e.target.value)}><option value="">{loading ? t('時段載入中…', 'Loading…') : t('請選擇時段', 'Choose a time')}</option>{slots.filter(s => s.available).map(s => <option key={s.starts_at} value={s.starts_at}>{slotLabel(s.time_label, lang)}</option>)}</select></label>
       {!loading && !slots.some(s => s.available) && <p className="lookup-help lookup-wide">{t('此日期／技師沒有可用時段，請更換選擇。', 'No available times. Choose another date or therapist.')}</p>}
