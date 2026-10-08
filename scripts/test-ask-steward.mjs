@@ -6,10 +6,10 @@ const token='test.jwt.token.for.authenticated.user', question='規則如何設�
 let checks=0;
 function check(label,fn) { return Promise.resolve().then(fn).then(()=>{checks++;console.log('✓ '+label);}); }
 const manual='# ROU SPA 操作手冊\n'+('已核對的操作規則。'.repeat(200));
-async function scenario({session=owner,recheck=session,beforeProvider=session,quota={allowed:true},providerStatus=200,providerResult={choices:[{message:{content:'核對後的操作說明。',reasoning_content:'NEVER_RETURN_PRIVATE_THINKING'},finish_reason:'stop'}]},user={id:'user-1'},gatherError,quotaError,env={KIMI_API_KEY:'SECRET_SERVER_ONLY'},fetchError,manualText=manual,overrides={}}={}) {
+async function scenario({session=owner,recheck=session,beforeProvider=session,quota={allowed:true},providerStatus=200,providerResult={choices:[{message:{content:'核對後的操作說明。',reasoning_content:'NEVER_RETURN_PRIVATE_THINKING'},finish_reason:'stop'}]},user={id:'user-1'},gatherError,quotaError,env={KIMI_API_KEY:'SECRET_SERVER_ONLY'},fetchError,manualText=manual,snapshot={state:{units:'NTD',bookingCount:2},pageLabel:'營運首頁',failures:[],sources:[{label:'營運摘要'}]},overrides={}}={}) {
  const seen={rpc:[],provider:[],gather:[]}; let sessions=0;
  const gateway={user:async()=>user,rpc:async(name)=>{seen.rpc.push(name);if(name==='spa_session')return [session,beforeProvider,recheck][Math.min(sessions++,2)];if(name==='spa_ai_reserve_request'){if(quotaError)throw quotaError;return quota;}throw Error(name);}};
- const handler=createStewardHandler({env,now:()=>new Date('2026-10-08T01:00:00Z'),gatewayFactory:()=>gateway,readManual:async()=>manualText,gather:async(input)=>{seen.gather.push(input);if(gatherError)throw gatherError;return {state:{units:'NTD',bookingCount:2},pageLabel:'營運首頁',failures:[],sources:[{label:'營運摘要'}]};},fetcher:async(url,init)=>{seen.provider.push({url,init,body:JSON.parse(init.body)});if(fetchError)throw fetchError;return new Response(JSON.stringify(providerResult),{status:providerStatus});}});
+ const handler=createStewardHandler({env,now:()=>new Date('2026-10-08T01:00:00Z'),gatewayFactory:()=>gateway,readManual:async()=>manualText,gather:async(input)=>{seen.gather.push(input);if(gatherError)throw gatherError;return snapshot;},fetcher:async(url,init)=>{seen.provider.push({url,init,body:JSON.parse(init.body)});if(fetchError)throw fetchError;return new Response(JSON.stringify(providerResult),{status:providerStatus});}});
  const req={method:'POST',headers:{origin:'https://www.rouspa.tw','content-type':'application/json',authorization:'Bearer '+token},body:{question,page:'dashboard',range:{from:'2026-10-01',to:'2026-10-08'},history:[]},...overrides};
  const res={headers:{},setHeader(k,v){this.headers[k]=v;},end(value){this.body=JSON.parse(value);}};
  await handler(req,res); return {res,seen};
@@ -44,4 +44,23 @@ await check('provider errors, reasoning-only, truncated and timed out answers ar
 await check('missing configuration, invalid provider URL and missing manual never spend quota',async()=>{for(const options of [{env:{}},{env:{KIMI_API_KEY:'KEY',KIMI_BASE_URL:'http://attacker'}},{manualText:''}]) {const {res,seen}=await scenario(options);assert.equal(res.statusCode,503);assert.equal(seen.provider.length,0);assert.equal(seen.rpc.includes('spa_ai_reserve_request'),false);}});
 await check('Supabase gateway uses public key and the caller JWT on every read',async()=>{const calls=[];const gateway=createSupabaseGateway(token,async(url,init)=>{calls.push({url,init});return new Response(JSON.stringify({id:'u'}),{status:200});});await gateway.user();await gateway.rpc('spa_session');assert.equal(calls[0].init.headers.Authorization,'Bearer '+token);assert.equal(calls[1].init.headers.Authorization,'Bearer '+token);assert.match(calls[0].init.headers.apikey,/^sb_publishable_/);assert.equal(calls[1].init.body,'{}');});
 await check('Supabase permission exception and expired token remain authentication errors',async()=>{for(const [status,data,expected] of [[400,{message:'FORBIDDEN'},403],[401,{message:'expired'},401],[403,{message:'denied'},403]]) {const gateway=createSupabaseGateway(token,async()=>new Response(JSON.stringify(data),{status}));await assert.rejects(()=>gateway.rpc('spa_session'),error=>error.status===expected);}});
+await check('automatic business analysis uses question period and exposes full source list',async()=>{
+ const sources=Array.from({length:14},(_,i)=>({label:`來源 ${i+1}`}));
+ const {res,seen}=await scenario({overrides:{body:{question:'上個月營運有哪些問題？',page:'dashboard',scope:'business',period:'month'}},snapshot:{state:{},pageLabel:'營運首頁',sources,failures:[]}});
+ assert.equal(res.statusCode,200);assert.equal(seen.gather[0].scope,'business');assert.equal(seen.gather[0].period,'last_month');
+ assert.deepEqual(res.body.context.range,{from:'2026-09-01',to:'2026-09-30'});assert.equal(res.body.context.scopeLabel,'全店授權業務');assert.equal(res.body.sources.length,15);
+});
+await check('all history uses database-resolved earliest date and safe missing-source metadata',async()=>{
+ const resolvedRange={from:'2023-06-15',to:'2026-10-08'};
+ const {res,seen}=await scenario({overrides:{body:{question:'查看全部歷史',page:'dashboard',period:'all'}},snapshot:{state:{},pageLabel:'營運首頁',resolvedRange,sources:[],failures:[{label:'薪資試算',code:'RANGE_NOT_SUPPORTED',rpc:'PRIVATE_RPC',raw:'PRIVATE_ERROR'}]}});
+ assert.equal(res.statusCode,200);assert.equal(seen.gather[0].period,'all');assert.deepEqual(res.body.context.range,resolvedRange);
+ assert.deepEqual(JSON.parse(seen.provider[0].body.messages[1].content).selectedRange,resolvedRange);
+ assert.deepEqual(res.body.unavailableSources,[{label:'薪資試算',code:'RANGE_NOT_SUPPORTED'}]);assert.equal(JSON.stringify(res.body).includes('PRIVATE'),false);
+});
+await check('quota denial stops expensive cross-module reads',async()=>{
+ const {res,seen}=await scenario({quota:{allowed:false,reason:'daily_limit'}});assert.equal(res.statusCode,429);assert.equal(seen.gather.length,0);
+});
+await check('unsupported period or scope returns safe validation error',async()=>{
+ for(const extra of [{period:'unsafe'},{scope:'all_secrets'},{question:'2026-02-30'}]) {const {res,seen}=await scenario({overrides:{body:{question,page:'dashboard',...extra}}});assert.equal(res.statusCode,400);assert.equal(res.body.code,'INVALID_RANGE');assert.equal(seen.provider.length,0);}
+});
 console.log(`\n${checks} ask-steward API checks passed.`);

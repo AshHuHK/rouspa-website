@@ -1,13 +1,14 @@
 {
-  "reviewed_at": "2026-10-08T20:24:48.882Z",
-  "manual_sha256": "742dbab2e557ef392517ba6adf4dc1f254b7df66ec96db4d87e4c16f6ba4a791",
+  "reviewed_at": "2026-10-08T20:59:45.731Z",
+  "manual_sha256": "b548b3c02d32d7ebf317a60420343d24c6cfe50c0626efdb5d5949fad5b5cf40",
   "sources": {
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
-    "server/ask-steward.mjs": "689be66b6d44dc681bd68c02b42b05095133ccd08b1ee1e56e7082cfff475e80",
-    "server/steward-context.mjs": "bcd4288aa16a585663a381ba8fe1bd0eae3fd12872f56f11b1c10289d08f4874",
+    "server/ask-steward.mjs": "0e2559a37d9f0ddf88acad9588bfc67e4c4ee1a3d28334ea9db1a2a31efdc55c",
+    "server/steward-context.mjs": "71a5260d1a475e566633db79b9096dbf2b8bb157fb81ca13f6992ed73e61f348",
+    "server/steward-period.mjs": "77f60bd099b89aa335101c3b27bca392d1a3502067919dfffa64ae7966dd2f87",
     "src/Admin.jsx": "61ced123336b5d43f03bd919c929b77e3a0901521f76b6ca0e8a1a2d3cf1df36",
     "src/App.jsx": "414aac371689c20d3bd45e45a59d2ff5e3aecd759a445d15237c7e9a66b517d7",
-    "src/AskSteward.jsx": "1ad2a356785bd247de289c160d6433b88531ff9800846970830f27675a4ebc71",
+    "src/AskSteward.jsx": "20fac738a757a6595e019d2bb7b0906abf9ec92e5d07fbff9a2f4873c79d8169",
     "src/Attendance.jsx": "5afa4f1fd837b5e0709932b9616f5be817001ccd25e370ce0e7433fe25376ed9",
     "src/BookingLookup.jsx": "e3013fa630cc2a1bd2bea68d65fab5db63a446f86b24defdc6f73c3ec8100548",
     "src/BookingPortal.jsx": "017806ac23607fc953da7ec1b50625041f68839c9b1d1d75c1545fad7dcdd60d",
@@ -77,6 +78,7 @@
     "supabase/migrations/202610080008_payroll_source_backup.sql": "cdbe660ca843b20f71d454d96b2081b9db37ccf894540bd6576b4f6777f6ed2f",
     "supabase/migrations/202610080009_realtime_updates.sql": "ea1087eed5171c530960eb0eed2d524b1b523e35b3978328613ae9908152bbc3",
     "supabase/migrations/202610080010_operations_event_reminders.sql": "c4ffe91b349960a8da5aa85a8f8d577d913432fe2bb385a520269308b1c4d221",
-    "supabase/migrations/202610080011_ai_steward_limits.sql": "127a80cec743634d7d9bb01c9a079c2684df7c093872167cb66303283eeea11a"
+    "supabase/migrations/202610080011_ai_steward_limits.sql": "127a80cec743634d7d9bb01c9a079c2684df7c093872167cb66303283eeea11a",
+    "supabase/migrations/202610080012_ai_business_snapshot.sql": "684948378bf695d6542837b529117a6c2e16b91c4d00a272ba9a92a9a3490ac3"
   }
 }
