@@ -366,7 +366,7 @@ const Particle = ({ delay, x, duration }) => (
   }} />
 );
 
-export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact, onLangChange }) {
+export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact, onLangChange, onRebook, rebookingIntent, onRebookingApplied }) {
   const setLang = next => onLangChange?.(next);
   const [bookingStep, setBookingStep] = useState(0);
   const [bookingMode, setBookingMode] = useState("new");
@@ -467,7 +467,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
     followAnchor();
     window.addEventListener('hashchange', followAnchor);
     return () => { cancelled = true; cancelAnimationFrame(frame); window.removeEventListener('hashchange', followAnchor); };
-  }, [catalog, catalogError]);
+  }, [catalog, catalogError, rebookingIntent?.id]);
   useEffect(() => { if (catalog) updateBusinessSeo(catalog, 'home', lang); }, [catalog, lang]);
 
   useLayoutEffect(() => {
@@ -1329,7 +1329,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           </div>
 
           <div className="booking-mode" role="tablist" aria-label={lang === 'zh' ? '預約功能' : 'Booking options'}><button role="tab" aria-selected={bookingMode === 'new'} onClick={() => setBookingMode('new')}>{lang === 'zh' ? '新增預約' : 'New booking'}</button><button role="tab" aria-selected={bookingMode === 'lookup'} onClick={() => setBookingMode('lookup')}>{lang === 'zh' ? '查詢預約' : 'Find booking'}</button></div>
-          {bookingMode === 'lookup' ? <BookingLookup lang={lang}/> : <PublicBookingExperience catalog={catalog} catalogError={catalogError} lang={lang}/>} {false && <>
+          {bookingMode === 'lookup' ? <BookingLookup lang={lang} onRebook={onRebook}/> : <PublicBookingExperience catalog={catalog} catalogError={catalogError} lang={lang} rebookingIntent={rebookingIntent} onRebookingApplied={onRebookingApplied}/>} {false && <>
           {(catalogError || slotError) && <p role="alert" style={{ color: "#b5523b", textAlign: "center", marginBottom: 20 }}>{catalogError || slotError}</p>}
           {!catalog && !catalogError && <p style={{ textAlign: "center" }}>{lang === "zh" ? "正在載入預約服務…" : "Loading booking services…"}</p>}
           {!bookingComplete && (

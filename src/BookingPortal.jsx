@@ -3,8 +3,8 @@ import { publicRpc, errorText } from './lib/spa.js';
 import BookingLookup from './BookingLookup.jsx';
 import { MutationForm, Field, Empty } from './OperationsShared.jsx';
 
-export default function BookingPortal({ token, review = false, lang = 'zh' }) {
-  return review ? <ReviewPortal token={token} lang={lang} /> : <BookingLookup standalone privateToken={token} lang={lang} />;
+export default function BookingPortal({ token, review = false, lang = 'zh', onRebook }) {
+  return review ? <ReviewPortal token={token} lang={lang} /> : <BookingLookup standalone privateToken={token} lang={lang} onRebook={onRebook} />;
 }
 
 function ReviewPortal({ token, lang }) {

@@ -1,0 +1,33 @@
+.ops .payroll-sources{min-width:0}
+.ops .payroll-source-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.ops .payroll-source-heading h2{margin:0 0 5px}
+.ops .payroll-source-heading .eyebrow{margin:0 0 5px}
+.ops .payroll-source-kpis,.ops .payroll-source-rule-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.ops .payroll-source-kpis article,.ops .payroll-source-rule-grid article{display:grid;gap:4px;padding:14px;border:1px solid var(--line);border-radius:8px;background:rgba(255,250,244,.18)}
+.ops .payroll-source-kpis span,.ops .payroll-source-rule-grid span,.ops .payroll-source-kpis small,.ops .payroll-source-rule-grid small{font-size:12px;color:var(--muted)}
+.ops .payroll-source-kpis strong,.ops .payroll-source-rule-grid strong{font-size:20px;color:var(--gold-deep);overflow-wrap:anywhere}
+.ops .payroll-source-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:6px;margin:18px 0}
+.ops .payroll-source-tabs button{white-space:nowrap;flex-shrink:0;padding:8px 11px}
+.ops .payroll-source-section{margin:24px 0}
+.ops .payroll-source-section-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}
+.ops .payroll-source-section-head h3{margin:0}
+.ops .payroll-source-section-head input{width:min(100%,240px);padding:7px 10px;font-size:12px}
+.ops .payroll-sources td{vertical-align:top;padding:10px 8px;font-size:13px}
+.ops .payroll-sources th{padding:10px 8px;font-size:12px}
+.ops .payroll-sources td small{display:block;margin-top:3px;color:var(--muted);font-size:11px}
+.ops .payroll-sources .source-note{white-space:normal;min-width:135px;max-width:260px;overflow-wrap:anywhere}
+.ops .payroll-source-reference{font-size:11px;line-height:1.5;margin-top:4px;max-width:240px}
+.ops .payroll-source-reference summary{color:var(--gold-deep);cursor:pointer;overflow-wrap:anywhere;white-space:normal}
+.ops .payroll-source-reference dl{margin:8px 0;padding:9px;border:1px solid var(--line);border-radius:5px;white-space:normal;background:rgba(255,248,238,.2)}
+.ops .payroll-source-reference dt{color:var(--muted);font-size:10px}
+.ops .payroll-source-reference dd{margin:2px 0 8px;font:11px/1.5 ui-monospace,SFMono-Regular,monospace;overflow-wrap:anywhere}
+.ops .payroll-sources code{display:block;font-size:11px;line-height:1.6;white-space:normal;overflow-wrap:anywhere;margin:7px 0}
+.ops .payroll-source-checks{padding:12px 0;border-top:1px solid var(--line);margin-top:16px}
+.ops .payroll-source-checks>summary{cursor:pointer;color:var(--gold-deep);font-weight:600;padding:5px 0}
+.ops .payroll-source-check-table{margin-top:8px}
+.ops .payroll-source-check-table .source-mismatch{border-color:#b0614c;color:#954331;background:rgba(174,93,68,.1)}
+.ops .payroll-source-components .link-button{padding:0;background:transparent;border:0;box-shadow:none}
+.ops .payroll-source-components tfoot{color:var(--gold-deep)}
+.ops .payroll-source-note{padding:13px 15px;margin:16px 0;border-left:3px solid var(--gold);border-radius:4px;background:rgba(189,146,99,.1);font-size:13px;overflow-wrap:anywhere}
+.ops .payroll-source-count,.ops .payroll-source-footnote{font-size:11px;margin-top:12px}
+@media(max-width:480px){.ops .payroll-source-heading{flex-direction:column;gap:7px}.ops .payroll-source-kpis strong,.ops .payroll-source-rule-grid strong{font-size:17px}.ops .payroll-source-kpis article,.ops .payroll-source-rule-grid article{padding:10px}.ops .payroll-source-tabs button{padding:7px 9px;font-size:12px}.ops .payroll-sources .source-note{min-width:110px}}

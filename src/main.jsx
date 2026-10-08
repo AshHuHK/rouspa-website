@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import BookingLookup from './BookingLookup.jsx';
 import { applySeo, routeFromLocation } from './lib/seo.js';
+import { createRebookingIntent } from './lib/rebooking.js';
 import './responsive.css';
 import './public-theme.css';
 import './public-navigation.css';
@@ -20,6 +21,7 @@ const BookingPortal = React.lazy(() => import('./BookingPortal.jsx'));
 // https://www.rouspa.tw/#admin    → 管理後台（noindex）
 function Router() {
   const [route, setRoute] = useState(() => routeFromLocation());
+  const [rebookingIntent, setRebookingIntent] = useState(null), rebookingSequence = useRef(0);
   const [lang, setLang] = useState(() => { try { return localStorage.getItem('rouspa-language') === 'en' ? 'en' : 'zh'; } catch { return 'zh'; } });
   useEffect(() => {
     try { localStorage.setItem('rouspa-language', lang); } catch {}
@@ -46,10 +48,18 @@ function Router() {
     setRoute(routeFromLocation());
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   };
+  const rebook = (booking) => {
+    const intent = createRebookingIntent(booking);
+    if (!intent) return;
+    setRebookingIntent({ ...intent, id: ++rebookingSequence.current });
+    navigateTo('/#booking');
+  };
+  const rebookingApplied = (id) => setRebookingIntent(current => current?.id === id ? null : current);
+  useEffect(() => { if (route !== 'home') setRebookingIntent(null); }, [route]);
 
-  if (route === 'lookup') return <BookingLookup standalone lang={lang} />;
-  if (route === 'member') return <Member lang={lang} />;
-  if (route === 'manage') return <BookingPortal token={window.location.hash.slice(8)} lang={lang} />;
+  if (route === 'lookup') return <BookingLookup standalone lang={lang} onRebook={rebook} />;
+  if (route === 'member') return <Member lang={lang} onRebook={rebook} />;
+  if (route === 'manage') return <BookingPortal token={window.location.hash.slice(8)} lang={lang} onRebook={rebook} />;
   if (route === 'review') return <BookingPortal token={window.location.hash.slice(8)} review lang={lang} />;
   if (route === 'admin') {
     return <Admin />;
@@ -61,7 +71,7 @@ function Router() {
   if (route === 'contact') {
     return <Contact lang={lang} onNavigateHome={() => navigateTo('/')} />;
   }
-  return <App lang={lang} onNavigateShop={() => navigateTo('/shop/')} onNavigateContact={() => navigateTo('/contact/')} onLangChange={setLang} />;
+  return <App lang={lang} onNavigateShop={() => navigateTo('/shop/')} onNavigateContact={() => navigateTo('/contact/')} onLangChange={setLang} onRebook={rebook} rebookingIntent={rebookingIntent} onRebookingApplied={rebookingApplied} />;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<React.Suspense fallback={<div style={{padding:40,textAlign:"center"}}>載入中…</div>}><Router /></React.Suspense>);

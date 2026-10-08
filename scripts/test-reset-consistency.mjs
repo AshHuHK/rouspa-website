@@ -42,10 +42,15 @@ await db.query("insert into spa_time_entries(id,staff_id,work_date,started_at,en
 await db.query("insert into spa_attendance(id,staff_id,work_date,clock_in,clock_out,effective_start,effective_end,status,time_entry_id) values($1,$2,'2026-08-01','2026-08-01T10:00:00+08:00','2026-08-01T18:00:00+08:00','2026-08-01T10:00:00+08:00','2026-08-01T18:00:00+08:00','approved',$3)",[attendance,staff,entry]);
 await db.query("insert into spa_attendance_events(id,request_id,attendance_id,staff_id,kind,latitude,longitude,accuracy_m,geofence_snapshot,created_by) values($1,$2,$3,$4,'in',23.4768128,120.4431785,8,'{}',$5)",[event,randomUUID(),attendance,staff,employee]);
 await db.query("insert into spa_attendance_requests(request_id,staff_id,attendance_id,base_version,work_date,proposed_start,proposed_end,break_minutes,reason,status,created_by) values($1,$2,$3,1,'2026-08-01','2026-08-01T10:00:00+08:00','2026-08-01T18:00:00+08:00',0,'測試','approved',$4)",[randomUUID(),staff,attendance,employee]);
+const ruleId=(await db.query("select id from spa_payroll_rule_versions where status='active' limit 1")).rows[0].id;
+await db.query("update spa_staff set hire_date='2026-01-01' where id=$1",[staff]);
+const wageRun=await admin('spa_payroll_run_save',['2026-08-01','2026-08-01',ruleId,false]);
 const payBackup=await admin('spa_backup_export',['payroll','2026-08-01','2026-08-01']);check(payBackup.attendance.length===1&&payBackup.attendance_events.length===1&&payBackup.attendance_requests.length===1,'payroll backup includes raw punches, GPS evidence and correction requests');
+check(payBackup.payroll_source_snapshots.length>0&&payBackup.payroll_source_snapshots.every(row=>row.packet?.source_totals&&row.run_id===wageRun),'payroll backup includes matching immutable source packets');
+check((await admin('spa_backup_export',['reviews',null,null])).payroll_source_snapshots.length===0,'review-only export cannot include unrelated salary sources');
 const preview=await admin('spa_reset_preview',['payroll','2026-08-01','2026-08-01']);check(preview.counts.attendance===1&&preview.counts.attendance_requests===1,'preview exposes coupled attendance deletions');
 await admin('spa_reset_business_data',['payroll','2026-08-01','2026-08-01','RESET']);
-for(const table of ['spa_time_entries','spa_attendance','spa_attendance_events','spa_attendance_requests'])check(await count(table)===0,'payroll reset clears '+table);
+for(const table of ['spa_time_entries','spa_attendance','spa_attendance_events','spa_attendance_requests','spa_payroll_source_snapshots'])check(await count(table)===0,'payroll reset clears '+table);
 await admin('spa_reset_business_data',['all',null,null,'RESET']);check(await count('spa_appointments')===0&&await count('spa_coupons')===0,'all reset deletes full appointment/reward chains');
 check(await count('spa_customers')===1&&await count('spa_staff')>0&&await count('spa_products')>0,'reset preserves customers, team and catalog configuration');
 console.log(`Reset consistency checks passed: ${checks}`);await db.close();

@@ -3,10 +3,11 @@ import { publicRpc, errorText, dateTime, money, statusNames, taipeiDate, dateAft
 import { isInactiveBooking, canChangeBooking } from './lib/booking-state.js';
 import { useBookingClock } from './lib/useBookingClock.js';
 import { nextMonthEnd } from './lib/date-range.js';
+import { canRebookBooking } from './lib/rebooking.js';
 import { statusNamesEn, therapistLabel, slotLabel } from './lib/public-copy.js';
 import './booking-lookup.css';
 
-export default function BookingLookup({ lang = 'zh', standalone = false, privateToken = null }) {
+export default function BookingLookup({ lang = 'zh', standalone = false, privateToken = null, onRebook }) {
   const [phone, setPhone] = useState(''), [name, setName] = useState('');
   const [access, setAccess] = useState(null), [rows, setRows] = useState([]), [searched, setSearched] = useState(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
@@ -103,6 +104,7 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
           : !isInactiveBooking(row, now) && <p className="lookup-help">{t('已超過線上修改期限，請聯絡門店。', 'The online change deadline has passed. Please contact the store.')}</p>}
         {row.review_submitted && <p className="lookup-success">{t('已評價，謝謝您的回饋。', 'Review submitted. Thank you.')}</p>}
         {row.can_review && !row.review_submitted && <div className="lookup-actions"><button className="lookup-primary" onClick={() => setEditing({row,kind:'review'})}>{t('評價技師 · 領 NT$50 優惠券', 'Review therapist · Get NT$50')}</button></div>}
+        {onRebook && canRebookBooking(row) && <div className="lookup-actions"><button onClick={() => onRebook(row)}>{t('再次預約', 'Book again')}</button></div>}
         {isInactiveBooking(row,now) && !['completed','cancelled','no_show'].includes(row.status) && <p className="lookup-help">{t('待門店確認完成療程後，即可評價服務技師。', 'You can review your therapist once the store confirms completion.')}</p>}
         {editing?.row.id === row.id && editing.kind === 'review' && <BookingReview key={row.id} access={access} row={row} lang={lang} close={() => setEditing(null)} changed={changed}/>}
         {editing?.row.id === row.id && editing.kind !== 'review' && <BookingChange key={`${row.id}-${editing.kind}`} access={access} row={row} kind={editing.kind} lang={lang} now={now} close={() => setEditing(null)} changed={changed} />}
