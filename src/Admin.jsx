@@ -6,6 +6,7 @@ import { bookingMatchesContext, reviewMatchesContext } from './lib/operations-na
 import { useBookingClock } from './lib/useBookingClock.js';
 import { useLiveRefresh } from './lib/useLiveRefresh.js';
 import { OperationsNotifications } from './OperationsNotifications.jsx';
+import { AskSteward } from './AskSteward.jsx';
 import { useSession, Login, Field, Modal, Empty, Method, MutationForm, PrivateLink } from './OperationsShared.jsx';
 import { StaffSelf, StaffAccountForm, StaffArchiveForm, EmployeeCustomer, staffRoleNames, payLabel, payBasisNames } from './StaffPortal.jsx';
 import { AccessOS, CatalogOS, DashboardOS, MonthlyOperationsCalendar, PayrollOS, PosOS, SettingsOS, TeamOS, moduleName } from './BusinessOS.jsx';
@@ -103,6 +104,7 @@ export default function Admin() {
  {modal.kind==='room'&&<RoomForm row={modal.row} saved={saved}/>}
   </Modal>}
  <OperationsNotifications userKey={session.user.id} enabled={allowed('dashboard')} allowed={allowed} onNavigate={navigateFromDashboard} onAccessDenied={accessDenied}/>
+ <AskSteward userKey={session.user.id} accessKey={JSON.stringify([role,access.staff_id||null,[...permissions].sort()])} page={tab} pageLabel={moduleName(tab)} range={range} disabled={!!modal} onAccessDenied={accessDenied}/>
  </main></div>;
 }
 function Bookings({rows,catalog,front,manager,open,navigationContext}){
