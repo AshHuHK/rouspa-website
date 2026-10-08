@@ -30,7 +30,8 @@ function ReminderToast({ task, identity, onDismiss, onNavigate, canOpen }) {
 function AccountNotifications({ userKey, allowed, onNavigate, onAccessDenied }) {
   const { data, busy, error, forbidden, refresh, status } = useOperationsSnapshot({ userKey });
   const [open, setOpen] = useState(false), [toasts, setToasts] = useState([]);
-  const previous = useRef(null), bell = useRef(null);
+  const previous = useRef(null), bell = useRef(null), surface = useRef(null);
+  const openMode = useRef(null), closeTimer = useRef(null), suppressHover = useRef(false);
   const accessDenied = useRef(false);
   const panelId = useId(), headingId = useId();
   const todos = useMemo(() => activeOperationsTodos(data, allowed), [data, allowed]);
@@ -53,17 +54,50 @@ function AccountNotifications({ userKey, allowed, onNavigate, onAccessDenied }) 
     setToasts(items => open ? [] : mergeOperationsToasts(items, changed, todos));
   }, [data, todos, open]);
 
-  function closePanel() { setOpen(false); bell.current?.focus(); }
-  function navigate(task) { if (canOpen(task)) { onNavigate(task.module, task.context); setOpen(false); } }
+  function cancelClose() { window.clearTimeout(closeTimer.current); closeTimer.current = null; }
+  function showPanel(mode) {
+    cancelClose();
+    if (openMode.current !== 'pinned') openMode.current = mode;
+    setOpen(true); setToasts([]);
+  }
+  function closePanel(returnFocus = true) {
+    cancelClose(); openMode.current = null; suppressHover.current = !!surface.current?.matches(':hover');
+    setOpen(false);
+    if (returnFocus) bell.current?.focus();
+  }
+  function leavePanel() {
+    suppressHover.current = false;
+    if (openMode.current !== 'hover') return;
+    cancelClose();
+    closeTimer.current = window.setTimeout(() => {
+      if (openMode.current === 'hover' && !surface.current?.contains(document.activeElement)) {
+        openMode.current = null; setOpen(false);
+      }
+    }, 200);
+  }
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+  useEffect(() => {
+    if (!open) return;
+    const closeOutside = event => { if (!surface.current?.contains(event.target)) closePanel(false); };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('focusin', closeOutside);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('focusin', closeOutside);
+    };
+  }, [open]);
+  function navigate(task) { if (canOpen(task)) { onNavigate(task.module, task.context); closePanel(false); } }
   // Filter at render as well as in the effect: revoked/resolved reminders must
   // disappear immediately, including while an old toast is still in state.
   const visibleToasts = toasts.filter(task => current.has(task.key) && operationsTodoIdentity(current.get(task.key)) === operationsTodoIdentity(task));
   const connectionNote = status === 'connected' ? '資料變更時同步更新' : connectionLabels[status] || '正在建立即時連線…';
-  const connectionBadge = error ? '更新失敗' : status === 'offline' ? '離線' : status === 'connecting' ? '連線中' : '未連線';
 
-  return <aside className="ops-notifications" aria-label="營運待辦提醒">
-    {open && <section id={panelId} className="ops-notification-panel" role="region" aria-labelledby={headingId} onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); closePanel(); } }}>
-      <div className="ops-notification-panel-heading"><div><p>營運待辦</p><h2 id={headingId}>{data?.is_owner ? '待辦提醒' : '我的工作提醒'}</h2></div><button type="button" className="ops-notification-close" onClick={closePanel} aria-label="關閉待辦提醒">✕</button></div>
+  return <aside ref={surface} className={`ops-notifications ${open ? 'is-open' : ''}`} aria-label="營運待辦提醒"
+    onPointerEnter={cancelClose}
+    onPointerLeave={leavePanel} onFocusCapture={cancelClose}
+    onKeyDown={event => { if (event.key === 'Escape' && open) { event.stopPropagation(); closePanel(); } }}>
+    {open && <section id={panelId} className="ops-notification-panel" role="region" aria-labelledby={headingId}>
+      <div className="ops-notification-panel-heading"><div><p>營運待辦</p><h2 id={headingId}>{data?.is_owner ? '待辦提醒' : '我的工作提醒'}</h2></div><button type="button" className="ops-notification-close" onClick={() => closePanel()} aria-label="關閉待辦提醒">✕</button></div>
       <p className="ops-notification-summary">{todos.length} 類提醒 · 點選後前往原處理頁面</p>
       <div className="ops-notification-list">
         {!data && busy && <p className="ops-notification-empty" role="status">正在讀取提醒…</p>}
@@ -78,8 +112,10 @@ function AccountNotifications({ userKey, allowed, onNavigate, onAccessDenied }) 
       const task = current.get(item.key), identity = operationsTodoIdentity(task);
       return <ReminderToast key={identity} task={task} identity={identity} onDismiss={dismiss} onNavigate={onNavigate} canOpen={canOpen(task)}/>;
     })}</div>}
-    <button ref={bell} type="button" className={`ops-notification-bell ${todos.length ? 'has-tasks' : ''}`} aria-expanded={open} aria-controls={open ? panelId : undefined} aria-label={`待辦提醒，${todos.length} 類${open ? '，已展開' : ''}${error || status !== 'connected' ? `，${error || connectionNote}` : ''}`} onClick={() => { setOpen(value => !value); setToasts([]); }}>
-      <BellIcon/><span>待辦提醒</span><b>{todos.length} 類</b>{(error || status !== 'connected') && <small className="ops-notification-connection" aria-hidden="true">{connectionBadge}</small>}
+    <button ref={bell} type="button" className={`ops-notification-bell ${todos.length ? 'has-tasks' : ''}`} aria-expanded={open} aria-controls={open ? panelId : undefined} aria-label={`待辦提醒，${todos.length} 類${open ? '，已展開' : ''}${error || status !== 'connected' ? `，${error || connectionNote}` : ''}`}
+      onPointerEnter={event => { if (event.pointerType === 'mouse' && window.matchMedia('(hover: hover)').matches && !suppressHover.current) showPanel('hover'); }}
+      onClick={() => { if (openMode.current === 'pinned') closePanel(); else showPanel('pinned'); }}>
+      <BellIcon/><span>待辦</span><b aria-hidden="true">{todos.length}</b>{(error || status !== 'connected') && <i className="ops-notification-connection" aria-hidden="true"/>}
     </button>
   </aside>;
 }
