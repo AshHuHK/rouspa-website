@@ -46,9 +46,11 @@ function dashboard(data, session) {
 }
 const todoKeys = ['pending_bookings', 'arrivals', 'completion', 'unsettled', 'attendance', 'corrections', 'missing_clockout', 'schedule_requests', 'missing_schedule', 'payroll_drafts', 'low_stock', 'reviews', 'my_schedule', 'my_clockout', 'my_attendance', 'my_requests', 'my_submission'];
 function convenience(data, session) {
- const beds = list(data?.beds), todos = list(data?.todos);
+ const beds = list(data?.beds), todos = list(data?.todos).filter(row => todoKeys.includes(row.key) && validatePageAccess(session, row.module));
+ const active = todos.filter(row => number(row.count) > 0);
  return { today: date(data?.today), bed_counts: counted(beds, 'state', ['free', 'reserved', 'treatment', 'buffer']), overlapping_bed_count: beds.filter(row => (number(row.overlap_count) ?? 0) > 1).length,
-  todos: todos.filter(row => todoKeys.includes(row.key) && validatePageAccess(session, row.module)).map(row => ({ key: row.key, count: number(row.count), severity: enumValue(row.severity, ['urgent', 'normal', 'waiting']), module: row.module })), next_month_self_edit_open: bool(data?.edit_open) };
+  active_todo_category_count: active.length, todo_counts: Object.fromEntries(todos.map(row => [row.key, number(row.count)])),
+  todos: active.map(row => ({ key: row.key, count: number(row.count), severity: enumValue(row.severity, ['urgent', 'normal', 'waiting']), module: row.module })), next_month_self_edit_open: bool(data?.edit_open) };
 }
 const bookingStatuses = ['pending', 'confirmed', 'checked_in', 'in_service', 'completed', 'cancelled', 'no_show'];
 function bookings(data, session) {
