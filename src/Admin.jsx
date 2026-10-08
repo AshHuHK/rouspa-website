@@ -4,6 +4,8 @@ import { sevenDayRange, rangeDays, validRange, shiftRange, dateAfter } from './l
 import { isInactiveBooking } from './lib/booking-state.js';
 import { bookingMatchesContext, reviewMatchesContext } from './lib/operations-navigation.js';
 import { useBookingClock } from './lib/useBookingClock.js';
+import { useLiveRefresh } from './lib/useLiveRefresh.js';
+import { OperationsNotifications } from './OperationsNotifications.jsx';
 import { useSession, Login, Field, Modal, Empty, Method, MutationForm, PrivateLink } from './OperationsShared.jsx';
 import { StaffSelf, StaffAccountForm, StaffArchiveForm, EmployeeCustomer, staffRoleNames, payLabel, payBasisNames } from './StaffPortal.jsx';
 import { AccessOS, CatalogOS, DashboardOS, MonthlyOperationsCalendar, PayrollOS, PosOS, SettingsOS, TeamOS, moduleName } from './BusinessOS.jsx';
@@ -11,14 +13,14 @@ import { AccessOS, CatalogOS, DashboardOS, MonthlyOperationsCalendar, PayrollOS,
 export default function Admin() {
  const session=useSession(),[access,setAccess]=useState(null),[tab,setTab]=useState('dashboard'),[range,setRange]=useState(sevenDayRange);
  const {from,to}=range;
- const [autoRefresh,setAutoRefresh]=useState(true),[lastUpdated,setLastUpdated]=useState(null),[syncError,setSyncError]=useState('');
+ const [lastUpdated,setLastUpdated]=useState(null),[syncError,setSyncError]=useState('');
  const [data,setData]=useState(null),[catalog,setCatalog]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[modal,setModal]=useState(null),[notice,setNotice]=useState('');
  const [navigationContext,setNavigationContext]=useState(null);
  const loadSequence=useRef(0),refreshRef=useRef(null);
  const activeData=data?.tab===tab?data.value:null;
  useEffect(()=>{if(!activeData||!navigationContext?.section)return;const frame=requestAnimationFrame(()=>{document.getElementById(navigationContext.section)?.scrollIntoView({behavior:'smooth',block:'start'});});return()=>cancelAnimationFrame(frame);},[activeData&&data?.tab,navigationContext]);
  const role=access?.role,permissions=access?.permissions||[],has=permission=>role==='owner'||permissions.includes(permission),manager=has('finance.manage'),front=has('appointments.manage');
- useEffect(()=>{let live=true;loadSequence.current++;setAccess(null);setData(null);if(session)rpc('spa_session').then(next=>{if(live){setAccess(next);setTab(next.permissions?.includes('dashboard.view')||next.role==='owner'?'dashboard':'bookings');setError('');}}).catch(e=>{if(live)setError(errorText(e));});return()=>{live=false;};},[session?.user?.id]);
+ useEffect(()=>{let live=true;loadSequence.current++;setAccess(null);setData(null);setCatalog(null);setModal(null);setNotice('');setNavigationContext(null);setSyncError('');setLastUpdated(null);if(session)rpc('spa_session').then(next=>{if(live){setAccess(next);setTab(next.permissions?.includes('dashboard.view')||next.role==='owner'?'dashboard':'bookings');setError('');}}).catch(e=>{if(live)setError(errorText(e));});return()=>{live=false;};},[session?.user?.id]);
  async function load({background=false}={}){
   if(!role||(['bookings','reports','self','payroll'].includes(tab)&&!validRange(range)))return;const sequence=++loadSequence.current;setBusy(true);if(!background)setError('');
   try{
@@ -29,17 +31,14 @@ export default function Admin() {
    if(nextAccess.role!=='owner'&&!['dashboard','bookings','reviews',...(nextAccess.staff_id?['self']:[])].includes(tab)){setData(null);setModal(null);setTab('dashboard');return;}
    const [cat,result]=await Promise.all([rpc('spa_catalog'),tab==='dashboard'?rpc('spa_dashboard'):tab==='bookings'?rpc('spa_admin_bookings',{p_from:from,p_to:to}):tab==='self'?rpc('spa_staff_self',{p_from:from,p_to:to}):tab==='customers'?rpc('spa_customers_list'):tab==='pos'?Promise.all([rpc('spa_catalog_admin'),rpc('spa_customers_list')]).then(([store,customers])=>({store,customers})):tab==='team'?rpc('spa_team_os'):tab==='payroll'?rpc('spa_payroll_admin',{p_from:from,p_to:to,p_rule:null}):tab==='catalog'?rpc('spa_catalog_admin'):tab==='reviews'?rpc('spa_reviews_admin'):tab==='access'?rpc('spa_access_admin'):tab==='settings'?rpc('spa_settings_os'):rpc('spa_report',{p_from:from,p_to:to})]);
    if(sequence===loadSequence.current){setCatalog(cat);setData({tab,value:result});setLastUpdated(new Date());setSyncError('');}
-  }catch(e){if(sequence===loadSequence.current){if(background){setSyncError('自動更新失敗，以下保留上次成功載入的資料。'+errorText(e));}else{setError(errorText(e));setData(null);}}}finally{if(sequence===loadSequence.current)setBusy(false);}
+  }catch(e){if(sequence===loadSequence.current){if(e.message?.includes('FORBIDDEN')){setData(null);setCatalog(null);setModal(null);try{const next=await rpc('spa_session');if(sequence===loadSequence.current)setAccess(next);}catch{if(sequence===loadSequence.current)setAccess({role:null});}setError(errorText(e));}else if(background){setSyncError('自動更新失敗，以下保留上次成功載入的資料。'+errorText(e));}else{setError(errorText(e));setData(null);}}}finally{if(sequence===loadSequence.current)setBusy(false);}
  }
  refreshRef.current={load,busy};
  useEffect(()=>{setData(null);setBusy(false);setLastUpdated(null);setSyncError('');load();return()=>{loadSequence.current++;};},[role,tab,from,to]);
- useEffect(()=>{
-  if(!role||!['dashboard','bookings','reviews','self'].includes(tab)||!autoRefresh||modal||!validRange(range))return;
-  const refresh=()=>{if(document.visibilityState==='visible'&&navigator.onLine!==false&&!refreshRef.current.busy)refreshRef.current.load({background:true});};
-  const timer=window.setInterval(refresh,15000);
-  window.addEventListener('focus',refresh);window.addEventListener('online',refresh);document.addEventListener('visibilitychange',refresh);
-  return()=>{window.clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('online',refresh);document.removeEventListener('visibilitychange',refresh);};
- },[role,tab,from,to,autoRefresh,modal]);
+ const now=useBookingClock(),currentDay=taipeiDate(new Date(now)),previousDay=useRef(currentDay);
+ const liveUpdate=useLiveRefresh(()=>refreshRef.current.load({background:true}),{audience:'operations',enabled:!!role,paused:busy||!!modal});
+ useEffect(()=>{if(previousDay.current!==currentDay){previousDay.current=currentDay;liveUpdate.invalidate();}},[currentDay,liveUpdate.invalidate]);
+ function accessDenied(){loadSequence.current++;setData(null);setCatalog(null);setModal(null);setNotice('');setNavigationContext(null);setAccess({role:null});setError('權限已變更，請重新登入確認。');}
  async function saved({bookingDate}={}){
   setModal(null);setNotice('已儲存');
   if(bookingDate&&(bookingDate<from||bookingDate>to)){setRange(sevenDayRange(bookingDate));setNotice('已儲存，已切換至預約日期所在的七天。');return;}
@@ -63,9 +62,9 @@ export default function Admin() {
  }
  return <div className="ops"><main><header><div><h1>柔療髮浴</h1><p className="muted">門店營運系統 · {access.role_name||staffRoleNames[role]||role} · {role==='owner'?session.user.email:(access.username||'人員帳號')}</p></div><div className="row">{access.staff_id&&<button className="primary" onClick={()=>{setTab('self');const today=taipeiDate();setRange({from:today.slice(0,8)+'01',to:today});}}>出勤打卡</button>}<a href="#">查看網站</a><button onClick={()=>supabase.auth.signOut()}>登出</button></div></header><nav className="os-main-nav">{tabs.map(([id])=><button key={id} className={tab===id?'active':''} onClick={()=>{setNavigationContext(null);setTab(id);setNotice('');if(['self','payroll'].includes(id)){const today=taipeiDate();setRange({from:today.slice(0,8)+'01',to:today});}}}>{moduleName(id)}</button>)}</nav>
  {['bookings','reports','self','payroll'].includes(tab)&&<div className="card date-panel"><div className="toolbar"><Field label="開始日期"><input required type="date" value={from} onChange={e=>{const next=e.target.value;setRange({from:next,to:next&&next>to?dateAfter(6,next):to});}}/></Field><Field label="結束日期"><input required type="date" min={from} value={to} onChange={e=>setRange({...range,to:e.target.value})}/></Field><div className="range-shortcuts"><button onClick={()=>{const today=taipeiDate();setRange({from:today,to:today});}}>今天</button><button onClick={()=>setRange(sevenDayRange())}>未來 7 天</button><button onClick={()=>{const today=taipeiDate();setRange({from:dateAfter(-6,today),to:today});}}>最近 7 天</button>{tab==='bookings'&&catalog&&<button onClick={()=>setRange({from:taipeiDate(),to:dateAfter(catalog.settings.booking_days)})}>全部可預約日期</button>}<button disabled={!validRange(range)} onClick={()=>setRange(shiftRange(range,-1))}>上一段</button><button disabled={!validRange(range)} onClick={()=>setRange(shiftRange(range,1))}>下一段</button></div></div>{validRange(range)?<p className="muted">目前顯示 {from} ～ {to}，共 {rangeDays(range)} 天（含起訖日）。{tab==='bookings'?'依預約營業日期篩選；日期外的預約不會列入，凌晨時段歸前一營業日。':tab==='self'?'按療程營業日期統計自己的完成數、提成及評價。':tab==='payroll'?'依台灣營業日期、核准工時及已結帳紀錄試算；結算後保存快照。':'預約依營業日期統計；收支依台灣時間入帳日期統計。'}</p>:<p className="alert" role="alert">請選擇完整日期，結束日期不得早於開始日期，查詢範圍最多 367 天。</p>}</div>}
- <div className="row sync-toolbar"><button disabled={busy||(['bookings','reports','self','payroll'].includes(tab)&&!validRange(range))} onClick={()=>load()}>{busy?'更新中…':'重新整理'}</button>{tab==='bookings'&&<label className="auto-refresh"><input type="checkbox" checked={autoRefresh} onChange={e=>setAutoRefresh(e.target.checked)}/>每 15 秒自動更新{modal?'（編輯中暫停）':''}</label>}{lastUpdated&&<span className="muted">上次更新：{dateTime(lastUpdated)}（台灣時間）</span>}{notice&&<span className="success" role="status">{notice}</span>}</div>{syncError&&<p className="alert" role="alert">{syncError}</p>}{error&&<p className="alert" role="alert">{error}</p>}
+ <div className="row sync-toolbar"><button disabled={busy||(['bookings','reports','self','payroll'].includes(tab)&&!validRange(range))} onClick={()=>load()}>{busy?'更新中…':'重新整理'}</button><span className="muted" role="status">{liveUpdate.status==='connected'?'資料變動時自動更新':liveUpdate.status==='connecting'?'即時連線中…':'即時連線中斷，恢復後會補齊資料。'}{liveUpdate.pending?' · 有更新，編輯結束後套用':''}</span>{lastUpdated&&<span className="muted">上次更新：{dateTime(lastUpdated)}（台灣時間）</span>}{notice&&<span className="success" role="status">{notice}</span>}</div>{syncError&&<p className="alert" role="alert">{syncError}</p>}{error&&<p className="alert" role="alert">{error}</p>}
  {activeData&&catalog&&<>
- {tab==='dashboard'&&<DashboardOS data={activeData} onNavigate={navigateFromDashboard} allowed={allowed} onReload={load}/>}
+ {tab==='dashboard'&&<DashboardOS userKey={session.user.id} data={activeData} onNavigate={navigateFromDashboard} allowed={allowed} onReload={load}/>}
  {tab==='bookings'&&<Bookings rows={activeData} catalog={catalog} front={front} manager={manager} open={setModal} navigationContext={navigationContext}/>}
  {tab==='customers'&&<Customers rows={activeData} owner={has('customers.manage')} open={setModal}/>}
  {tab==='pos'&&<PosOS catalog={activeData.store} customers={activeData.customers} onReload={load}/>}
@@ -103,10 +102,11 @@ export default function Admin() {
  {modal.kind==='service'&&<ServiceForm row={modal.row} saved={saved}/>}
  {modal.kind==='room'&&<RoomForm row={modal.row} saved={saved}/>}
   </Modal>}
+ <OperationsNotifications userKey={session.user.id} enabled={allowed('dashboard')} allowed={allowed} onNavigate={navigateFromDashboard} onAccessDenied={accessDenied}/>
  </main></div>;
 }
 function Bookings({rows,catalog,front,manager,open,navigationContext}){
- const now=useBookingClock();
+ const now=useBookingClock(rows.flatMap(row=>[row.starts_at,row.ends_at,row.blocked_until,row.change_before]));
  const [filter,setFilter]=useState('all'),[staff,setStaff]=useState('all'),[view,setView]=useState('list'),[search,setSearch]=useState('');
  const [contextEnabled,setContextEnabled]=useState(true);
  useEffect(()=>{setContextEnabled(true);},[navigationContext]);

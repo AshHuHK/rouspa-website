@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { STORE, hoursText } from "./lib/public-copy.js";
 import { updateBusinessSeo } from './lib/seo.js';
-import { publicRpc } from "./lib/spa.js";
+import { usePublicCatalog } from './lib/usePublicData.js';
 
 // ============================================================
 // 聯繫資訊配置
@@ -46,8 +46,7 @@ const contactInfo = {
 export default function Contact({ lang = "zh", onNavigateHome }) {
   const [copied, setCopied] = useState("");
   const [copyError, setCopyError] = useState("");
-  const [catalog, setCatalog] = useState(null);
-  useEffect(() => { let live = true; publicRpc("spa_catalog").then(c => { if(live) setCatalog(c); }).catch(() => {}); return () => { live = false; }; }, []);
+  const { data: catalog } = usePublicCatalog({ lang });
   useEffect(() => { if (catalog) updateBusinessSeo(catalog, 'contact', lang); }, [catalog, lang]);
   const t = contactInfo[lang];
   const isZh = lang === "zh";

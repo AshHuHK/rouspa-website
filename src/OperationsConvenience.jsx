@@ -1,18 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
-import { rpc, errorText, dateTime } from './lib/spa.js';
+import { dateTime } from './lib/spa.js';
+import { useOperationsSnapshot } from './lib/useOperationsSnapshot.js';
 import './convenience.css';
 
 const bedNames={free:'空檔',reserved:'預定',treatment:'療程中',buffer:'緩衝'};
 const taskLabels={urgent:'待處理',normal:'待核對',waiting:'等待確認'};
 const time=value=>new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
 
-export function OperationsConvenience({refreshToken,onNavigate,allowed}){
- const [data,setData]=useState(null),[busy,setBusy]=useState(true),[error,setError]=useState('');
- const sequence=useRef(0),running=useRef(false),loadRef=useRef(null);
- async function load(){if(running.current)return;running.current=true;const request=++sequence.current;setBusy(true);try{const next=await rpc('spa_operations_convenience');if(request===sequence.current){setData(next);setError('');}}catch(e){if(request===sequence.current){setError(errorText(e));if(e.message?.includes('FORBIDDEN'))setData(null);}}finally{running.current=false;if(request===sequence.current)setBusy(false);}}
- loadRef.current=load;
- useEffect(()=>{loadRef.current();const update=()=>{if(document.visibilityState==='visible'&&navigator.onLine!==false)loadRef.current();};const timer=window.setInterval(update,15000);window.addEventListener('focus',update);window.addEventListener('online',update);document.addEventListener('visibilitychange',update);return()=>{window.clearInterval(timer);window.removeEventListener('focus',update);window.removeEventListener('online',update);document.removeEventListener('visibilitychange',update);};},[refreshToken]);
- useEffect(()=>()=>{sequence.current++;},[]);
+export function OperationsConvenience({refreshToken,onNavigate,allowed,userKey}){
+ const {data,busy,error,refresh:load}=useOperationsSnapshot({userKey,refreshToken});
  const canOpen=module=>!!onNavigate&&(!allowed||allowed(module));
  const go=(module,context)=>{if(canOpen(module))onNavigate(module,context);};
  const beds=data?.beds||[],todos=(data?.todos||[]).filter(task=>task.count>0&&(!allowed||allowed(task.module)));
@@ -32,7 +27,7 @@ export function OperationsConvenience({refreshToken,onNavigate,allowed}){
       {contextBooking&&canOpen('bookings')&&<button onClick={()=>go('bookings',{from:contextBooking.business_date,to:contextBooking.business_date,room_id:bed.id})}>查看這一天的排程</button>}
      </article>;
     })}</div>{!beds.length&&<p className="empty">目前沒有啟用的床位，請由店主核對資源設定。</p>}
-    <p className="ops-convenience-footnote">「療程中」需已到店，並在排定服務時間內；「緩衝」依預約保留到清潔緩衝結束，僅表示排程狀態。實際清潔與是否可接客仍由門店核對。<span>台灣伺服器時間：{dateTime(data.server_time)} · 每 15 秒更新</span></p>
+    <p className="ops-convenience-footnote">「療程中」需已到店，並在排定服務時間內；「緩衝」依預約保留到清潔緩衝結束，僅表示排程狀態。實際清潔與是否可接客仍由門店核對。<span>台灣伺服器時間：{dateTime(data.server_time)} · 資料變更與排程狀態切換時更新</span></p>
    </>}
   </section>
   {data&&<section className="card ops-todo-center" aria-labelledby="ops-todo-title"><div className="ops-convenience-heading"><div><p className="eyebrow">NEXT ACTIONS</p><h2 id="ops-todo-title">{data.is_owner?'營運待辦中心':'我的工作提醒'}</h2><p className="muted">{data.is_owner?'從提醒直接前往原本的處理頁面，核對後再操作。':'查看自己的排程、出勤與班表提交狀態。'}</p></div><span className="ops-todo-total">{todos.length} 類提醒</span></div>

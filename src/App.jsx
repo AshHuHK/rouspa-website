@@ -5,6 +5,8 @@ import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistL
 import { publicRpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 import { updateBusinessSeo } from './lib/seo.js';
 import { serviceAddonGroup, serviceCardVariant, serviceDurationGroups, servicePresentationCards } from "./lib/catalog-presentation.js";
+import { usePublicCatalog, usePublicData } from './lib/usePublicData.js';
+import { publicAnchorKey } from './lib/public-data.js';
 
 // ============================================================
 // 🔧 CONFIGURATION
@@ -352,8 +354,7 @@ const FeedbackSection = ({ t }) => {
 };
 
 function PublishedReviews({lang}) {
- const [reviews,setReviews]=useState([]);
- useEffect(()=>{let live=true;publicRpc('spa_public_reviews').then(rows=>{if(live)setReviews(rows);}).catch(()=>{});return()=>{live=false;};},[]);
+ const {data:reviews}=usePublicData('spa_public_reviews',{lang,scopes:['member','catalog'],initialData:[]});
  if(!reviews.length)return null;
  return <section className="public-reviews" style={{padding:"30px 30px 80px",maxWidth:900,margin:"0 auto"}}><h2 style={{fontWeight:500,textAlign:"center",color:"#a3823f",marginBottom:28}}>{lang==='zh'?'顧客療程評價':'Verified guest reviews'}</h2><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",gap:20}}>{reviews.map((r,i)=><article key={i} style={{padding:24,border:"1px solid rgba(163,130,63,.2)",borderRadius:4}}><p aria-label={`${r.rating} / 5`} style={{color:"#a3823f"}}>{'★'.repeat(r.rating)}{'☆'.repeat(5-r.rating)}</p><p style={{marginTop:12,lineHeight:1.8,whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{r.comment}</p><p style={{fontSize:12,opacity:.7,marginTop:12}}>{r.therapist} · {taipeiDate(new Date(r.created_at))}</p>{r.reply&&<p style={{marginTop:16,lineHeight:1.8,fontSize:13,whiteSpace:"pre-wrap"}}>{lang==='zh'?'門店回覆：':'Our reply: '}{r.reply}</p>}</article>)}</div></section>;
 }
@@ -380,8 +381,10 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   const [formNote, setFormNote] = useState("");
   const [bookingComplete, setBookingComplete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [catalog, setCatalog] = useState(null);
-  const [catalogError, setCatalogError] = useState("");
+  const { data: catalog, error: catalogError, refresh: refreshCatalog } = usePublicCatalog({ lang });
+  const catalogReady = !!catalog || !!catalogError;
+  const followedAnchor = useRef(null), latestRebookingAnchor = useRef(null);
+  if (rebookingIntent?.id != null) latestRebookingAnchor.current = rebookingIntent.id;
   const [bookedSlots, setBookedSlots] = useState([]);
   const [receipt, setReceipt] = useState(null);
   const bookingRequest = useRef(null);
@@ -449,14 +452,18 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   useEffect(() => {
     // Catalog cards and the local font change section heights after mount.
     // Position cross-page anchors only once those layouts are ready.
-    if (!catalog && !catalogError) return;
+    if (!catalogReady) return;
     let frame, cancelled = false;
     const followAnchor = async () => {
       const target = window.location.hash.slice(1);
-      if (target !== 'booking' && target !== 'services') return;
+      if (target !== 'booking' && target !== 'services') { followedAnchor.current = null; return; }
+      const key = publicAnchorKey(window.location.hash, latestRebookingAnchor.current);
+      if (followedAnchor.current === key) return;
       await document.fonts.ready;
       if (cancelled || window.location.hash !== `#${target}`) return;
       frame = requestAnimationFrame(() => {
+        if (window.location.hash !== `#${target}` || followedAnchor.current === key) return;
+        followedAnchor.current = key;
         if (target === 'booking') { setBookingMode('new'); alignBooking(); }
         else {
           const section = sectionRefs.services.current;
@@ -467,7 +474,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
     followAnchor();
     window.addEventListener('hashchange', followAnchor);
     return () => { cancelled = true; cancelAnimationFrame(frame); window.removeEventListener('hashchange', followAnchor); };
-  }, [catalog, catalogError, rebookingIntent?.id]);
+  }, [catalogReady, rebookingIntent?.id]);
   useEffect(() => { if (catalog) updateBusinessSeo(catalog, 'home', lang); }, [catalog, lang]);
 
   useLayoutEffect(() => {
@@ -475,10 +482,6 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     alignBooking();
   }, [bookingStep, bookingComplete, bookingMode]);
-
-  useEffect(() => {
-    publicRpc("spa_catalog").then(setCatalog).catch(err => setCatalogError(errorText(err, lang)));
-  }, []);
 
   useEffect(() => {
     setSelectedTime(""); setBookedSlots([]);
@@ -1329,7 +1332,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           </div>
 
           <div className="booking-mode" role="tablist" aria-label={lang === 'zh' ? '預約功能' : 'Booking options'}><button role="tab" aria-selected={bookingMode === 'new'} onClick={() => setBookingMode('new')}>{lang === 'zh' ? '新增預約' : 'New booking'}</button><button role="tab" aria-selected={bookingMode === 'lookup'} onClick={() => setBookingMode('lookup')}>{lang === 'zh' ? '查詢預約' : 'Find booking'}</button></div>
-          {bookingMode === 'lookup' ? <BookingLookup lang={lang} onRebook={onRebook}/> : <PublicBookingExperience catalog={catalog} catalogError={catalogError} lang={lang} rebookingIntent={rebookingIntent} onRebookingApplied={onRebookingApplied}/>} {false && <>
+          {bookingMode === 'lookup' ? <BookingLookup lang={lang} onRebook={onRebook}/> : <PublicBookingExperience catalog={catalog} catalogError={catalogError} onCatalogRetry={refreshCatalog} lang={lang} rebookingIntent={rebookingIntent} onRebookingApplied={onRebookingApplied}/>} {false && <>
           {(catalogError || slotError) && <p role="alert" style={{ color: "#b5523b", textAlign: "center", marginBottom: 20 }}>{catalogError || slotError}</p>}
           {!catalog && !catalogError && <p style={{ textAlign: "center" }}>{lang === "zh" ? "正在載入預約服務…" : "Loading booking services…"}</p>}
           {!bookingComplete && (

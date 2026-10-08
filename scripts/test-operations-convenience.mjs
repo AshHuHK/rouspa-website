@@ -19,7 +19,7 @@ create function spa_private.convenience_test_now() returns timestamptz language 
 const directory=new URL('../supabase/migrations/',import.meta.url);
 for(const file of (await readdir(directory)).filter(file=>file.endsWith('.sql')).sort()){
  let source=await readFile(new URL(file,directory),'utf8');
- if(file==='202610080006_operations_convenience.sql')source=source.replaceAll('now()','spa_private.convenience_test_now()');
+ if(['202610080006_operations_convenience.sql','202610080010_operations_event_reminders.sql'].includes(file))source=source.replaceAll('now()','spa_private.convenience_test_now()');
  await db.exec(source);
 }
 await db.exec(`create or replace function spa_private.public_booking_last_date() returns date language sql stable security definer set search_path='' as $$
@@ -93,6 +93,27 @@ check(admin.todos.find(item=>item.key==='completion').context.statuses.includes(
 check(admin.todos.find(item=>item.key==='attendance').context.section==='attendance-review'&&staff.todos.find(item=>item.key==='my_requests').context.section==='my-schedule','todo destinations use owner and employee specific existing sections');
 check(admin.todos.filter(item=>!['low_stock'].includes(item.key)).every(item=>item.context.from&&item.context.to),'date-dependent todos carry the same bounded destination range');
 
+const revision=(packet,key)=>packet.todos.find(task=>task.key===key)?.revision;
+check(admin.todos.every(task=>/^[a-f0-9]{32}$/.test(task.revision)),'reminder revisions are opaque hashes, with no record IDs');
+check(JSON.stringify(admin.todos.map(t=>[t.key,t.revision]))===JSON.stringify((await call(owner)).todos.map(t=>[t.key,t.revision])),'unchanged source data keeps revisions stable');
+check(new Date(admin.next_refresh_at).valueOf()===new Date('2026-10-09T00:40:00+08:00').valueOf(),'one-shot refresh targets the nearest real bed boundary');
+const pendingId=(await db.query("select id from spa_appointments where status='pending' and business_date='2026-11-02'")).rows[0].id;
+const priorPendingRevision=revision(admin,'pending_bookings'),priorStaffRevision=revision(staff,'my_schedule');
+await db.query("update spa_appointments set status='cancelled' where id=$1",[pendingId]);
+await appointment(0,people[0].id,'2026-11-03T10:00:00+08:00','2026-11-03T10:45:00+08:00','2026-11-03T11:00:00+08:00','pending','2026-11-03');
+const replacement=await call(owner);
+check(count(replacement).pending_bookings===count(admin).pending_bookings&&revision(replacement,'pending_bookings')!==priorPendingRevision,'replacing a pending record still triggers a new reminder when count stays the same');
+check(revision(await call(employee),'my_schedule')===priorStaffRevision,'unrelated future records do not change employee own imminent-service revision');
+await db.query("update convenience_test_clock set instant='2026-10-09T00:40:00+08:00'");
+check(new Date((await call(owner)).next_refresh_at).valueOf()===new Date('2026-10-09T00:45:00+08:00').valueOf(),'passing a boundary schedules the next transition rather than repeating the old timer');
+await db.query("update convenience_test_clock set instant='2026-10-09T00:30:00+08:00'");
+const dueAttendance=(await db.query(`insert into spa_attendance(staff_id,work_date,clock_in,status)
+ select $1,'2026-10-08',spa_private.convenience_test_now()-make_interval(mins=>max_shift_minutes)+interval '2 minutes','open' from spa_attendance_settings returning id`,[people[2].id])).rows[0].id;
+check(new Date((await call(owner)).next_refresh_at).valueOf()===new Date('2026-10-09T00:32:00+08:00').valueOf(),'open attendance schedules its exact overdue threshold ahead of the bed transition');
+await db.query("update convenience_test_clock set instant='2026-10-09T00:32:00+08:00'");
+check(count(await call(owner)).missing_clockout===2,'exact max-shift equality creates overdue reminder without another poll');
+await db.query('delete from spa_attendance where id=$1',[dueAttendance]);
+await db.query("update convenience_test_clock set instant='2026-10-09T00:30:00+08:00'");
 const before=(await db.query(`select (select count(*) from spa_appointments) bookings,(select count(*) from spa_attendance) attendance,(select count(*) from spa_audit) audit,(select count(*) from spa_orders) orders`)).rows[0];
 await call(owner);await call(employee);
 check(JSON.stringify(before)===JSON.stringify((await db.query(`select (select count(*) from spa_appointments) bookings,(select count(*) from spa_attendance) attendance,(select count(*) from spa_audit) audit,(select count(*) from spa_orders) orders`)).rows[0]),'refresh is read-only and never changes allocation, attendance, orders or audit');

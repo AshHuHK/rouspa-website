@@ -3,12 +3,13 @@ import {rpc,dateTime,errorText,taipeiDate,exportCSV} from './lib/spa.js';
 import {attendanceStatuses,attendanceFlags,attendanceMinutes,taipeiInput,attendanceStamp,getPunchLocation,canPunch} from './lib/attendance.js';
 import {Field,Modal,MutationForm,Empty} from './OperationsShared.jsx';
 import './attendance.css';
+import {useLiveRefresh} from './lib/useLiveRefresh.js';
 
 function useAttendance(name,from,to){
  const [data,setData]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(false);const sequence=useRef(0);
- async function load(){const id=++sequence.current;setLoading(true);try{const next=await rpc(name,{p_from:from,p_to:to});if(id===sequence.current){setData(next);setError('');}return next;}catch(e){if(id===sequence.current)setError(errorText(e));return null;}finally{if(id===sequence.current)setLoading(false);}}
+ async function load(){const id=++sequence.current;setLoading(true);try{const next=await rpc(name,{p_from:from,p_to:to});if(id===sequence.current){setData(next);setError('');}return next;}catch(e){if(id===sequence.current){setError(errorText(e));if(e.message?.includes('FORBIDDEN'))setData(null);}return null;}finally{if(id===sequence.current)setLoading(false);}}
  useEffect(()=>{setData(null);load();return()=>{sequence.current++;};},[name,from,to]);
- useEffect(()=>{const refresh=()=>{if(document.visibilityState==='visible')load();};window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);const timer=setInterval(refresh,60000);return()=>{window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);clearInterval(timer);};},[name,from,to]);
+ useLiveRefresh(load,{audience:'operations',scopes:['attendance','schedule','settings','team','payroll'],paused:loading});
  return {data,error,loading,load};
 }
 function Flags({flags=[]}){return <div className="attendance-flags">{(flags||[]).map(flag=><span className="badge" key={flag}>{attendanceFlags[flag]||flag}</span>)}</div>;}

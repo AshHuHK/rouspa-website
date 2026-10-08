@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { createPublicDataController, publicAnchorKey } from '../src/lib/public-data.js';
+let checks = 0;
+const check = (value, label) => { assert.ok(value, label); checks++; };
+const tick = async () => { for (let n = 0; n < 8; n++) await Promise.resolve(); };
+let reads = 0, resolveRead, rejectRead;
+const results = [], errors = [], loading = [];
+const controller = createPublicDataController({
+  read: () => { reads++; return new Promise((resolve, reject) => { resolveRead = resolve; rejectRead = reject; }); },
+  onResult: data => results.push(data), onError: error => errors.push(error), onLoading: value => loading.push(value),
+});
+const first = controller.refresh(); await tick();
+check(reads === 1 && loading.at(-1) === true, 'initial public catalog starts one request');
+controller.refresh(); controller.refresh();
+check(reads === 1, 'concurrent refresh signals do not start overlapping reads');
+resolveRead({ services: ['original'] }); await tick();
+check(reads === 2 && results.length === 1, 'signals during a read retain exactly one catch-up request');
+resolveRead({ services: ['updated'] }); await first;
+check(results.at(-1).services[0] === 'updated' && loading.at(-1) === false, 'catch-up replaces published data after it completes');
+const failed = controller.refresh(); await tick(); rejectRead(new Error('offline')); await failed;
+check(results.at(-1).services[0] === 'updated' && errors.at(-1).message === 'offline', 'background failure preserves the previous catalog and reports an error');
+const retry = controller.refresh(); await tick(); resolveRead({ services: ['recovered'] }); await retry;
+check(results.at(-1).services[0] === 'recovered', 'manual catalog retry recovers without remounting or reloading inputs');
+const late = controller.refresh(); await tick(); controller.dispose(); resolveRead({ services: ['obsolete'] }); await late;
+check(results.at(-1).services[0] === 'recovered', 'late results after leaving a page cannot update its data');
+await controller.refresh();
+check(reads === 5, 'disposed data controller performs no future network calls');
+let throws = 0;
+const synchronousError = createPublicDataController({ read: () => { throws++; throw new Error('sync'); }, onResult() {}, onError() {}, onLoading() {} });
+await synchronousError.refresh(); await synchronousError.refresh();
+check(throws === 2, 'synchronous read failure does not leave the retry controller stuck');
+synchronousError.dispose();
+const applied = publicAnchorKey('#booking', 1);
+check(applied === publicAnchorKey('#booking', 1), 'unchanged anchor/rebooking intent yields the same key after catalog updates');
+check(applied !== publicAnchorKey('#services', 1) && applied !== publicAnchorKey('#booking', 2), 'new hash and new rebooking intent each get an independent anchor key');
+const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+check(app.includes('}, [catalogReady, rebookingIntent?.id]);') && app.includes('followedAnchor.current === key'), 'App keys anchor placement to initial readiness and explicit navigation, preserving mode and scroll on catalog refresh');
+check(app.includes('onCatalogRetry={refreshCatalog}'), 'App exposes an explicit public catalog retry to the booking form');
+console.log(`Public data checks passed: ${checks}`);
