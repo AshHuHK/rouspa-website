@@ -423,13 +423,17 @@
 
 「服務・商品・庫存」提供服務／商品切換、名稱／代碼／SKU 搜尋、顯示封存、編輯、批次上架／隱藏／封存、刪除及商品庫存調整。官網、預約、POS、薪資引用同一套主資料；歷史成交／預約的名稱、時長、價格快照與目前主資料分開。
 
-主療程分類固定 45／90／120 分鐘，第四類「加購項目」排其後。新建服務一律加購；既有主療程不可改成加購、不可改到另一時長分類，主療程分鐘必須與原分類相同。加購時長可 15–480 分鐘、單價可 0、預設 60 分鐘／無緩衝／草稿／不官網顯示／不線上預約；上架並打開官網顯示後展示在第四類。加購沒有直接線上預約按鈕，也沒有自動加在已建預約增加佔床時長或價格的功能；可在 POS 賣並指定實際技師。
+主療程分類固定 45／90／120 分鐘，首頁直接顯示「45分方子」「90分方子」「120分方子」及價格，不再重複加上「45／90／120分鐘療程」標題。第四類「另外項目」獨立排其後；這是原加購分類的顯示名稱，內部代碼仍為 `add_on`，不因此開放直接預約或改動既有預約。新建服務一律加購；既有主療程不可改成加購、不可改到另一時長分類，主療程分鐘必須與原分類相同。加購時長可 15–480 分鐘、單價可 0、預設 60 分鐘／無緩衝／草稿／不官網顯示／不線上預約；上架並打開官網顯示後展示在第四類。加購沒有直接線上預約按鈕，也沒有自動加在已建預約增加佔床時長或價格的功能；可在 POS 賣並指定實際技師。
 
 服務可編輯中文／英文名稱、介紹、圖 URL、售價／會員價、清潔緩衝、排序、狀態、官網顯示，主療程另有線上預約控制。自訂中／英文官網卡片可增刪多個卡片，每卡片章字（1–2 字）、標題、副標及一行一個療程步驟；不設自訂卡片時用服務內容生成自動卡片。
 
 服務只有上架＋有效＋開放線上預約才進預約菜單；官網展示另外受官網顯示控制，因此「官網隱藏」與「停止預約」是不同開關。歷史預約既定價格及時長不因後來修改服務而變。
 
-商品有 SKU（保存大寫）、條碼、中英文名／介紹、分類、圖片 URL、單價、選填成本、庫存單位（件／瓶／盒等）、低庫存門檻、排序、狀態、官網顯示與商店顯示。新商品預設草稿、零售價格 0、低庫存門檻 2、單位「件」、兩種展示關閉；新增商品不自動產生庫存。成本目前用於保存商品資料／成交成本快照，經營報表沒有自動毛利或進銷存成本分析。
+商品新增／編輯分成「產品照片」「產品資訊」「價格、庫存與展示」。可填 SKU（保存大寫）、條碼、中英文名、產品資訊（特色、容量／規格、成分、使用方式與注意事項）、分類、單價、選填成本、中英文規格／庫存單位（件／瓶／盒等）、低庫存門檻、排序、狀態、官網顯示與商店顯示。官網商品卡片保留產品資訊的換行，照片無法載入時回退分類章字，不出現破圖。新商品預設草稿、零售價格 0、低庫存門檻 2、單位「件」、兩種展示關閉；新增商品不自動產生庫存。成本目前用於保存商品資料／成交成本快照，經營報表沒有自動毛利或進銷存成本分析。
+
+照片可直接選檔、本地預覽，或改用完整 HTTP(S) 圖片網址。選檔僅接受 JPG、PNG、WebP，非空且最多 5 MiB（5,242,880 bytes）；檔頭須與格式相符。選擇照片或移除照片時尚未改動正式商品，按「儲存商品」才先上傳、再保存商品資料。僅已登入且有 `catalog.manage` 的有效帳號可上傳，沿用目錄權限；專用公開 `product-media` 儲存區只存公開產品照片，不存顧客、薪資或人事附件。每次照片用獨立 UUID 路徑，不覆寫舊圖。
+
+照片檢查或保存期間會停用表單避免重複提交。上傳失敗不保存商品，錯誤與表單保留；上傳等待超過 45 秒可再按儲存，沿用同一次尚未完成的上傳。已成功上傳但商品保存失敗時，重試沿用照片網址，不再上傳同一張。移除照片只清除商品的圖片關聯，沒有刪雲端舊照片的按鈕，避免影響共用圖片；關閉未保存表單不改商品，已成功上傳的照片則可能留在儲存區。新增商品不因選照片自動上架，原有草稿／展示／庫存規則照常。
 
 庫存 = 全部庫存流水 `delta` 加總；調庫存填整數正增／負減及理由，不能減到負庫存；POS 出售扣數量。低庫存判斷為當前庫存 ≤ 門檻。公開商店只載入上架＋官網顯示＋商店顯示的商品，零庫存在系統設定可選顯示售罄（預設）或隱藏；店內 POS 無論該設定都不賣零庫存商品。
 
@@ -437,7 +441,7 @@
 
 批次「上架」服務會同時啟用官網及線上預約，批次「隱藏」會關閉官網及線上預約；商品上架／隱藏則同時控制官網及商店展示。批次封存改狀態並停止有效服務。批次服務上架也可能把加購的 `online_booking_enabled` 打開，但公開預約目錄仍只列三種主療程；單筆加購編輯會強制關閉線上預約，應維持一致設定。庫存調整使用實際庫存調整函式，保存數量與理由後重新載入。
 
-來源：[BusinessOS.jsx](src/BusinessOS.jsx)（`CatalogOS`、`ServiceEditor`、`WebsiteCardsEditor`、`ProductEditor`、`InventoryEditor`）、[Shop.jsx](src/Shop.jsx)、[202610030005_business_operating_system.sql](supabase/migrations/202610030005_business_operating_system.sql)（`spa_product_save`、`spa_inventory_adjust`、`spa_catalog_bulk`、`spa_store_catalog`）、[202610040001_compensation_pos_titles.sql](supabase/migrations/202610040001_compensation_pos_titles.sql)（`spa_catalog_delete`）、[202610040006_service_addons.sql](supabase/migrations/202610040006_service_addons.sql)、[202610040007_standalone_addon_category.sql](supabase/migrations/202610040007_standalone_addon_category.sql)（最新服務保存）。
+來源：[BusinessOS.jsx](src/BusinessOS.jsx)（`CatalogOS`、`ServiceEditor`、`WebsiteCardsEditor`、`InventoryEditor`）、[ProductEditor.jsx](src/ProductEditor.jsx)、[product-media.js](src/lib/product-media.js)、[Shop.jsx](src/Shop.jsx)、[202610030005_business_operating_system.sql](supabase/migrations/202610030005_business_operating_system.sql)（`spa_product_save`、`spa_inventory_adjust`、`spa_catalog_bulk`、`spa_store_catalog`）、[202610040001_compensation_pos_titles.sql](supabase/migrations/202610040001_compensation_pos_titles.sql)（`spa_catalog_delete`）、[202610040006_service_addons.sql](supabase/migrations/202610040006_service_addons.sql)、[202610040007_standalone_addon_category.sql](supabase/migrations/202610040007_standalone_addon_category.sql)（服務保存）、[202610100006_product_media.sql](supabase/migrations/202610100006_product_media.sql)（產品照片權限及儲存區）、[202610100007_home_catalog_labels.sql](supabase/migrations/202610100007_home_catalog_labels.sql)（目前目錄顯示名稱；不重寫歷史快照）。
 
 
 商品分類現在可在目錄的「商品分類」新增、改中英文名稱／章字／排序、停用與刪除。穩定分類代碼建立後不修改，商品必須屬於分類，原無分類者轉「未分類」。停用分類同步隱藏官網商品並禁止 POS 新銷售，不刪庫存、歷史訂單或原抽成；原商品可留在停用分類方便更正，但新增／轉入必須選有效分類。刪分類需輸入 `DELETE`，有任何商品（含封存商品）時必須選另一有效分類遷移，交易 ID 與快照不變；沒有商品才可直接刪。官網只顯示含目前可展示商品的有效分類，切換分類停用後會返回全部，不留空白分類頁。

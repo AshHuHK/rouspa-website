@@ -5,7 +5,7 @@ import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistL
 import { publicRpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 import { createRequestId } from './lib/request-id.js';
 import { updateBusinessSeo } from './lib/seo.js';
-import { serviceAddonGroup, serviceCardVariant, serviceDurationGroups, servicePresentationCards } from "./lib/catalog-presentation.js";
+import { serviceAddonGroup, serviceCardVariant, serviceDurationGroups, serviceMenuTitle, servicePresentationCards } from "./lib/catalog-presentation.js";
 import { usePublicCatalog, usePublicData } from './lib/usePublicData.js';
 import { publicAnchorKey } from './lib/public-data.js';
 
@@ -229,8 +229,8 @@ const LineIcon = () => (
   </svg>
 );
 
-const GoldDivider = ({ plain = false }) => plain ? (
-  <div className="hero-divider" aria-hidden="true" />
+const GoldDivider = ({ plain = false, section = false }) => plain || section ? (
+  <div className={section ? "section-divider" : "hero-divider"} aria-hidden="true" />
 ) : (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", margin: "20px 0" }}>
     <div style={{ width: "60px", height: "1px", background: "linear-gradient(to right, transparent, #a3823f)" }} />
@@ -618,6 +618,10 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         }
         .hero-divider {
           width: 180px; max-width: 100%; height: 1px; margin: 20px auto;
+          background: rgba(131,101,52,0.65); transform: scaleY(0.5);
+        }
+        .section-divider {
+          width: min(280px, 76%); height: 1px; margin: 20px auto;
           background: rgba(131,101,52,0.65); transform: scaleY(0.5);
         }
         @media (prefers-reduced-motion: reduce) {
@@ -1303,22 +1307,21 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           <div style={{ textAlign: "center", marginBottom: "80px" }} className={`services-intro ${isAnimated("services") ? "animate-in" : ""}`}>
             <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>SERVICES</div>
             <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{lang === "zh" ? "頭療與髮浴療程" : "Head-care treatments"}</h2>
-            <GoldDivider />
+            <GoldDivider section />
             <p style={{ fontSize: "12px", letterSpacing: "2px", color: "rgba(74,68,58,0.5)", marginTop: "4px" }}>
               {lang === "zh" ? "點擊療程，查看完整內容" : "Tap a therapy to see the full ritual"}
             </p>
           </div>
 
-          <p className="service-page-intro">{lang === 'zh' ? '依照想放鬆的時間，選擇45、90或120分鐘頭療；完整步驟與加購內容如下。' : 'Choose a 45, 90 or 120-minute head-care visit. Explore the care steps and add-ons below.'}<br /><a href="/services/">{lang === 'zh' ? '認識頭療服務與預約常見問題' : 'About our head-care treatments and booking'} →</a></p>
+          <p className="service-page-intro">{lang === 'zh' ? '依照想放鬆的時間，選擇45、90或120分方子；完整步驟與另外項目如下。' : 'Choose a 45, 90 or 120-minute ritual. Explore the care steps and other services below.'}<br /><a href="/services/">{lang === 'zh' ? '認識頭療服務與預約常見問題' : 'About our head-care treatments and booking'} →</a></p>
           {websiteServiceGroups.map((group,groupIndex)=><section key={group.code} className={`service-duration-group ${isAnimated("services")?`animate-in-delay-${Math.min(groupIndex+1,4)}`:""}`}>
-            <header className="service-duration-heading"><span>{group.minutes}</span><div><h3 aria-label={lang==='zh'?`${group.minutes}分鐘療程`:`${group.minutes}-minute treatments`}>{lang==='zh'?'分鐘療程':'MINUTE TREATMENTS'}</h3><small>{lang==='zh'?`${group.services.length} 項療程`:`${group.services.length} treatment${group.services.length===1?'':'s'}`}</small></div></header>
             <div className="service-category-services">{group.services.map(service=>{const rituals=serviceRituals(service);return <article className="service-entry" key={service.id}>
-              <div className="service-heading"><h4 className="service-name">{publicName(service,lang)}</h4><span className="service-price">{money(service.price_cents)}</span></div>
+              <div className="service-heading"><h3 className="service-name">{serviceMenuTitle(service,lang)}</h3><span className="service-price">{money(service.price_cents)}</span></div>
               <div className="service-vertical-list formula-list" style={{maxWidth:"520px",margin:"0 auto"}}>{rituals.map((ritual,index)=>{const key=`${service.id}-${index}`;return <FormulaCard key={key} stamp={ritual.stamp} name={ritual.name} sub={ritual.sub} steps={ritual.steps||[]} variant={serviceCardVariant(service)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;})}</div>
             </article>;})}</div>
           </section>)}
           {websiteAddonGroup&&<section className={`service-duration-group service-addon-group ${isAnimated("services")?'animate-in-delay-4':''}`}>
-            <header className="service-duration-heading"><span>＋</span><div><h3>{websiteAddonGroup.name}</h3><small>{lang==='zh'?`${websiteAddonGroup.services.length} 項加購`:`${websiteAddonGroup.services.length} add-on${websiteAddonGroup.services.length===1?'':'s'}`}</small></div></header>
+            <header className="service-duration-heading"><span>＋</span><div><h3>{websiteAddonGroup.name}</h3><small>{lang==='zh'?`${websiteAddonGroup.services.length} 項服務`:`${websiteAddonGroup.services.length} service${websiteAddonGroup.services.length===1?'':'s'}`}</small></div></header>
             <div className="service-category-services">{websiteAddonGroup.services.map(addon=>{const rituals=serviceRituals(addon);return <article className="service-entry" key={addon.id}>
               <div className="service-heading"><h4 className="service-name">{publicName(addon,lang)}</h4><span className="service-price">＋ {money(addon.price_cents)}</span></div>
               <div className="service-vertical-list formula-list" style={{maxWidth:"520px",margin:"0 auto"}}>{rituals.map((ritual,index)=>{const key=`addon-${addon.id}-${index}`;return <FormulaCard key={key} stamp={ritual.stamp} name={ritual.name} sub={ritual.sub} steps={ritual.steps||[]} variant={serviceCardVariant(addon)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;})}</div>
@@ -1338,7 +1341,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           <div style={{ textAlign: "center", marginBottom: "50px" }} className={isAnimated("booking") ? "animate-in" : ""}>
             <div style={{ fontSize: "11px", letterSpacing: "6px", color: "rgba(163,130,63,0.6)", marginBottom: "16px" }}>RESERVATION</div>
             <h2 style={{ fontSize: lang === "zh" ? "clamp(28px, 4vw, 38px)" : "clamp(26px, 3.5vw, 36px)", fontWeight: 500, letterSpacing: lang === "zh" ? "6px" : "3px" }}>{t.booking.title}</h2>
-            <GoldDivider />
+            <GoldDivider section />
             <p style={{ fontSize: "13px", color: "rgba(74, 68, 58, 0.6)", letterSpacing: "3px" }}>{t.booking.subtitle}</p>
           </div>
 

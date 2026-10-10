@@ -48,7 +48,7 @@ check(business?.sameAs?.includes('https://www.facebook.com/share/19Wj9WjiiY/') &
 check(business?.openingHoursSpecification?.length === 7 && business.openingHoursSpecification.every(row => row.opens === '10:00' && row.closes === '22:00'), 'static LocalBusiness hours are 10:00–22:00 every day');
 check(!business.priceRange, 'static metadata does not freeze mutable prices');
 check((app.match(/<h1\b/g) || []).length === 1 && app.includes('aria-label={lang === "zh" ? "嘉義中式頭療｜柔療髮浴 ROU SPA"'), 'homepage has one semantically named H1 while preserving the visible hero copy');
-check(app.includes('<h2 style={{ fontSize: lang === "zh"') && app.includes('<h3 aria-label={lang===\'zh\'?`${group.minutes}分鐘療程`'), 'homepage keeps H2 sections with specifically named H3 treatment groups');
+check(app.includes('<h2 style={{ fontSize: lang === "zh"') && app.includes('<h3 className="service-name">{serviceMenuTitle(service,lang)}</h3>'), 'homepage keeps H2 sections with one H3 menu heading per main treatment');
 
 JSON.parse(vercel);
 check(shop.includes('<link rel="canonical" href="https://www.rouspa.tw/shop/"'), 'product HTML has a static product canonical');

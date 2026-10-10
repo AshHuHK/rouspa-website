@@ -32,6 +32,14 @@ export function serviceCardVariant(service) {
   return Number(service?.duration_minutes) >= 120 ? 'v120' : 'v90';
 }
 
+// Cached catalogs may retain the original 120-minute name during rollout.
+// Respect edited names; this fallback only bridges that one renamed ritual.
+export function serviceMenuTitle(service, lang = 'zh') {
+  if (lang !== 'en' && service?.name === '120分全息'
+    && (service?.id === 'formula120' || service?.category_code === 'duration_120')) return '120分方子';
+  return localized(service, 'name', lang);
+}
+
 export function serviceDurationGroups(services = [], categories = [], lang = 'zh') {
   return serviceDurationCodes.map((code, index) => {
     const minutes = Number(code.replace('duration_', ''));
@@ -53,7 +61,7 @@ export function serviceAddonGroup(addons = [], lang = 'zh') {
   if (!addons.length) return null;
   return {
     code: 'add_on',
-    name: lang === 'en' ? 'ADD-ONS' : '加購項目',
+    name: lang === 'en' ? 'OTHER SERVICES' : '另外項目',
     displayOrder: 900,
     services: addons,
   };

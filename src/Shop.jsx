@@ -7,9 +7,12 @@ import { publicProductCatalog } from './lib/product-categories.js';
 
 function ProductArtwork({ product, category, lang }) {
   const icon = productPresentationMark(product, category, lang);
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => { setImageFailed(false); }, [product.image_url]);
+  const showImage = !!product.image_url && !imageFailed;
   return <div className="product-artwork">
-    {product.image_url && <img src={product.image_url} alt={lang === "en" ? product.name_en || product.name : product.name} loading="lazy" decoding="async" width="600" height="480" style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}} />}
-    {!product.image_url && <><span>{icon}</span><small>ROU SPA</small></>}
+    {showImage && <img src={product.image_url} alt={lang === "en" ? product.name_en || product.name : product.name} onError={() => setImageFailed(true)} loading="lazy" decoding="async" width="600" height="480" style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}} />}
+    {!showImage && <><span>{icon}</span><small>ROU SPA</small></>}
   </div>;
 }
 
@@ -33,7 +36,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
       .shop-main{max-width:1200px;margin:auto;padding:48px 24px 100px}.category-tabs{display:flex;gap:10px;overflow:auto;padding:0 0 18px;margin-bottom:36px;justify-content:center}.category-tabs button{white-space:nowrap;min-height:44px;padding:8px 20px;border:1px solid rgba(163,130,63,.24);background:transparent;border-radius:30px;color:#4a443a;font:inherit;cursor:pointer}.category-tabs button.active{background:#9a793e;color:#fff}
       .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:24px}.product-card{background:#fff;border:1px solid rgba(163,130,63,.13);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(74,55,29,.05)}
       .product-artwork{aspect-ratio:1.25;background:#e5ded1 center/cover no-repeat;display:grid;place-items:center;color:#9a793e;position:relative}.product-artwork span{font-size:44px;border:1px solid rgba(154,121,62,.45);width:84px;height:84px;border-radius:50%;display:grid;place-items:center}.product-artwork small{position:absolute;bottom:18px;letter-spacing:3px}
-      .product-copy{padding:22px}.product-copy h2{font-size:18px;font-weight:600;line-height:1.45;margin-bottom:8px}.product-copy p{font-size:13px;line-height:1.75;color:#746b5d;min-height:68px}.product-meta{border-top:1px solid #eee5d8;margin-top:18px;padding-top:16px;display:flex;justify-content:space-between;gap:12px;align-items:end}.product-price{font-family:'Cormorant Garamond',serif;color:#8b6a31;font-size:22px;font-weight:700}.product-unit{font-size:11px;color:#867c6c}.stock{font-size:12px;padding:5px 9px;border-radius:20px;background:#eff5ec;color:#51714d}.stock.out{background:#f1ece7;color:#8a6d5b}
+      .product-copy{padding:22px}.product-copy h2{font-size:18px;font-weight:600;line-height:1.45;margin-bottom:8px}.product-copy p{white-space:pre-line;overflow-wrap:anywhere;font-size:13px;line-height:1.75;color:#746b5d;min-height:68px}.product-meta{border-top:1px solid #eee5d8;margin-top:18px;padding-top:16px;display:flex;justify-content:space-between;gap:12px;align-items:end}.product-price{font-family:'Cormorant Garamond',serif;color:#8b6a31;font-size:22px;font-weight:700}.product-unit{overflow-wrap:anywhere;font-size:11px;color:#867c6c}.stock{font-size:12px;padding:5px 9px;border-radius:20px;background:#eff5ec;color:#51714d}.stock.out{background:#f1ece7;color:#8a6d5b}
       .shop-state{padding:44px;text-align:center;background:#fff;border:1px solid #e5dac7;border-radius:10px}.shop-visit{text-align:center;margin-top:70px;padding:54px 24px;background:#fff;border-radius:10px}.shop-visit p{line-height:1.8}.shop-visit a{color:#80622d}
       @media(max-width:640px){.shop-brand span{display:none}.shop-hero{padding-top:120px}.category-tabs{justify-content:flex-start}.product-copy p{min-height:0}}
     `}</style>
