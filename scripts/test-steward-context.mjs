@@ -270,6 +270,9 @@ try {
  create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
  grant usage on schema auth to anon,authenticated;grant execute on function auth.uid(),auth.jwt() to anon,authenticated;`);
  for (const file of sqlFiles.filter(file => file.endsWith('.sql')).sort()) await db.exec(await readFile(new URL(file, migrationDirectory), 'utf8'));
+ // The document-policy migration starts the active version on current_date.
+ // This fixture analyses a fixed October period, independent of the run date.
+ await db.query("update spa_payroll_rule_versions set effective_from=$1 where status='active'", [range.from]);
  const realOwner = randomUUID(), employee = randomUUID(), outsider = randomUUID();
  await db.query('insert into auth.users(id,email) values($1,$2),($3,$4),($5,$6)', [realOwner, 'PRIVATE_OWNER@example.test', employee, 'PRIVATE_EMPLOYEE@example.test', outsider, 'PRIVATE_OUTSIDER@example.test']);
  const staff = (await db.query("select id from spa_staff where active and employment_status='active' and archived_at is null order by display_order limit 2")).rows;
