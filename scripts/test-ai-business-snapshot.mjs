@@ -103,10 +103,27 @@ result=await snapshot(owner);
 check(result.customers.current_members===1&&result.customers.current_guests===0&&result.customers.current_archived===1&&result.customers.new_in_period===1,'booked guest is promoted to member; archived membership is excluded from active member totals');
 // Saved payroll JSON is re-projected, including for a finalized exact period.
 const rule=(await db.query("select id from spa_payroll_rule_versions where status='active' limit 1")).rows[0].id;
-const wageRow={staff_id:staff[0].id,total_cents:56789,work_minutes:55,private_note:'PRIVATE_PAYROLL_SECRET',customer_phone:'0988123456'};
-await db.query("insert into spa_payroll_runs(period_start,period_end,rule_version_id,status,created_by,calculation_snapshot) values('2026-10-01','2026-10-31',$1,'finalized',$2,$3)",[rule,owner,{rows:[wageRow,{staff_id:staff[1].id,total_cents:98765,private_note:'OTHER_PAYROLL_SECRET'}]}]);
+await db.query("update spa_staff set contract_started_on='2026-10-01' where id=any($1::uuid[])",[[staff[0].id,staff[1].id]]);
+const wageRow={staff_id:staff[0].id,role:'初級技師',employment_type:'兼職',employment_type_code:'part_time',pay_basis:'hourly',total_cents:56789,work_minutes:55,
+ minimum_service_minutes:2400,self_sourced_commission_bps:5000,service_commission_mode:'ordered_tiers',contractor_count_scope:'lifetime',service_policy_status:'needs_confirmation',commission_policy_ready:false,
+ commission_warning:'PRIVATE_WARNING_SECRET',calculation:{rule_version:4,calculation_engine:'ordered_v2',profile_source:'rule_version_snapshot',tier_mode:'chronological_per_service',tier_reset:'calendar_month',product_commission_basis:'sale_percentage_snapshot',self_sourced_basis:'explicit_settlement_snapshot',component_total_before_floor_cents:56789,private_note:'PRIVATE_CALCULATION_SECRET'},
+ private_note:'PRIVATE_PAYROLL_SECRET',customer_phone:'0988123456'};
+await db.query("insert into spa_payroll_runs(period_start,period_end,rule_version_id,status,created_by,calculation_snapshot) values('2026-10-01','2026-10-31',$1,'finalized',$2,$3)",[rule,owner,{rows:[wageRow,{staff_id:staff[1].id,role:'承攬技師',employment_type_code:'contractor',contract_started_on:'2026-09-01',contract_start_pending:false,total_cents:98765,private_note:'OTHER_PAYROLL_SECRET'}]}]);
 result=await snapshot(employee);
 check(result.payroll.status==='finalized'&&result.payroll.total_cents===56789&&result.payroll.rows.length===1&&!JSON.stringify(result).includes('PAYROLL_SECRET')&&!JSON.stringify(result).includes('customer_phone'),'finalized payroll retains own saved amount while re-projecting raw snapshot fields');
+check(result.payroll.rows[0].role==='初級技師'&&result.payroll.rows[0].employment_type==='兼職'&&result.payroll.rows[0].employment_type_code==='part_time'&&result.payroll.rows[0].pay_basis==='hourly','saved wage title, employment and pay basis survive the safe snapshot projection');
+check(result.payroll.rows[0].minimum_service_minutes===2400&&result.payroll.rows[0].self_sourced_commission_bps===5000&&result.payroll.rows[0].contractor_count_scope==='lifetime'&&result.payroll.rows[0].service_policy_status==='needs_confirmation'&&result.payroll.rows[0].commission_policy_ready===false,'new rule gates and unresolved contractor rules are preserved without inventing eligibility');
+check(result.payroll.rows[0].calculation.calculation_engine==='ordered_v2'&&result.payroll.rows[0].calculation.profile_source==='rule_version_snapshot'&&result.payroll.rows[0].calculation.tier_reset==='calendar_month','history carries explicit ordered engine and versioned profile calculation basis');
+check(result.payroll.rows[0].has_commission_warning===true&&!JSON.stringify(result).includes('WARNING_SECRET')&&!JSON.stringify(result).includes('CALCULATION_SECRET'),'warning presence is boolean and arbitrary nested calculation notes never cross the RPC boundary');
+check(result.payroll.rows[0].contract_started_on===null&&result.payroll.rows[0].contract_start_pending===null,'legacy wage cooperation fields remain unknown instead of being filled from current personnel');
+const ownerHistory=await snapshot(owner);
+const savedCooperation=ownerHistory.payroll.rows.find(row=>row.staff_id===staff[1].id);
+check(savedCooperation.contract_started_on==='2026-09-01'&&savedCooperation.contract_start_pending===false,'safe historical projection preserves the saved cooperation start despite a different current staff date');
+check(result.payroll.rows.length===1&&!JSON.stringify(result.payroll).includes('2026-09-01'),'employee cannot read another staff member cooperation date through payroll snapshots');
+const promotedTitle=(await db.query("select id,name from spa_job_titles where code='ft_senior_advanced'")).rows[0];
+await db.query("update spa_staff set job_title_id=$2,employment_type_code='full_time' where id=$1",[staff[0].id,promotedTitle.id]);
+result=await snapshot(employee);
+check(result.staff[0].title===promotedTitle.name&&result.payroll.rows[0].role==='初級技師'&&result.payroll.rows[0].employment_type_code==='part_time','later current-personnel promotion cannot rewrite historical finalized wage classification');
 await db.query('update spa_roles set active=false where user_id=$1',[employee]);await reject(()=>snapshot(employee),/FORBIDDEN/);
 await db.query("update spa_roles set active=true,login_after='2026-10-09T00:00:00+08:00' where user_id=$1",[employee]);await reject(()=>snapshot(employee,null,null,'authenticated',1),/FORBIDDEN/);
 check((await snapshot(employee)).scope==='self','fresh JWT retains personal access after revocation boundary');

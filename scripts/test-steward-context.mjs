@@ -34,7 +34,7 @@ const businessFixture = (session = owner, selectedRange = range) => ({
  staff: [row({ id: session.staff_id, name: '授權技師甲', title: '調理師', employment_status: 'active', active: true, ...zeros('completed settled_completed unsettled_completed refunded_completed service_minutes service_sales_cents product_sales_cents product_quantity pos_service_quantity reassigned reviews'), completed: 3, average_rating: null })],
  scheduling: zeros('daily_rows working_rows off_rows planned_minutes time_off_count requests_pending requests_approved requests_rejected submissions submitted_staff submission_months'),
  attendance: zeros('approved open pending rejected missing_clock_out requests_pending approved_work_minutes draft_time_entries approved_overtime_minutes draft_overtime_entries'),
- payroll: { status: 'preview', pending_sources: false, needs_recalculation: false, total_cents: 240001, rows: [row({ staff_id: session.staff_id, work_minutes: 480, service_minutes: 180, service_count: 3, total_cents: 240001, compensation_configured: true, commission_eligibility_met: true })] },
+ payroll: { status: 'preview', pending_sources: false, needs_recalculation: false, total_cents: 240001, rows: [row({ staff_id: session.staff_id, role: '調理師', work_minutes: 480, service_minutes: 180, service_count: 3, total_cents: 240001, compensation_configured: true, commission_eligibility_met: true })] },
  ...(session.role === 'owner' ? { finances: zeros('cash_in_cents cash_out_cents cash_net_cents expenses_cents cash_refunds_cents checkout_refunds_cents checkout_refund_count pos_refunded_orders_by_paid_date'), customers: zeros('current_total current_active current_archived current_members current_guests new_in_period visited_in_period current_dormant_90_days'), current: zeros('wallet_liability_cents package_liability_cents active_staff departed_staff active_services active_products inventory_units') } : {}),
  private_payload: privateFields,
 });
@@ -154,14 +154,28 @@ const migrationDirectory = new URL('../supabase/migrations/', import.meta.url);
 const sqlFiles = await readdir(migrationDirectory), definitions = new Map();
 for (const file of sqlFiles.filter(file => file.endsWith('.sql')).sort()) {
  const sql = await readFile(new URL(file, migrationDirectory), 'utf8');
- for (const match of sql.matchAll(/create (?:or replace )?function public\.(spa_[a-z_]+)\(([^$]*?)\$\$([\s\S]*?)\$\$;/gi)) definitions.set(match[1], { declaration: match[2], body: match[3] });
+ const events = [...sql.matchAll(/create (?:or replace )?function (public|spa_private)\.([a-z_0-9]+)\(([^$]*?)\$\$([\s\S]*?)\$\$;/gi)].map(match => ({ index: match.index, kind: 'create', match }));
+ events.push(...[...sql.matchAll(/alter function (public|spa_private)\.([a-z_0-9]+)\([^;]*?\) (?:set schema ([a-z_]+)|rename to ([a-z_0-9]+));/gi)].map(match => ({ index: match.index, kind: 'move', match })));
+ for (const { kind, match } of events.sort((a, b) => a.index - b.index)) {
+  const key = `${match[1]}.${match[2]}`;
+  if (kind === 'create') definitions.set(key, { declaration: match[3], body: match[4] });
+  else if (definitions.has(key)) {
+   definitions.set(match[3] ? `${match[3]}.${match[2]}` : `${match[1]}.${match[4]}`, definitions.get(key));
+   definitions.delete(key);
+  }
+ }
 }
-for (const name of Object.keys(fixtures)) assert.ok(definitions.has(name), `Read RPC does not exist in migrations: ${name}`);
+function resolvedBody(name, seen = new Set()) {
+ if (seen.has(name)) return ''; seen.add(name);
+ const body = definitions.get(name)?.body || '';
+ return body + [...body.matchAll(/(public|spa_private)\.([a-z_0-9]+)\(/g)].map(match => resolvedBody(`${match[1]}.${match[2]}`, seen)).join('\n');
+}
+for (const name of Object.keys(fixtures)) assert.ok(definitions.has(`public.${name}`), `Read RPC does not exist in migrations: ${name}`);
 for (const [name, keys] of Object.entries({ spa_catalog: ['settings', 'services', 'website_addons', 'business_hours', 'today_hours'], spa_dashboard: ['appointments', 'revenue_cents', 'staff_working'], spa_operations_convenience: ['beds', 'todos', 'today'], spa_admin_bookings: ['staff_change_count', 'checkout', 'status'], spa_payroll_admin: ['preview', 'compensation_profiles', 'rules', 'rates', 'tiers'], spa_staff_self: ['profile', 'metrics', 'payroll', 'work_minutes', 'total_cents'], spa_report: ['revenue_cents', 'cash_entries', 'daily'], spa_settings_os: ['booking', 'resources', 'business_overrides'], spa_team_os: ['staff', 'job_titles', 'daily_shifts', 'accounts'], spa_reviews_admin: ['reviews', 'feedback'], spa_access_admin: ['roles', 'permissions'], spa_attendance_self: ['rows', 'open', 'requests', 'settings', 'events'] })) {
- for (const key of keys) assert.ok(definitions.get(name).body.includes(`'${key}'`), `Fixture field ${name}.${key} must match actual SQL`);
+ for (const key of keys) assert.ok(resolvedBody(`public.${name}`).includes(`'${key}'`), `Fixture field ${name}.${key} must match actual SQL or its exact delegated implementation`);
 }
-assert.match(definitions.get('spa_admin_bookings').declaration, /p_from date,p_to date/);
-assert.match(definitions.get('spa_payroll_admin').declaration, /p_rule uuid default null/);
+assert.match(definitions.get('public.spa_admin_bookings').declaration, /p_from date,p_to date/);
+assert.match(definitions.get('public.spa_payroll_admin').declaration, /p_rule uuid default null/);
 const attendanceSql = await readFile(new URL('202610060001_employee_attendance.sql', migrationDirectory), 'utf8');
 for (const key of ['effective_start', 'effective_end', 'break_minutes', 'radius_m', 'max_shift_minutes', 'grace_minutes']) assert.ok(attendanceSql.includes(key));
 const policySql = await readFile(new URL('202610040002_payroll_policy_engine.sql', migrationDirectory), 'utf8');
@@ -197,6 +211,71 @@ assert.equal(wholeBusiness.state.bookings.actual_staff[0].staff, '授權技師�
 assert.equal(wholeBusiness.state.source_periods.dashboard.basis, 'current_taipei_day');
 assert.equal(wholeBusiness.state.source_periods.reports.basis, 'taipei_recorded_payments_and_refunds');
 assert.equal(wholeBusiness.state.source_periods.customers.basis, 'current_and_lifetime');
+const historicalWages = businessFixture();
+historicalWages.staff[0].title = '資深高階技師';
+historicalWages.payroll.status = 'finalized';
+Object.assign(historicalWages.payroll.rows[0], { role: '初級技師', employment_type: '兼職', employment_type_code: 'part_time', pay_basis: 'hourly', minimum_service_minutes: 2400, self_sourced_commission_bps: 5000,
+ service_commission_mode: 'ordered_tiers', contractor_count_scope: 'period', service_policy_status: 'needs_confirmation', commission_policy_ready: false,
+ calculation: { rule_version: 3, calculation_engine: 'ordered_v2', profile_source: 'rule_version_snapshot', tier_mode: 'chronological_per_service', tier_reset: 'calendar_month', product_commission_basis: 'sale_percentage_snapshot', self_sourced_basis: 'explicit_settlement_snapshot', private_note: 'PRIVATE_CALCULATION_NOTE', component_total_before_floor_cents: 240001 } });
+const historicalContext = await gatherBusiness({ overrides: { spa_ai_business_snapshot: historicalWages } });
+const historicalWage = historicalContext.state.business_snapshot.payroll.rows[0];
+assert.equal(historicalContext.state.business_snapshot.staff[0].title, '資深高階技師', 'Current personnel title remains current');
+assert.equal(historicalWage.title, '初級技師', 'Finalized wage retains its own historical title after later promotion');
+assert.equal(historicalWage.employment_type, '兼職');
+assert.equal(historicalWage.employment_type_code, 'part_time');
+assert.equal(historicalWage.title_source, 'saved_payroll_snapshot');
+assert.equal(historicalWage.minimum_service_minutes, 2400);
+assert.equal(historicalWage.self_sourced_commission_percent, 50);
+assert.equal(historicalWage.service_policy_status, 'needs_confirmation');
+assert.equal(historicalWage.commission_policy_ready, false);
+assert.equal(historicalWage.calculation.calculation_engine, 'ordered_v2');
+assert.equal(historicalWage.calculation.component_total_before_floor_ntd, 2400.01);
+delete historicalWages.payroll.rows[0].role;
+const unknownHistoricalTitle = await gatherBusiness({ overrides: { spa_ai_business_snapshot: historicalWages } });
+assert.equal(unknownHistoricalTitle.state.business_snapshot.payroll.rows[0].title, undefined, 'Missing saved title is unknown, never silently replaced with current rank');
+assert.equal(unknownHistoricalTitle.state.business_snapshot.payroll.rows[0].title_source, 'unavailable');
+
+const contractHistory = businessFixture();
+contractHistory.payroll.status = 'finalized';
+contractHistory.staff[0].contract_started_on = '2026-10-01';
+contractHistory.staff[0].hire_date = '2024-01-01';
+Object.assign(contractHistory.payroll.rows[0], { role: '承攬技師', employment_type_code: 'contractor', contract_started_on: '2026-09-01', contract_start_pending: false });
+const savedContract = (await gatherBusiness({ overrides: { spa_ai_business_snapshot: contractHistory } })).state.business_snapshot.payroll.rows[0];
+assert.equal(savedContract.contract_started_on, '2026-09-01', 'Saved cooperation start is retained separately from current staff date');
+assert.equal(savedContract.contract_start_pending, false);
+assert.equal(savedContract.contract_start_source, 'saved_payroll_snapshot');
+delete contractHistory.payroll.rows[0].contract_started_on;
+delete contractHistory.payroll.rows[0].contract_start_pending;
+const missingContract = (await gatherBusiness({ overrides: { spa_ai_business_snapshot: contractHistory } })).state.business_snapshot.payroll.rows[0];
+assert.equal(missingContract.contract_started_on, undefined, 'Missing historical cooperation start is never inferred from current personnel or hire date');
+assert.equal(missingContract.contract_start_pending, undefined, 'Legacy wages do not acquire a fabricated pending flag');
+assert.equal(missingContract.contract_start_source, 'unavailable');
+contractHistory.payroll.status = 'preview';
+Object.assign(contractHistory.payroll.rows[0], { contract_started_on: null, contract_start_pending: true, commission_policy_ready: false });
+const pendingContract = (await gatherBusiness({ overrides: { spa_ai_business_snapshot: contractHistory } })).state.business_snapshot.payroll.rows[0];
+assert.equal(pendingContract.contract_started_on, undefined);
+assert.equal(pendingContract.contract_start_pending, true);
+assert.equal(pendingContract.commission_policy_ready, false);
+assert.equal(pendingContract.policy_pending_reason, 'contract_cooperation_date_required', 'A fixed reason conveys the settlement block without raw warning text');
+
+const versionedPolicy = structuredClone(fixtures.spa_payroll_admin);
+versionedPolicy.selected_rule_id = 'PRIVATE_RULE_ID';
+versionedPolicy.calculation_engine = 'ordered_v2';
+Object.assign(versionedPolicy.compensation_profiles[0], { rule_version_id: 'PRIVATE_RULE_ID', work_category: 'technician', job_title_code: 'pt_technician', active: false, service_commission_mode: 'ordered_tiers', minimum_service_minutes: 2400, minimum_attendance_minutes: 2400, self_sourced_commission_bps: 5000, contractor_count_scope: 'lifetime', service_policy_status: 'needs_confirmation' });
+versionedPolicy.compensation_profiles.push(row({ rule_version_id: 'PRIVATE_FUTURE_RULE', active: true, base_pay_cents: 99999999, employment_type_code: 'full_time' }));
+versionedPolicy.tiers = Array.from({ length: 75 }, (_, index) => ({ ...versionedPolicy.tiers[0], threshold_from: index * 10000, threshold_to: (index + 1) * 10000 }));
+const versionedContext = await gather('payroll', owner, { spa_payroll_admin: versionedPolicy });
+const versioned = versionedContext.state.payroll;
+assert.equal(versioned.active_rule.calculation_engine, 'ordered_v2');
+assert.equal(versioned.compensation_profiles.length, 1, 'Only the selected rule version is described');
+assert.equal(versioned.compensation_profiles[0].active, false, 'Inactive/unconfigured profiles remain visible as disabled instead of disappearing');
+assert.equal(versioned.compensation_profiles[0].rule_version, 3);
+assert.equal(versioned.compensation_profiles[0].minimum_service_minutes, 2400);
+assert.equal(versioned.compensation_profiles[0].self_sourced_commission_percent, 50);
+assert.equal(versioned.compensation_profiles[0].contractor_count_scope, 'lifetime');
+assert.equal(versioned.compensation_profiles[0].service_policy_status, 'needs_confirmation');
+assert.equal(versioned.commission_tiers.length, 75, 'The complete seven-rank tier set is not silently cut after 32 rows');
+assert.equal(versioned.commission_tiers_omitted, 0);
 const ownBusiness = await gatherBusiness({ session: worker });
 assert.deepEqual(ownBusiness.calls.map(call => call.name).sort(), ['spa_ai_business_snapshot', 'spa_catalog', 'spa_dashboard', 'spa_operations_convenience', 'spa_staff_self', 'spa_attendance_self'].sort());
 assert.equal(ownBusiness.state.business_snapshot.scope, 'self');

@@ -27,7 +27,11 @@ const sources=(id=staff.id,rule=null,user=owner)=>call(user,'spa_payroll_sources
 const service=(await db.query("select * from spa_services where active and duration_minutes=45 order by display_order limit 1")).rows[0];
 const product=(await db.query("select * from spa_products where status='active' order by display_order limit 1")).rows[0];
 const room=(await db.query('select id from spa_rooms where active order by name limit 1')).rows[0].id;
-const rule=(await db.query("select id from spa_payroll_rule_versions where status='active' limit 1")).rows[0].id;
+// These arbitrary-period/source-snapshot assertions intentionally exercise the
+// preserved legacy engine. Keep all migrations loaded and activate it explicitly;
+// the chronological full-month engine has its own test-payroll-redesign.mjs.
+const rule=(await db.query("select id from spa_payroll_rule_versions where calculation_engine='legacy_period_average' and effective_from<=(public.payroll_source_test_now() at time zone 'Asia/Taipei')::date order by effective_from desc,version_no desc limit 1")).rows[0].id;
+await admin('spa_payroll_rule_activate',[rule]);
 for(const person of people){
  await db.query('delete from spa_payroll_commission_tiers where job_title_id=$1 and employment_type_code=$2',[person.job_title_id,person.employment_type_code]);
  await admin('spa_compensation_profile_save_v2',[person.job_title_id,person.employment_type_code,'hourly',20000,1000,2000,500,0,0,true]);

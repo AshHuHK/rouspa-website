@@ -3,6 +3,7 @@ import { supabase, rpc, errorText, money, dateTime } from './lib/spa.js';
 import { Field, MutationForm, Empty, Modal } from './OperationsShared.jsx';
 import { AttendanceEmployee } from './Attendance.jsx';
 import PayrollSources from './PayrollSources.jsx';
+import StaffAnnualReviews from './StaffAnnualReviews.jsx';
 
 export const staffRoleNames = {owner:'店主',manager:'主管',receptionist:'櫃台',therapist:'技師'};
 export const payBasisNames = {monthly:'月薪',hourly:'時薪',session:'每堂薪酬'};
@@ -69,7 +70,7 @@ export function StaffSelf({data,from,to,onReload}) {
  const [sourcesOpen,setSourcesOpen]=useState(false);
  if (!data.profile) return <Empty>此帳號尚未綁定人員資料，請由店主在「人員管理」配置登入帳號。</Empty>;
  const s=data.profile,m=data.metrics;
- return <><AttendanceEmployee from={from} to={to}/><EmployeeSchedulePlanner refreshToken={data} onReload={onReload}/><div className="card"><h2>{s.name}</h2><p>{s.title} · {s.employment_type} · {payLabel(s)}</p><p>基本服務提成 {(Number(s.commission_bps)/100).toFixed(2)}% · 商品銷售提成 {(Number(s.product_commission_bps)/100).toFixed(2)}% · 指定客服務加成 {(Number(s.designated_client_bonus_bps||0)/100).toFixed(2)}%</p><p className="muted">薪酬依職稱與聘僱類型規則套用；服務階梯依薪資規則版本計算。累計完成 {data.lifetime_completed} 堂；以下為所選期間的業績與薪資試算。</p></div>
+ return <><AttendanceEmployee from={from} to={to}/><EmployeeSchedulePlanner refreshToken={data} onReload={onReload}/><div className="card"><h2>{s.name}</h2><p>{s.title} · {s.employment_type} · {payLabel(s)}</p><p>基本服務提成 {(Number(s.commission_bps)/100).toFixed(2)}% · 商品銷售提成 {(Number(s.product_commission_bps)/100).toFixed(2)}% · 指定客服務加成 {(Number(s.designated_client_bonus_bps||0)/100).toFixed(2)}%</p><p className="muted">薪酬依職稱與聘僱類型規則套用；服務階梯依薪資規則版本計算。累計完成 {data.lifetime_completed} 堂；以下為所選期間的業績與薪資試算。</p></div><StaffAnnualReviews refreshToken={data}/>
  <div className="grid">{[['實際完成療程',m.completed],['已結帳／待結帳',`${m.settled_completed} / ${m.unsettled_completed}`],['已結帳服務分鐘',m.minutes],[m.payroll_status==='finalized'?'已結算提成':'本期試算提成',money(m.commission_cents)],['平均評分／評價數',`${m.rating??'—'} / ${m.reviews}`]].map(([label,value])=><div className="card" key={label}><p className="muted">{label}</p><div className="metric">{value}</div></div>)}</div>
  <section className="card"><div className="os-page-title"><div><p className="muted">{m.payroll_status==='finalized'?'本期已結算應發':'本期應發試算'}</p><strong className="metric">{money(m.total_cents)}</strong></div><button onClick={()=>setSourcesOpen(true)}>核對我的薪資來源</button></div><p className="muted">完成堂數、提成與評價均依實際服務技師計入。可核對本薪、提成、出勤、加班與加扣的來源；試算金額仍須店主確認結算。</p></section>
  {sourcesOpen&&<Modal title="我的薪資來源" onClose={()=>setSourcesOpen(false)}><PayrollSources staffId={data.payroll?.staff_id||s.id} from={from} to={to} expectedRow={data.payroll}/></Modal>}

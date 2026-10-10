@@ -1,4 +1,4 @@
-export async function exportPayrollXlsx({rows,from,to,rule,rates=[],tiers=[]}){
+export async function exportPayrollXlsx({rows,from,to,rule,rates=[],tiers=[],profiles=[]}){
  const module=await import('exceljs');
  const ExcelJS=module.default||module;
  const workbook=new ExcelJS.Workbook();
@@ -16,11 +16,14 @@ export async function exportPayrollXlsx({rows,from,to,rule,rates=[],tiers=[]}){
  sheet.columns.forEach((column,index)=>{column.width=index===0?16:index===26?24:14;});sheet.autoFilter={from:'A2',to:`AA2`};
  sheet.eachRow((row,rowNumber)=>{row.alignment={vertical:'middle',wrapText:true};if(rowNumber>1)row.height=22;row.eachCell(cell=>{cell.border={bottom:{style:'hair',color:{argb:'FFD8CAB1'}}};});});
  const rules=workbook.addWorksheet('規則與倍率');
- rules.addRow(['規則版本',rule?`v${rule.version_no} · ${rule.name}`:'']);rules.addRow(['生效日',rule?.effective_from||'']);rules.addRow(['療程計算','實際服務技師＋已完成＋已結帳＋未退款']);rules.addRow(['月薪換算時薪除數',rule?.hourly_divisor||'']);rules.addRow(['包含固定提成',rule?.include_regular_commission?'是':'否']);rules.addRow(['一般月加班上限（分鐘）',rule?.monthly_overtime_limit_minutes||'']);rules.addRow(['勞資會議月上限（分鐘）',rule?.agreed_monthly_limit_minutes||'']);rules.addRow(['季度上限（分鐘）',rule?.quarterly_overtime_limit_minutes||'']);rules.addRow([]);rules.addRow(['聘僱類型','加班類型','起始分鐘','結束分鐘','倍率']);
- for(const rate of rates.filter(item=>!rule||item.rule_version_id===rule.id))rules.addRow([rate.employment_type_code,rate.overtime_type,rate.start_minute,rate.end_minute,Number(rate.multiplier_bps)/10000]);
- rules.addRow([]);rules.addRow(['職稱','聘僱類型','指標','算法','起點（系統單位）','終點（系統單位）','提成比例']);
- for(const tier of tiers.filter(item=>!rule||item.rule_version_id===rule.id))rules.addRow([tier.job_title_name||tier.job_title_id,tier.employment_type_name||tier.employment_type_code,tier.metric,tier.calculation_mode,tier.threshold_from,tier.threshold_to,Number(tier.rate_bps)/10000]);
- rules.getRow(10).font={bold:true};rules.getColumn(5).numFmt='0.00x';rules.getColumn(7).numFmt='0.00%';rules.columns.forEach(column=>column.width=24);
+ rules.addRow(['規則版本',rule?`v${rule.version_no} · ${rule.name}`:'']);rules.addRow(['生效日',rule?.effective_from||'']);rules.addRow(['療程計算','實際服務技師＋已完成＋已結帳＋未退款']);rules.addRow(['月薪換算時薪除數',rule?.hourly_divisor??'']);rules.addRow(['包含固定提成',rule?.include_regular_commission?'是':'否']);rules.addRow(['一般月加班上限（分鐘）',rule?.monthly_overtime_limit_minutes??'']);rules.addRow(['勞資會議月上限（分鐘）',rule?.agreed_monthly_limit_minutes??'']);rules.addRow(['季度上限（分鐘）',rule?.quarterly_overtime_limit_minutes??'']);rules.addRow(['計算方式',rule?.calculation_engine==='ordered_v2'?'逐堂累進；服務按自然月重置；承攬依設定累計':'歷史制度算法']);rules.addRow(['商品抽成','依成交明細比例快照，設定變更不追溯']);rules.addRow([]);rules.addRow(['聘僱類型','加班類型','起始分鐘','結束分鐘','倍率']);
+ for(const rate of rates.filter(item=>!rule||item.rule_version_id===rule.id)){const row=rules.addRow([rate.employment_type_code,rate.overtime_type,rate.start_minute,rate.end_minute,Number(rate.multiplier_bps)/10000]);row.getCell(5).numFmt='0.00"x"';}
+ rules.addRow([]);rules.addRow(['職稱','聘僱類型','指標（單位）','算法','起點','終點','提成比例']);
+ for(const tier of tiers.filter(item=>!rule||item.rule_version_id===rule.id))rules.addRow([tier.job_title_name||tier.job_title_id,tier.employment_type_name||tier.employment_type_code,({service_minutes:'服務小時',service_count:'服務堂數',service_sales_cents:'服務 NT$ 元',product_sales_cents:'商品 NT$ 元'}[tier.metric]||tier.metric),tier.calculation_mode,Number(tier.threshold_from)/(tier.metric==='service_minutes'?60:tier.metric.endsWith('_cents')?100:1),tier.threshold_to==null?'以上':Number(tier.threshold_to)/(tier.metric==='service_minutes'?60:tier.metric.endsWith('_cents')?100:1),Number(tier.rate_bps)/10000]);
+ rules.getRow(12).font={bold:true};rules.getColumn(7).numFmt='0.00%';rules.columns.forEach(column=>column.width=24);
+ const settings=workbook.addWorksheet('版本職稱設定');settings.addRow(['職稱','聘僱類型','計薪方式','本薪 NT$','商品比例 %','指定加成 %','出勤門檻 小時','服務門檻 小時','普通服務方式','自帶客 %','承攬累計範圍','啟用']);
+ for(const profile of profiles.filter(item=>!rule||item.rule_version_id===rule.id))settings.addRow([profile.job_title_name||profile.job_title_id,profile.employment_type_name||profile.employment_type_code,profile.pay_basis,Number(profile.base_pay_cents)/100,Number(profile.product_commission_bps)/100,Number(profile.designated_client_bonus_bps)/100,Number(profile.minimum_attendance_minutes)/60,Number(profile.minimum_service_minutes)/60,profile.service_commission_mode,Number(profile.self_sourced_commission_bps)/100,profile.contractor_count_scope||'不適用',profile.active?'是':'否']);
+ settings.getRow(1).font={bold:true};settings.columns.forEach(column=>column.width=24);
  const buffer=await workbook.xlsx.writeBuffer();const url=URL.createObjectURL(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
  const link=document.createElement('a');link.href=url;link.download=`柔療髮浴_薪資_${from}_${to}.xlsx`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }

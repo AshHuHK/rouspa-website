@@ -26,7 +26,11 @@ const range=['2026-10-01','2026-10-31'];
 const rowFor=async(id=staff[0].id)=>(await admin('spa_payroll_preview',[...range,null])).find(row=>row.staff_id===id);
 const service=(await db.query("select * from spa_services where code='45' or duration_minutes=45 order by display_order limit 1")).rows[0];
 const product=(await db.query("select * from spa_products where status='active' order by display_order limit 1")).rows[0];
-const rule=(await db.query("select id from spa_payroll_rule_versions where status='active' limit 1")).rows[0].id;
+// This suite exercises the retained legacy engine, including legacy profile
+// edits and finalized snapshots. Load every migration, then explicitly select
+// that engine; ordered_v2 is covered by test-payroll-redesign.mjs.
+const rule=(await db.query("select id from spa_payroll_rule_versions where calculation_engine='legacy_period_average' and effective_from<=(public.consistency_test_now() at time zone 'Asia/Taipei')::date order by effective_from desc,version_no desc limit 1")).rows[0].id;
+await admin('spa_payroll_rule_activate',[rule]);
 
 // Explicitly configured rates isolate each business mapping from document tier
 // defaults. All amounts below are integer cents; no production data is touched.

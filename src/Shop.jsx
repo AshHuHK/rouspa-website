@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { STORE } from "./lib/public-copy.js";
 import { money } from "./lib/spa.js";
 import { productPresentationMark } from "./lib/catalog-presentation.js";
 import { usePublicData } from './lib/usePublicData.js';
+import { publicProductCatalog } from './lib/product-categories.js';
 
 function ProductArtwork({ product, category, lang }) {
   const icon = productPresentationMark(product, category, lang);
@@ -16,10 +17,10 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
   const { data: catalog, error } = usePublicData('spa_store_catalog', { lang, scopes: ['catalog'] });
   const [activeCategory,setActiveCategory]=useState("all");
   const isZh=lang==="zh";
-  const categories=catalog?.categories||[],allProducts=catalog?.products||[];
-  const products=useMemo(()=>allProducts.filter(p=>activeCategory==="all"||p.category_id===activeCategory),[allProducts,activeCategory]);
-  const zeroBehavior=catalog?.settings?.zero_stock_behavior||"sold_out";
-  const visible=products.filter(p=>zeroBehavior!=="hide"||Number(p.inventory)>0);
+  const {categories,products:allProducts}=useMemo(()=>publicProductCatalog(catalog||{}),[catalog]);
+  const effectiveCategory=activeCategory==='all'||categories.some(category=>category.id===activeCategory)?activeCategory:'all';
+  useEffect(()=>{if(effectiveCategory!==activeCategory)setActiveCategory(effectiveCategory);},[activeCategory,effectiveCategory]);
+  const visible=useMemo(()=>allProducts.filter(p=>effectiveCategory==="all"||p.category_id===effectiveCategory),[allProducts,effectiveCategory]);
   const name=(row)=>isZh?row.name:(row.name_en||row.name);
   const description=(row)=>isZh?row.description:(row.description_en||row.description);
   return <div className="shop-page">
@@ -46,8 +47,8 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
       {!catalog&&!error&&<div className="shop-state">{isZh?"正在載入商品…":"Loading products…"}</div>}
       {catalog&&<>
         <div className="category-tabs" role="tablist" aria-label={isZh?"商品分類":"Product categories"}>
-          <button className={activeCategory==="all"?"active":""} onClick={()=>setActiveCategory("all")}>{isZh?"全部產品":"All products"}</button>
-          {categories.map(c=><button key={c.id} className={activeCategory===c.id?"active":""} onClick={()=>setActiveCategory(c.id)}>{name(c)}</button>)}
+          <button className={effectiveCategory==="all"?"active":""} onClick={()=>setActiveCategory("all")}>{isZh?"全部產品":"All products"}</button>
+          {categories.map(c=><button key={c.id} className={effectiveCategory===c.id?"active":""} onClick={()=>setActiveCategory(c.id)}>{name(c)}</button>)}
         </div>
         {!visible.length&&<div className="shop-state">{isZh?"此分類目前沒有上架商品。":"No published products in this category."}</div>}
         <div className="product-grid">{visible.map(p=>{const category=categories.find(c=>c.id===p.category_id),soldOut=Number(p.inventory)<=0;return <article className="product-card" key={p.id}>

@@ -85,6 +85,7 @@ export function servicePresentationCards(service, lang = 'zh') {
 }
 
 export function productPresentationMark(product, category, lang = 'zh') {
+  if (category?.display_mark) return String(category.display_mark).trim().slice(0, 2);
   if (productMarks[category?.code]) return productMarks[category.code];
   return firstDisplayCharacter(localized(category, 'name', lang) || localized(product, 'name', lang));
 }
