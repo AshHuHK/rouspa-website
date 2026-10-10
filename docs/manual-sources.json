@@ -1,6 +1,6 @@
 {
-  "reviewed_at": "2026-10-10T05:25:52.101Z",
-  "manual_sha256": "f404c121d4f6a336e30c7e051759f2ed6f5599b782fc4e4e7f794c845191dd9a",
+  "reviewed_at": "2026-10-10T08:54:52.437Z",
+  "manual_sha256": "563149232dc3cb4920d2fc984796e63c9a46804be011d0be2583f99595126158",
   "sources": {
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
     "server/ask-steward.mjs": "df35563809379796c7bd2680999f3e594844b0bf023de59c173c1d8acffc8d73",
@@ -15,8 +15,8 @@
     "src/BusinessOS.jsx": "71d89b0fcdd9315ad4e20f78561c11b94d9ed407b15827bf750eaaa5e1862131",
     "src/Contact.jsx": "ee32a1b82045cd86e363968dd60f060179fd27dff048b888523067c06216f433",
     "src/Member.jsx": "3910ad332c20bda31e82eebeb2c725a348a030847727d349d0197dab5afc8740",
-    "src/OperationsConvenience.jsx": "4e2c7db09983d796ff34ca9bdc883855162b7db31379f2f415b6fd16f600703d",
-    "src/OperationsNotifications.jsx": "8fb6abcd1a15b6e3187b86ce191ee7afdbfab24ca010041526cada6d5e360433",
+    "src/OperationsConvenience.jsx": "09820f7029144e2faab0b654f5b326a982d2719b736e2f35f39b7667e632a7b9",
+    "src/OperationsNotifications.jsx": "db929170047b7012997e763f3562cfdac90359bd30ea8a1a965b854dbd3b7671",
     "src/OperationsShared.jsx": "f1a182834d647f78087ebd935b718c374b2ce81d6461f523695cfddcd32dd554",
     "src/PayrollSources.jsx": "e9f4d45fbbe3b9d683df20a4666793dbc82e09a7903123c9729f32b06beecb8d",
     "src/PublicBookingExperience.jsx": "cc426baca1b8bb68e95abcc0c7097f87bfb74e6093b95e8662e7030aacd93c83",
@@ -30,7 +30,7 @@
     "src/lib/live-updates.js": "a4602903bdd899bdf423fc091d320a4e138a8002cb0e9e1d01614e84c26b1987",
     "src/lib/operations-drafts.js": "5690f4621eaa807932f4406658401790aa53406c006d7a7d9686130fea83621e",
     "src/lib/operations-navigation.js": "40ffb6a7c76ea2c21e368b79e2616f5bd3b559ba1e3160c331f2fd3c2d20a2ff",
-    "src/lib/operations-notifications.js": "7300c1de7557f1ccc55bfd59b80c965b224d5bb0a4194f3947b9b0b540a19d64",
+    "src/lib/operations-notifications.js": "b0a3dbc439ec6a3f33dece8515def1fa05d01a1d090833a22326a678c19f4d6d",
     "src/lib/operations-snapshot.js": "15989e31fc501a2fc477e059ce9400367dbd3decebc886aaca93095597d9f696",
     "src/lib/payroll-xlsx.js": "0e7507596b006ef4ce54ac640660e3da16a89f7969f52d2960a999929808b568",
     "src/lib/public-config.js": "fc7998d680656d6aa366d55790ff1349aec4094a3a62d6f874984bf7cf232b12",

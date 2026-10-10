@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { activeOperationsTodos, changedOperationsTodos, mergeOperationsToasts, operationsTodoIdentity } from '../src/lib/operations-notifications.js';
+import { activeOperationsTodos, changedOperationsTodos, mergeOperationsToasts, operationsTodoIdentity, operationsTodoTotal } from '../src/lib/operations-notifications.js';
 import { createOperationsSnapshotStore } from '../src/lib/operations-snapshot.js';
 
 let checks = 0;
@@ -8,6 +8,13 @@ const todo = (key, count = 1, revision = key, extra = {}) => ({ key, count, revi
 const first = [todo('pending', 2), todo('arrivals', 1)];
 check(changedOperationsTodos(null, first), [], 'initial snapshot is a silent baseline');
 check(activeOperationsTodos({ todos: [...first, todo('empty', 0), todo('payroll', 3, 'payroll', { module: 'payroll' })] }, module => module === 'bookings').map(task => task.key), ['pending', 'arrivals'], 'only positive, accessible tasks are shown');
+const screenshotTodos = [todo('pending', 4), todo('checkout', 1), todo('schedule', 1, 'schedule', { module: 'team' })];
+check(operationsTodoTotal(screenshotTodos), 6, '4 pending bookings, 1 checkout and 1 roster submission make 6 tasks, not 3 categories');
+check(operationsTodoTotal(activeOperationsTodos({ todos: screenshotTodos }, module => module === 'bookings')), 5, 'the badge totals only categories this account can see');
+check(operationsTodoTotal(screenshotTodos.slice(1)), 2, 'resolved categories disappear from the total');
+check(operationsTodoTotal(), 0, 'no data has no pending tasks');
+check(operationsTodoTotal([todo('empty', 0), todo('negative', -1), todo('bad', NaN), todo('infinite', Infinity), todo('fraction', 1.5), todo('numeric', '2')]), 2, 'invalid counts cannot produce a broken badge; numeric counts are accepted');
+check(activeOperationsTodos({ todos: [todo('infinite', Infinity), todo('fraction', 1.5), todo('valid', 1)] }).map(task => task.key), ['valid'], 'invalid counts do not create phantom reminder categories');
 check(changedOperationsTodos(first, first.map(task => ({ ...task, context: { starts_before: 'later' } }))), [], 'changing server navigation cutoff does not repeat a task');
 check(changedOperationsTodos(first, [todo('pending', 2, 'replaced'), todo('arrivals')]).map(task => task.key), ['pending'], 'same-count replacement is detected by opaque task revision');
 check(changedOperationsTodos(first, [todo('pending', 3), todo('arrivals')]).map(task => task.key), ['pending'], 'count changes update the reminder');

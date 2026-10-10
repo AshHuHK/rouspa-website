@@ -1,5 +1,6 @@
 import { dateTime } from './lib/spa.js';
 import { useOperationsSnapshot } from './lib/useOperationsSnapshot.js';
+import { activeOperationsTodos, operationsTodoTotal } from './lib/operations-notifications.js';
 import './convenience.css';
 
 const bedNames={free:'空檔',reserved:'預定',treatment:'療程中',buffer:'緩衝'};
@@ -10,7 +11,7 @@ export function OperationsConvenience({refreshToken,onNavigate,allowed,userKey})
  const {data,busy,error,refresh:load}=useOperationsSnapshot({userKey,refreshToken});
  const canOpen=module=>!!onNavigate&&(!allowed||allowed(module));
  const go=(module,context)=>{if(canOpen(module))onNavigate(module,context);};
- const beds=data?.beds||[],todos=(data?.todos||[]).filter(task=>task.count>0&&(!allowed||allowed(task.module)));
+ const beds=data?.beds||[],todos=activeOperationsTodos(data,allowed),todoTotal=operationsTodoTotal(todos);
  return <div className="ops-convenience">
   <section className="card ops-bed-board" aria-labelledby="ops-bed-board-title">
    <div className="ops-convenience-heading"><div><p className="eyebrow">LIVE RESOURCES</p><h2 id="ops-bed-board-title">床位即時總覽</h2><p className="muted">同時查看預約、到店狀態與清潔緩衝，床位和預約共用正式排程。</p></div><button disabled={busy} onClick={load}>{busy?'更新中…':'更新狀態'}</button></div>
@@ -30,7 +31,7 @@ export function OperationsConvenience({refreshToken,onNavigate,allowed,userKey})
     <p className="ops-convenience-footnote">「療程中」需已到店，並在排定服務時間內；「緩衝」依預約保留到清潔緩衝結束，僅表示排程狀態。實際清潔與是否可接客仍由門店核對。<span>台灣伺服器時間：{dateTime(data.server_time)} · 資料變更與排程狀態切換時更新</span></p>
    </>}
   </section>
-  {data&&<section className="card ops-todo-center" aria-labelledby="ops-todo-title"><div className="ops-convenience-heading"><div><p className="eyebrow">NEXT ACTIONS</p><h2 id="ops-todo-title">{data.is_owner?'營運待辦中心':'我的工作提醒'}</h2><p className="muted">{data.is_owner?'從提醒直接前往原本的處理頁面，核對後再操作。':'查看自己的排程、出勤與班表提交狀態。'}</p></div><span className="ops-todo-total">{todos.length} 類提醒</span></div>
+  {data&&<section className="card ops-todo-center" aria-labelledby="ops-todo-title"><div className="ops-convenience-heading"><div><p className="eyebrow">NEXT ACTIONS</p><h2 id="ops-todo-title">{data.is_owner?'營運待辦中心':'我的工作提醒'}</h2><p className="muted">{data.is_owner?'從提醒直接前往原本的處理頁面，核對後再操作。':'查看自己的排程、出勤與班表提交狀態。'}</p></div><span className="ops-todo-total">{todoTotal} 項待辦 · {todos.length} 類提醒</span></div>
    {todos.length?<div className="ops-todo-grid">{todos.map(task=><button key={task.key} className={`ops-todo ${task.severity}`} disabled={!canOpen(task.module)} onClick={()=>go(task.module,task.context)}><span className="ops-todo-tag">{taskLabels[task.severity]||taskLabels.normal}</span><strong className="ops-todo-count">{task.count}</strong><h3>{task.title}</h3><p>{task.description}</p><span className="ops-todo-open">{task.severity==='waiting'?'查看狀態':'前往查看'} <i aria-hidden="true">↗</i></span></button>)}</div>:<p className="empty">目前沒有需要處理的提醒。</p>}
    <p className="ops-convenience-footnote">一般待辦涵蓋 {data.window.from} ～ {data.window.to}；到店與近期服務依今日及跨日排程顯示。下月班表為 {data.target_month.slice(0,7)}，商品庫存以目前啟用項目為準。</p>
   </section>}

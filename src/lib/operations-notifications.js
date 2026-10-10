@@ -1,5 +1,15 @@
+function operationsTodoCount(task) {
+  const count = Number(task?.count);
+  return Number.isSafeInteger(count) && count > 0 ? count : 0;
+}
+
 export function activeOperationsTodos(data, allowed) {
-  return (data?.todos || []).filter(task => task?.key && Number(task.count) > 0 && (!allowed || allowed(task.module)));
+  return (data?.todos || []).filter(task => task?.key && operationsTodoCount(task) > 0 && (!allowed || allowed(task.module)));
+}
+
+// Sum the visible, authorized reminder counts; categories are shown separately.
+export function operationsTodoTotal(todos) {
+  return (todos || []).reduce((total, task) => total + operationsTodoCount(task), 0);
 }
 
 // Ignore timestamps in navigation context: a later read should not repeat a

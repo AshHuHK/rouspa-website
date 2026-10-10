@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useOperationsSnapshot } from './lib/useOperationsSnapshot.js';
-import { activeOperationsTodos, changedOperationsTodos, mergeOperationsToasts, operationsTodoIdentity } from './lib/operations-notifications.js';
+import { activeOperationsTodos, changedOperationsTodos, mergeOperationsToasts, operationsTodoIdentity, operationsTodoTotal } from './lib/operations-notifications.js';
 import './notifications.css';
 
 const severityLabels = { urgent: '待處理', normal: '待核對', waiting: '等待確認' };
@@ -35,6 +35,7 @@ function AccountNotifications({ userKey, allowed, onNavigate, onAccessDenied }) 
   const accessDenied = useRef(false);
   const panelId = useId(), headingId = useId();
   const todos = useMemo(() => activeOperationsTodos(data, allowed), [data, allowed]);
+  const todoTotal = operationsTodoTotal(todos);
   const current = new Map(todos.map(task => [task.key, task]));
   const canOpen = task => !!onNavigate && (!allowed || allowed(task.module));
   const dismiss = useCallback(identity => setToasts(items => items.filter(task => operationsTodoIdentity(task) !== identity)), []);
@@ -98,7 +99,7 @@ function AccountNotifications({ userKey, allowed, onNavigate, onAccessDenied }) 
     onKeyDown={event => { if (event.key === 'Escape' && open) { event.stopPropagation(); closePanel(); } }}>
     {open && <section id={panelId} className="ops-notification-panel" role="region" aria-labelledby={headingId}>
       <div className="ops-notification-panel-heading"><div><p>營運待辦</p><h2 id={headingId}>{data?.is_owner ? '待辦提醒' : '我的工作提醒'}</h2></div><button type="button" className="ops-notification-close" onClick={() => closePanel()} aria-label="關閉待辦提醒">✕</button></div>
-      <p className="ops-notification-summary">{todos.length} 類提醒 · 點選後前往原處理頁面</p>
+      <p className="ops-notification-summary">{todoTotal} 項待辦 · {todos.length} 類提醒 · 點選後前往原處理頁面</p>
       <div className="ops-notification-list">
         {!data && busy && <p className="ops-notification-empty" role="status">正在讀取提醒…</p>}
         {data && !todos.length && <p className="ops-notification-empty">目前沒有需要處理的提醒。</p>}
@@ -112,10 +113,10 @@ function AccountNotifications({ userKey, allowed, onNavigate, onAccessDenied }) 
       const task = current.get(item.key), identity = operationsTodoIdentity(task);
       return <ReminderToast key={identity} task={task} identity={identity} onDismiss={dismiss} onNavigate={onNavigate} canOpen={canOpen(task)}/>;
     })}</div>}
-    <button ref={bell} type="button" className={`ops-notification-bell ${todos.length ? 'has-tasks' : ''}`} aria-expanded={open} aria-controls={open ? panelId : undefined} aria-label={`待辦提醒，${todos.length} 類${open ? '，已展開' : ''}${error || status !== 'connected' ? `，${error || connectionNote}` : ''}`}
+    <button ref={bell} type="button" className={`ops-notification-bell ${todoTotal ? 'has-tasks' : ''}`} aria-expanded={open} aria-controls={open ? panelId : undefined} aria-label={`待辦提醒，${todoTotal} 項待辦，${todos.length} 類提醒${open ? '，已展開' : ''}${error || status !== 'connected' ? `，${error || connectionNote}` : ''}`}
       onPointerEnter={event => { if (event.pointerType === 'mouse' && window.matchMedia('(hover: hover)').matches && !suppressHover.current) showPanel('hover'); }}
       onClick={() => { if (openMode.current === 'pinned') closePanel(); else showPanel('pinned'); }}>
-      <BellIcon/><span>待辦</span><b aria-hidden="true">{todos.length}</b>{(error || status !== 'connected') && <i className="ops-notification-connection" aria-hidden="true"/>}
+      <BellIcon/><span>待辦</span><b aria-hidden="true">{todoTotal}</b>{(error || status !== 'connected') && <i className="ops-notification-connection" aria-hidden="true"/>}
     </button>
   </aside>;
 }
