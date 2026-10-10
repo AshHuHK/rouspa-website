@@ -115,6 +115,10 @@
 
 第一次成功預約會以姓名及手機自動建立會員，無需 Email 或另外註冊。會員資料已存在時沿用同一筆；預約資料和會員資料共用該身分。預約 API 對既有顧客設有近期建立次數限制：同一顧客過去 24 小時內已有 5 筆預約紀錄時拒絕再新增，計數包含已取消的預約。
 
+一般訪客無需登入後台或使用特定瀏覽器；公開預約請求不沿用店主／員工登入憑證。操作編號以安全亂數建立，瀏覽器沒有 `crypto.randomUUID()` 時使用 `crypto.getRandomValues()` 相容方式。提交準備或連線失敗會顯示提示並恢復按鈕，不會一直卡在「預約中」。公開接口最多等待 25 秒；逾時不代表伺服器一定沒有建立預約。保持相同資料重送會沿用原操作編號並核對原回執，避免重複建立；也可先到「查詢預約」確認。只有出現成功回執才視為送出完成。
+
+來源：[安全操作編號](src/lib/request-id.js)、[公開接口與逾時處理](src/lib/public-rpc.js)。
+
 目前新的官網預約畫面沒有茶飲選項，送出茶飲代碼固定為 0。資料庫仍保留舊茶飲欄位與費用；目前不能在此預約流程選購茶飲。
 
 來源：[公開預約畫面](src/PublicBookingExperience.jsx)、[最新建立預約及會員身分核對](supabase/migrations/202610080002_booking_schedule_consistency.sql) `spa_create_booking`、[自動轉會員](supabase/migrations/202610050001_member_rewards_smart_roster.sql) `promote_booking_customer`。

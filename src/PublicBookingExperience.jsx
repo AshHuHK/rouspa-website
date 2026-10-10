@@ -4,6 +4,7 @@ import { publicName, publicTitle, therapistLabel, slotLabel } from './lib/public
 import { useBookingClock } from './lib/useBookingClock.js';
 import { resolveRebookingIntent } from './lib/rebooking.js';
 import { useLiveRefresh } from './lib/useLiveRefresh.js';
+import { createRequestId } from './lib/request-id.js';
 
 const copy={zh:{steps:['選擇服務','預約方式','日期時段','確認預約'],service:'請選擇服務項目',method:'您想怎麼找時間？',staff:'指定技師',staffSub:'先選技師，再看她本月與下月的班表。',time:'挑時間',timeSub:'先挑日期與時間，再看當時有空的技師。',any:'不指定技師，由店家安排',anySub:'系統會在有空的合格技師中，優先安排當天服務分鐘較少的人。',next:'下一步',back:'上一步',chooseStaff:'選擇指定技師',chooseDate:'只開放本月與下個月',chooseSlot:'選擇可預約時段',chooseAfter:'這個時間可選的技師',noPreference:'不指定，由店家安排',open:'可約',full:'已滿',off:'休',people:'位可約',loading:'正在計算正式班表與空檔…',summary:'預約摘要',name:'您的姓名',phone:'您的手機號碼',note:'備註（選填）',confirm:'確認預約',submitting:'預約中…',success:'預約已送出',again:'重新預約',manage:'查看、取消或改期（請保存此私人連結）',member:'首次預約會以姓名與手機號碼自動建立會員資料，無需 Email 或另外註冊。',assigned:'實際安排技師',designated:'指定技師',automatic:'店家自動安排'},en:{steps:['Service','Booking method','Date & time','Confirm'],service:'Choose a service',method:'How would you like to book?',staff:'Choose a therapist',staffSub:'Select a therapist, then view their roster for this and next month.',time:'Choose a time',timeSub:'Select a date and time, then choose from available therapists.',any:'No preference',anySub:'We assign an available qualified therapist with the lightest workload that day.',next:'Next',back:'Back',chooseStaff:'Select your therapist',chooseDate:'Available for this and next month',chooseSlot:'Choose an available time',chooseAfter:'Therapists available at this time',noPreference:'No preference — let the store assign',open:'Open',full:'Full',off:'Off',people:'available',loading:'Checking the live roster and availability…',summary:'Booking summary',name:'Full name',phone:'Phone number',note:'Notes (optional)',confirm:'Confirm booking',submitting:'Submitting…',success:'Booking received',again:'Book again',manage:'Manage booking — save this private link',member:'Your first booking creates a member profile with your name and phone. No email or separate registration is needed.',assigned:'Assigned therapist',designated:'Requested therapist',automatic:'Assigned by store'}};
 
@@ -17,6 +18,7 @@ export default function PublicBookingExperience({catalog:originalCatalog,catalog
  const [rebookingCatalog,setRebookingCatalog]=useState(null),[rebookingBusy,setRebookingBusy]=useState(false),[rebookingRetry,setRebookingRetry]=useState(0),[rebookingNotice,setRebookingNotice]=useState('');
  const catalog=rebookingCatalog||originalCatalog;
  const [availabilityVersion,setAvailabilityVersion]=useState(0),[availabilityNotice,setAvailabilityNotice]=useState('');
+ const [submissionError,setSubmissionError]=useState('');
  const draftService=useRef(null),draft=useRef(null);
  useEffect(()=>{if(originalCatalog)setRebookingCatalog(null);},[originalCatalog]);
  const c=copy[lang],services=(catalog?.services||[]).filter(row=>row.active!==false&&!['draft','archived'].includes(row.status)&&row.online_booking_enabled!==false),[step,setStep]=useState(0),[serviceId,setServiceId]=useState(''),[method,setMethod]=useState(''),[staffId,setStaffId]=useState(''),[calendars,setCalendars]=useState([]),[calendarBusy,setCalendarBusy]=useState(false),[date,setDate]=useState(''),[slots,setSlots]=useState([]),[slotBusy,setSlotBusy]=useState(false),[start,setStart]=useState(''),[availableStaff,setAvailableStaff]=useState([]),[staffBusy,setStaffBusy]=useState(false),[name,setName]=useState(''),[phone,setPhone]=useState(''),[note,setNote]=useState(''),[error,setError]=useState(''),[submitting,setSubmitting]=useState(false),[receipt,setReceipt]=useState(null);
@@ -40,7 +42,7 @@ export default function PublicBookingExperience({catalog:originalCatalog,catalog
  },[catalog,serviceId,method,staffId,submitting,receipt]);
  useEffect(()=>{
   if(!rebookingIntent)return;
-  let live=true;setRebookingBusy(true);setError('');
+  let live=true;setRebookingBusy(true);setError('');setSubmissionError('');
   publicRpc('spa_catalog').then(current=>{
    if(!live)return;
    const next=resolveRebookingIntent(rebookingIntent,current);
@@ -52,7 +54,7 @@ export default function PublicBookingExperience({catalog:originalCatalog,catalog
   return()=>{live=false;};
  },[rebookingIntent?.id,rebookingRetry]);
  // Only explicit new search choices clear the date. Server updates keep it.
- function resetAvailability(){setCalendars([]);setDate('');setStart('');setSlots([]);setAvailableStaff([]);}
+ function resetAvailability(){setCalendars([]);setDate('');setStart('');setSlots([]);setAvailableStaff([]);setSubmissionError('');}
  useEffect(()=>{
   if(!availabilityActive||!serviceId||!service||!method||(method==='staff'&&!availabilityStaff))return;
   let live=true;setCalendarBusy(true);setError('');
@@ -95,12 +97,24 @@ export default function PublicBookingExperience({catalog:originalCatalog,catalog
  },[now,slots,start,submitting,receipt]);
  const grouped=useMemo(()=>Object.fromEntries(['morning','afternoon','evening'].map(period=>[period,slots.filter(row=>row.available&&Date.parse(row.starts_at)>now+30*60000&&periodOf(row.time_label)===period)])),[slots,now]);
  const canLeaveMethod=service&&method&&!(method==='staff'&&!staffId),canLeaveTime=service&&(method!=='staff'||qualified.some(row=>row.id===staffId))&&calendars.some(calendar=>calendar.days.some(day=>day.date===date&&day.status==='open'))&&!calendarBusy&&!slotBusy&&date&&start&&slots.some(row=>row.starts_at===start&&row.available&&Date.parse(row.starts_at)>now+30*60000)&&(method!=='time'||(!staffBusy&&availableStaff.length>0&&(staffId==='any'||availableStaff.some(row=>row.id===staffId))));
- function reset(){setStep(0);setServiceId('');setMethod('');setStaffId('');setCalendars([]);setDate('');setSlots([]);setStart('');setAvailableStaff([]);setName('');setPhone('');setNote('');setError('');setReceipt(null);setRebookingNotice('');setAvailabilityNotice('');draftService.current=null;request.current=null;}
- async function submit(){if(submitting||!canLeaveTime||catalogError||!name.trim()||!phone.trim())return;setSubmitting(true);setError('');const assigned=method==='any'||staffId==='any'?null:staffId,payload={p_service:serviceId,p_date:date,p_start:start,p_staff:assigned,p_name:name.trim(),p_phone:phone.trim(),p_tea:0,p_note:note},fingerprint=JSON.stringify(payload);if(request.current?.fingerprint!==fingerprint)request.current={fingerprint,id:crypto.randomUUID()};try{setReceipt(await publicRpc('spa_create_booking',{p_request:request.current.id,...payload}));}catch(e){setError(errorText(e,lang));if(e.message?.includes('SLOT_TAKEN')||e.message?.includes('INVALID_DATE')){setStep(2);setStart('');setAvailabilityVersion(value=>value+1);}}finally{setSubmitting(false);}}
+ function reset(){setStep(0);setServiceId('');setMethod('');setStaffId('');setCalendars([]);setDate('');setStart('');setSlots([]);setAvailableStaff([]);setName('');setPhone('');setNote('');setError('');setSubmissionError('');setReceipt(null);setRebookingNotice('');setAvailabilityNotice('');draftService.current=null;request.current=null;}
+ async function submit(){
+  if(submitting||!canLeaveTime||catalogError||!name.trim()||!phone.trim())return;
+  setSubmitting(true);setError('');setSubmissionError('');
+  try{
+   const assigned=method==='any'||staffId==='any'?null:staffId;
+   const payload={p_service:serviceId,p_date:date,p_start:start,p_staff:assigned,p_name:name.trim(),p_phone:phone.trim(),p_tea:0,p_note:note},fingerprint=JSON.stringify(payload);
+   if(request.current?.fingerprint!==fingerprint)request.current={fingerprint,id:createRequestId()};
+   setReceipt(await publicRpc('spa_create_booking',{p_request:request.current.id,...payload}));
+  }catch(e){
+   setSubmissionError(errorText(e,lang));
+   if(e.message?.includes('SLOT_TAKEN')||e.message?.includes('INVALID_DATE')){setStep(2);setStart('');setAvailabilityVersion(value=>value+1);}
+  }finally{setSubmitting(false);}
+ }
  if(rebookingIntent||rebookingBusy)return <div className="booking-experience"><p className="booking-loading" role="status">{lang==='zh'?'正在核對目前療程、技師與價格…':'Checking current services, therapists and prices…'}</p>{error&&<><p className="booking-error" role="alert">{error}</p><div className="booking-actions"><button className="outline-btn" onClick={()=>{onRebookingApplied?.(rebookingIntent?.id);setRebookingBusy(false);reset();}}>{lang==='zh'?'重新選擇服務':'Choose a service'}</button><button className="gold-btn" disabled={rebookingBusy} onClick={()=>setRebookingRetry(value=>value+1)}>{lang==='zh'?'重新載入':'Try again'}</button></div></>}</div>;
  if(receipt)return <div className="booking-experience booking-success"><div className="booking-check">✓</div><h3>{c.success}</h3><p><strong>{receipt.reference}</strong></p><div className="booking-receipt"><span>{c.assigned}</span><strong>{receipt.staff_name}</strong><small>{receipt.booking_preference==='designated'?c.designated:c.automatic}</small></div><a href={`#manage/${receipt.manage_token}`}>{c.manage}</a><button className="outline-btn" onClick={reset}>{c.again}</button></div>;
  return <div className="booking-experience">
-  {(catalogError||error)&&<><p className="booking-error" role="alert">{catalogError||error}</p><button className="outline-btn" disabled={calendarBusy||slotBusy||staffBusy||submitting} onClick={()=>{if(catalogError)onCatalogRetry?.();setAvailabilityVersion(value=>value+1);}}>{catalogError?(lang==='zh'?'重新載入服務':'Reload services'):(lang==='zh'?'重新載入時段':'Reload availability')}</button></>}
+  {(catalogError||submissionError||error)&&<><p className="booking-error" role="alert">{catalogError||submissionError||error}</p><button className="outline-btn" disabled={calendarBusy||slotBusy||staffBusy||submitting} onClick={()=>{if(catalogError)onCatalogRetry?.();setAvailabilityVersion(value=>value+1);}}>{catalogError?(lang==='zh'?'重新載入服務':'Reload services'):(lang==='zh'?'重新載入時段':'Reload availability')}</button></>}
   {availabilityNotice&&<p className="lookup-help" role="status">{availabilityNotice}</p>}
   {rebookingNotice&&<p className="lookup-help" role="status">{rebookingNotice==='service-unavailable'?(lang==='zh'?'原療程目前無法線上預約，請選擇其他服務。':'The previous treatment is unavailable online. Please choose another service.'):rebookingNotice==='therapist-unavailable'?(lang==='zh'?'已選好原療程；原技師目前無法提供此療程，請重新選擇預約方式。':'Your previous treatment is selected. Please choose a booking method because the previous therapist is unavailable for it.'):(lang==='zh'?'已選好原療程與實際服務技師。請重新選擇日期與時間，費用以目前顯示的價格為準。':'Your previous treatment and actual therapist are selected. Choose a new date and time; current displayed prices apply.')}</p>}
   <ol className="booking-flow-progress">{c.steps.map((label,i)=><li className={i===step?'active':i<step?'done':''} key={label}><i>{i<step?'✓':i+1}</i><span>{label}</span></li>)}</ol>

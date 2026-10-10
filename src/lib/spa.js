@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from './public-config.js';
+import { createPublicRpc } from './public-rpc.js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
@@ -9,6 +10,9 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } }
 );
 const errors = {
+  BROWSER_RANDOM_UNAVAILABLE: '此瀏覽器無法建立安全的操作編號，請使用最新版瀏覽器開啟 https://www.rouspa.tw。',
+  PUBLIC_REQUEST_TIMEOUT: '連線逾時，請重試。若剛才提交預約，請保持相同資料重送，或至「查詢預約」確認。',
+  PUBLIC_NETWORK_ERROR: '無法連線至預約服務，請檢查網路後重試，或透過 LINE 聯絡門店。',
   ATTENDANCE_ALREADY_IN: '已有未結束的上班卡，請先打下班卡或申請更正。',
   ATTENDANCE_NOT_IN: '尚未打上班卡，請重新整理或申請補打卡。',
   ATTENDANCE_TOO_SHORT: '打卡間隔太短，或休息時間超過本次工時，請核對後再送出。',
@@ -82,6 +86,9 @@ const errors = {
   PAYROLL_RULE_IN_USE: '此版本已有薪資結算記錄，必須保留以供核對。'
 };
 const publicErrorsEn = {
+  BROWSER_RANDOM_UNAVAILABLE: 'This browser cannot create a secure request ID. Open https://www.rouspa.tw in an updated browser.',
+  PUBLIC_REQUEST_TIMEOUT: 'The connection timed out. Retry with the same booking details, or check Find booking first.',
+  PUBLIC_NETWORK_ERROR: 'Unable to connect to the booking service. Check your connection and retry, or contact us on LINE.',
   INVALID_SERVICE: 'This service is no longer available for online booking. Please choose another service.',
   BOOKING_ACCESS_EXPIRED: 'Your booking access has expired. Search again or reopen your private link.',
   CUSTOMER_NAME_MISMATCH: 'Use the full name from the previous booking for this phone number. Contact the store to correct your name.',
@@ -123,22 +130,7 @@ export async function rpc(name, args = {}) {
 // Public pages must never inherit a stale employee/owner session from the same
 // browser. Calling PostgREST with the publishable key keeps booking, lookup and
 // member access independent from back-office authentication.
-export async function publicRpc(name, args = {}) {
-  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${encodeURIComponent(name)}`, {
-    method: 'POST',
-    headers: { apikey: supabaseKey, authorization: `Bearer ${supabaseKey}`, 'content-type': 'application/json' },
-    body: JSON.stringify(args)
-  });
-  const text = await response.text();
-  let data = null;
-  if (text) { try { data = JSON.parse(text); } catch { data = text; } }
-  if (!response.ok) {
-    const error = new Error(data?.message || text || `HTTP ${response.status}`);
-    if (data && typeof data === 'object') Object.assign(error, data);
-    throw error;
-  }
-  return data;
-}
+export const publicRpc = createPublicRpc({ url: supabaseUrl, key: supabaseKey });
 export function money(cents = 0) {
   return 'NT$' + new Intl.NumberFormat('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(cents) / 100);
 }

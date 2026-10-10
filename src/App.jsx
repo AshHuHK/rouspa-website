@@ -3,6 +3,7 @@ import BookingLookup from "./BookingLookup.jsx";
 import PublicBookingExperience from "./PublicBookingExperience.jsx";
 import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistLabel, slotLabel } from "./lib/public-copy.js";
 import { publicRpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
+import { createRequestId } from './lib/request-id.js';
 import { updateBusinessSeo } from './lib/seo.js';
 import { serviceAddonGroup, serviceCardVariant, serviceDurationGroups, servicePresentationCards } from "./lib/catalog-presentation.js";
 import { usePublicCatalog, usePublicData } from './lib/usePublicData.js';
@@ -513,8 +514,8 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
     const payload = { p_service: services[selectedService]?.id, p_date: selectedDate, p_start: selectedTime,
       p_staff: selectedTherapist === -1 ? null : selectedTherapist, p_name: formName.trim(), p_phone: formPhone.trim(), p_tea: 0, p_note: formNote };
     const fingerprint = JSON.stringify(payload);
-    if (bookingRequest.current?.fingerprint !== fingerprint) bookingRequest.current = { fingerprint, id: crypto.randomUUID() };
     try {
+      if (bookingRequest.current?.fingerprint !== fingerprint) bookingRequest.current = { fingerprint, id: createRequestId() };
       const result = await publicRpc("spa_create_booking", { p_request: bookingRequest.current.id, ...payload });
       setReceipt(result); setBookingComplete(true);
     } catch (err) {

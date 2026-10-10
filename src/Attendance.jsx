@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {rpc,dateTime,errorText,taipeiDate,exportCSV} from './lib/spa.js';
+import { createRequestId } from './lib/request-id.js';
 import {attendanceStatuses,attendanceFlags,attendanceMinutes,taipeiInput,attendanceStamp,getPunchLocation,canPunch} from './lib/attendance.js';
 import {Field,Modal,MutationForm,Empty} from './OperationsShared.jsx';
 import './attendance.css';
@@ -22,7 +23,7 @@ export function AttendanceEmployee({from,to}){
  const saved=async()=>{setModal(null);await load();};
  async function punch(kind){if(running.current||!canPunch(kind,punchState))return;running.current=true;setBusy(true);setPunchError('');setMessage('正在取得本次定位…');
   try{const loc=await getPunchLocation();if(loc.error){setMessage('');setPunchError(`${loc.message} 未記錄打卡，填寫備註不能取代定位。`);return;}
-   if(!request.current||request.current.kind!==kind)request.current={kind,id:crypto.randomUUID()};
+   if(!request.current||request.current.kind!==kind)request.current={kind,id:createRequestId()};
    await rpc('spa_attendance_punch',{p_request:request.current.id,p_kind:kind,p_latitude:loc.latitude,p_longitude:loc.longitude,p_accuracy:loc.accuracy,p_reason:reason,p_location_error:'',p_break_minutes:kind==='out'?Number(breakMinutes):0});
    request.current=null;setReason('');setBreak(0);setMessage(kind==='in'?'已記錄上班。下班時請再次打卡。':'已記錄下班，待店主審核後計入薪資工時。');await load();
   }catch(e){setMessage('');setPunchError(errorText(e));await load();}finally{running.current=false;setBusy(false);}

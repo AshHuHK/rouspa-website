@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
 import { supabase, rpc, errorText } from './lib/spa.js';
+import { createRequestId } from './lib/request-id.js';
 import './operations.css';
 export function useSession() {
   const [session, setSession] = useState(undefined);
@@ -44,8 +45,8 @@ export function Empty({ children = '目前沒有記錄。' }) { return <p classN
 export function Method({ value, onChange }) { return <select value={value} onChange={e=>onChange(e.target.value)}><option value="cash">現金</option><option value="card">刷卡（已在店內收款）</option><option value="transfer">轉帳（已核對入帳）</option></select>; }
 export function MutationForm({ action, onSaved, children, submit = '儲存', lang = 'zh', requestKey, disabled = false }) {
   const [busy,setBusy]=useState(false),[error,setError]=useState('');
-  const request=useRef({id:crypto.randomUUID(),key:requestKey}),running=useRef(false);
-  return <form onSubmit={async e=>{e.preventDefault();if(running.current||disabled)return;const key=requestKey??JSON.stringify(Array.from(e.currentTarget.elements).filter(el=>['INPUT','SELECT','TEXTAREA'].includes(el.tagName)).map(el=>[el.type,el.value,el.checked]));if(request.current.key!==key)request.current={id:crypto.randomUUID(),key};running.current=true;setBusy(true);setError('');try{await action(request.current.id);await onSaved();}catch(err){setError(errorText(err, lang));}finally{running.current=false;setBusy(false);}}}>{children}{error&&<p className="alert" role="alert">{error}</p>}<div className="actions"><button className="primary" disabled={busy||disabled}>{busy?(lang === 'en' ? 'Saving…' : '處理中…'):submit}</button></div></form>;
+  const request=useRef({id:createRequestId(),key:requestKey}),running=useRef(false);
+  return <form onSubmit={async e=>{e.preventDefault();if(running.current||disabled)return;const key=requestKey??JSON.stringify(Array.from(e.currentTarget.elements).filter(el=>['INPUT','SELECT','TEXTAREA'].includes(el.tagName)).map(el=>[el.type,el.value,el.checked]));if(request.current.key!==key)request.current={id:createRequestId(),key};running.current=true;setBusy(true);setError('');try{await action(request.current.id);await onSaved();}catch(err){setError(errorText(err, lang));}finally{running.current=false;setBusy(false);}}}>{children}{error&&<p className="alert" role="alert">{error}</p>}<div className="actions"><button className="primary" disabled={busy||disabled}>{busy?(lang === 'en' ? 'Saving…' : '處理中…'):submit}</button></div></form>;
 }
 export function PrivateLink({ path, label }) {
   const [copied,setCopied]=useState(false),[error,setError]=useState('');

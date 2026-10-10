@@ -4,6 +4,7 @@ import { isInactiveBooking, canChangeBooking } from './lib/booking-state.js';
 import { useBookingClock } from './lib/useBookingClock.js';
 import { useLiveRefresh } from './lib/useLiveRefresh.js';
 import { nextMonthEnd } from './lib/date-range.js';
+import { createRequestId } from './lib/request-id.js';
 import { canRebookBooking } from './lib/rebooking.js';
 import { statusNamesEn, therapistLabel, slotLabel } from './lib/public-copy.js';
 import './booking-lookup.css';
@@ -145,9 +146,9 @@ function BookingChange({ access, row, kind, lang, now, close, changed }) {
     e.preventDefault();if (busy || !canChangeBooking(row, now) || (kind === 'reschedule' && (loading || !slots.some(slot => slot.starts_at === start && slot.available && Date.parse(slot.starts_at) > slotNow + 30 * 60000)))) return;
     const payload = { p_access: access, p_appointment: row.id, p_reason: reason.trim(), ...(kind === 'reschedule' ? { p_date: date, p_start: start, p_staff: staff || null } : {}) };
     const fingerprint = JSON.stringify(payload);
-    if (attempt.current?.fingerprint !== fingerprint) attempt.current = { fingerprint, id: crypto.randomUUID() };
     setBusy(true);setError('');
     try {
+      if (attempt.current?.fingerprint !== fingerprint) attempt.current = { fingerprint, id: createRequestId() };
       const result = await publicRpc(kind === 'cancel' ? 'spa_customer_cancel' : 'spa_customer_reschedule', { ...payload, p_request: attempt.current.id });
       await changed(result, kind);
     } catch (e) { setError(errorText(e, lang));if (e.message?.includes('SLOT_TAKEN')) { setStart('');setReload(n => n + 1); } }
