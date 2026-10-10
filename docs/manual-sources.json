@@ -1,13 +1,13 @@
 {
-  "reviewed_at": "2026-10-08T21:08:23.728Z",
-  "manual_sha256": "fc2e0cb316fb6dd7a99647c1adc9bcb7171dc0d7eb506cb5a681a5d7761226b8",
+  "reviewed_at": "2026-10-10T05:25:52.101Z",
+  "manual_sha256": "f404c121d4f6a336e30c7e051759f2ed6f5599b782fc4e4e7f794c845191dd9a",
   "sources": {
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
     "server/ask-steward.mjs": "df35563809379796c7bd2680999f3e594844b0bf023de59c173c1d8acffc8d73",
     "server/steward-context.mjs": "71a5260d1a475e566633db79b9096dbf2b8bb157fb81ca13f6992ed73e61f348",
     "server/steward-period.mjs": "77f60bd099b89aa335101c3b27bca392d1a3502067919dfffa64ae7966dd2f87",
     "src/Admin.jsx": "61ced123336b5d43f03bd919c929b77e3a0901521f76b6ca0e8a1a2d3cf1df36",
-    "src/App.jsx": "414aac371689c20d3bd45e45a59d2ff5e3aecd759a445d15237c7e9a66b517d7",
+    "src/App.jsx": "a28ffb1b6e671a91e100506a08cac5a0537a82053ccc5d77460178828b1bde65",
     "src/AskSteward.jsx": "20fac738a757a6595e019d2bb7b0906abf9ec92e5d07fbff9a2f4873c79d8169",
     "src/Attendance.jsx": "5afa4f1fd837b5e0709932b9616f5be817001ccd25e370ce0e7433fe25376ed9",
     "src/BookingLookup.jsx": "e3013fa630cc2a1bd2bea68d65fab5db63a446f86b24defdc6f73c3ec8100548",

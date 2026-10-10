@@ -18,6 +18,7 @@ const i18n = {
     brand: "柔療髮浴",
     brandEn: "ROU SPA",
     brandSub: "東方頭療・經絡舒緩",
+    announcement: { opening: "門店將於12月份試營運", thanks: "敬請期待，感謝關注" },
     nav: { home: "首頁", services: "服務項目", booking: "立即預約", lookup: "查詢預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",
@@ -75,6 +76,7 @@ const i18n = {
       brand: "ROU SPA",
       brandEn: "ROU SPA",
       brandSub: "Head therapy · Meridian relaxation",
+      announcement: { opening: "Our soft opening is planned for December", thanks: "Stay tuned, and thank you for your support" },
       nav: { home: "Home", services: "Services", booking: "Book now", lookup: "Find booking", shop: "Products", contact: "Contact" },
       hero: {
         title: "Wellness through gentle care",
@@ -439,6 +441,10 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   };
   const scrollTo = (section) => {
     setMenuOpen(false);
+    if (section === "home") {
+      window.scrollTo({ top: 0, left: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+      return;
+    }
     if (section === "booking" || section === "lookup") {
       setBookingMode(section === "lookup" ? "lookup" : "new");
       requestAnimationFrame(() => alignBooking(window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'));
@@ -1099,6 +1105,10 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           <button type="button" className="public-nav-link public-language-switch" onClick={() => { switchLanguage(); setMenuOpen(false); }}>{t.langSwitch}</button>
         </div>}
       </nav>
+
+      <aside className="public-opening-banner" aria-label={lang === 'zh' ? '門店公告' : 'Store announcement'}>
+        <p><span>{t.announcement.opening}</span><span>{t.announcement.thanks}</span></p>
+      </aside>
 
       {/* ========== LINE FLOATING BUTTON ========== */}
       <div className={`line-floating ${lineOverContent ? "over-content" : ""}`} style={{ position: "fixed", bottom: "30px", right: "30px", zIndex: 99, display: "flex", alignItems: "center", gap: "12px" }}>

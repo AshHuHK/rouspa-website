@@ -1,6 +1,6 @@
 .public-nav {
-  position: fixed;
-  inset: 0 0 auto;
+  position: sticky;
+  top: 0;
   z-index: 100;
   background: #f5efe5;
   border-bottom: 1px solid #cbb99f;
@@ -57,6 +57,24 @@
 .public-home[data-language=en] .public-nav-link { letter-spacing: .25px; }
 .public-nav :is(a,button):focus-visible { outline: 3px solid #6b4b2f; outline-offset: 3px; }
 
+.public-opening-banner {
+  padding: 16px 24px;
+  background: linear-gradient(110deg, #604431, #79573e, #604431);
+  color: #fff8eb;
+  border-bottom: 1px solid #bfa174;
+  text-align: center;
+}
+.public-opening-banner p {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  font: 600 17px/1.8 var(--public-font);
+  letter-spacing: 1px;
+}
+.public-opening-banner p span { max-width: 100%; text-wrap: balance; }
+
 @media(max-width:1100px) {
   .public-nav-inner { justify-content: flex-end; padding: 10px 20px; }
   .public-nav .desktop-nav { display: none; }
@@ -73,6 +91,10 @@
   .public-nav .mobile-nav .public-nav-link { min-width: 0; padding: 10px 8px; white-space: normal; border-color: #d1bea4; }
   .public-nav .mobile-nav .public-nav-booking { border-color: #6b4b2f; }
   .public-nav .mobile-nav .public-language-switch { grid-column: 1 / -1; justify-self: center; min-width: 100px; border-color: #876b4f; }
+}
+@media(max-width:640px) {
+  .public-opening-banner { padding: 13px 16px; }
+  .public-opening-banner p { flex-direction: column; gap: 2px; font-size: 15px; letter-spacing: .5px; }
 }
 @media(max-width:360px) {
   .public-nav-inner { padding: 8px 16px; }
