@@ -1,11 +1,11 @@
 {
-  "reviewed_at": "2026-10-10T10:06:19.232Z",
+  "reviewed_at": "2026-10-10T10:11:50.933Z",
   "manual_sha256": "d79cb64682d92d70d17887240ec00d04fe9dee9c56c8a669c7055f377c09a574",
   "sources": {
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
     "api/public-rpc.js": "d31da9ce11923cdd5e7ca122c6ae20799572679fe240d96cada8730fc7ab56f9",
     "server/ask-steward.mjs": "df35563809379796c7bd2680999f3e594844b0bf023de59c173c1d8acffc8d73",
-    "server/public-rpc.mjs": "7b9849634235fd654c0f187812eda4b0e104613d52914459edac259b2764c583",
+    "server/public-rpc.mjs": "742a7cc949816c3dbb56a56b28da0e9bea4d809aded93d1548d8f2c07c902da8",
     "server/steward-context.mjs": "71a5260d1a475e566633db79b9096dbf2b8bb157fb81ca13f6992ed73e61f348",
     "server/steward-period.mjs": "77f60bd099b89aa335101c3b27bca392d1a3502067919dfffa64ae7966dd2f87",
     "src/Admin.jsx": "61ced123336b5d43f03bd919c929b77e3a0901521f76b6ca0e8a1a2d3cf1df36",

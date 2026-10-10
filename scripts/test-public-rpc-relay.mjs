@@ -11,6 +11,7 @@ const success = async (url, init) => { requests.push({ url, init }); return new 
 async function invoke(body = { rpc: 'spa_catalog', args: {} }, options = {}) {
   const headers = { 'content-type': 'application/json', origin: 'https://www.rouspa.tw', ...options.headers };
   const req = { method: options.method || 'POST', headers, body };
+  if (options.chunks) { delete req.body; req[Symbol.asyncIterator] = async function* () { yield* options.chunks; }; }
   const res = { headers: {}, setHeader(key, value) { this.headers[key.toLowerCase()] = value; }, end(raw) { this.body = JSON.parse(raw); } };
   await createPublicRpcHandler({ fetchImpl: options.fetchImpl || success, env: options.env || { NODE_ENV: 'production' }, timeoutMs: options.timeoutMs || 100 })(req, res);
   return res;
@@ -28,6 +29,10 @@ check(requests.every(request => request.init.headers.apikey === PUBLIC_SUPABASE_
 const access = '23ea90a3-0092-4aaa-9517-292196556cec';
 await invoke({ rpc: 'spa_member_detail', args: { p_access: access } });
 check(JSON.parse(requests.at(-1).init.body).p_access === access, 'customer access proof is preserved for the database to validate');
+const fragmented = Buffer.from(JSON.stringify({ rpc: 'spa_member_login', args: { p_name: '中文姓名', p_phone: '0000000001' } }));
+const split = fragmented.indexOf(Buffer.from('中文')) + 1;
+await invoke(undefined, { chunks: [fragmented.subarray(0, split), fragmented.subarray(split, split + 1), fragmented.subarray(split + 1)] });
+check(JSON.parse(requests.at(-1).init.body).p_name === '中文姓名', 'Chinese names survive UTF-8 characters split across network chunks');
 
 for (const rpc of ['spa_admin_dashboard', 'spa_payroll_preview', 'spa_staff_schedule_submit', 'spa_settings_save', 'https://private.example/rpc']) {
   const before = requests.length, result = await invoke({ rpc, args: {} });

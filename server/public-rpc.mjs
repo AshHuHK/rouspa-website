@@ -24,10 +24,16 @@ async function readBody(req) {
   if (Number(req.headers?.['content-length']) > MAX_BODY) throw new PublicRpcError(413, 'INVALID_INPUT');
   let raw = '', bytes = 0;
   if (req.body !== undefined) raw = typeof req.body === 'string' || Buffer.isBuffer(req.body) ? String(req.body) : JSON.stringify(req.body);
-  else for await (const chunk of req) {
-    bytes += Buffer.byteLength(chunk);
-    if (bytes > MAX_BODY) throw new PublicRpcError(413, 'INVALID_INPUT');
-    raw += chunk;
+  else {
+    const chunks = [];
+    for await (const chunk of req) {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      bytes += buffer.length;
+      if (bytes > MAX_BODY) throw new PublicRpcError(413, 'INVALID_INPUT');
+      chunks.push(buffer);
+    }
+    // Decode after joining so a network chunk cannot split a Chinese character.
+    raw = Buffer.concat(chunks).toString('utf8');
   }
   if (Buffer.byteLength(raw) > MAX_BODY) throw new PublicRpcError(413, 'INVALID_INPUT');
   try { return JSON.parse(raw); } catch { throw new PublicRpcError(400, 'INVALID_INPUT'); }
