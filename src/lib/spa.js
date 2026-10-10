@@ -13,6 +13,7 @@ const errors = {
   BROWSER_RANDOM_UNAVAILABLE: '此瀏覽器無法建立安全的操作編號，請使用最新版瀏覽器開啟 https://www.rouspa.tw。',
   PUBLIC_REQUEST_TIMEOUT: '連線逾時，請重試。若剛才提交預約，請保持相同資料重送，或至「查詢預約」確認。',
   PUBLIC_NETWORK_ERROR: '無法連線至預約服務，請檢查網路後重試，或透過 LINE 聯絡門店。',
+  PUBLIC_SERVICE_UNAVAILABLE: '預約服務暫時無法回應，請稍後重試，或透過 LINE 聯絡門店。',
   ATTENDANCE_ALREADY_IN: '已有未結束的上班卡，請先打下班卡或申請更正。',
   ATTENDANCE_NOT_IN: '尚未打上班卡，請重新整理或申請補打卡。',
   ATTENDANCE_TOO_SHORT: '打卡間隔太短，或休息時間超過本次工時，請核對後再送出。',
@@ -89,6 +90,7 @@ const publicErrorsEn = {
   BROWSER_RANDOM_UNAVAILABLE: 'This browser cannot create a secure request ID. Open https://www.rouspa.tw in an updated browser.',
   PUBLIC_REQUEST_TIMEOUT: 'The connection timed out. Retry with the same booking details, or check Find booking first.',
   PUBLIC_NETWORK_ERROR: 'Unable to connect to the booking service. Check your connection and retry, or contact us on LINE.',
+  PUBLIC_SERVICE_UNAVAILABLE: 'The booking service is temporarily unavailable. Retry shortly or contact us on LINE.',
   INVALID_SERVICE: 'This service is no longer available for online booking. Please choose another service.',
   BOOKING_ACCESS_EXPIRED: 'Your booking access has expired. Search again or reopen your private link.',
   CUSTOMER_NAME_MISMATCH: 'Use the full name from the previous booking for this phone number. Contact the store to correct your name.',
@@ -128,9 +130,9 @@ export async function rpc(name, args = {}) {
   return data;
 }
 // Public pages must never inherit a stale employee/owner session from the same
-// browser. Calling PostgREST with the publishable key keeps booking, lookup and
-// member access independent from back-office authentication.
-export const publicRpc = createPublicRpc({ url: supabaseUrl, key: supabaseKey });
+// browser. The same-origin relay uses only the publishable key, keeping booking,
+// lookup and member access independent from back-office authentication.
+export const publicRpc = createPublicRpc({ url: supabaseUrl, key: supabaseKey, proxyUrl: '/api/public-rpc' });
 export function money(cents = 0) {
   return 'NT$' + new Intl.NumberFormat('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(cents) / 100);
 }

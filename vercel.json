@@ -47,6 +47,9 @@
     }
   ],
   "functions": {
+    "api/public-rpc.js": {
+      "maxDuration": 30
+    },
     "api/ask-steward.js": {
       "includeFiles": "ROU_SPA_OPERATING_MANUAL.md",
       "maxDuration": 120
