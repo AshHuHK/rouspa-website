@@ -571,12 +571,10 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         @keyframes tooltipSlide { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes checkmark { 0% { transform: scale(0) rotate(-45deg); opacity: 0; } 50% { transform: scale(1.2) rotate(0deg); } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
 
-        /* 手機版控制斷行 - 預設隱藏 */
-        .mobile-break { display: none; }
-
-        @media (max-width: 640px) {
-          .mobile-break { display: inline !important; }
-        }
+        /* Keep semantic lines on every viewport; wrap whole clauses first. */
+        .hero-copy { width: 100%; max-width: 400px; text-wrap: balance; }
+        .hero-copy-line { display: block; text-wrap: balance; }
+        .hero-copy-clause { display: inline-block; max-width: 100%; text-wrap: balance; }
 
         .animate-in { animation: fadeInUp 0.8s ease-out forwards; }
         .animate-in-delay-1 { animation: fadeInUp 0.8s ease-out 0.15s forwards; opacity: 0; }
@@ -1162,7 +1160,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
       }}>
         <picture className="hero-background">
           <source media="(max-width: 650px)" srcSet="/hero-960.jpg" />
-          <img src="/hero-1920.jpg" alt={lang === 'zh' ? '柔療髮浴的頭療與髮浴服務' : 'Hair-bathing care at ROU SPA'} width="1920" height="1920" fetchPriority="high" decoding="async" />
+          <img src="/hero-1920.jpg" alt={lang === 'zh' ? '柔療髮浴的頭療與髮浴服務' : 'Hair-bathing care at ROU SPA'} width="1920" height="1920" fetchpriority="high" decoding="async" />
         </picture>
         {/* 米白色遮罩：上方淡（露出照片、襯托白字 logo），往下漸濃（內文清楚可讀） */}
         <div style={{
@@ -1229,7 +1227,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           </div>
 
           {/* 第一段內文 - 控制斷行 */}
-          <p className="animate-in-delay-3 hero-intro-1" style={{
+          <p className="animate-in-delay-3 hero-intro-1 hero-copy" style={{
             fontSize: "15px",
             lineHeight: 2,
             color: "rgba(74, 68, 58, 0.85)",
@@ -1238,7 +1236,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
             fontWeight: 400,
             textAlign: "center"
           }}>
-            {lang === "zh" ? <>取東方養護之意，循舒緩調理之法<span className="mobile-break"><br /></span>由頭開始，漸入身心。</> : <>Inspired by Eastern care, guided by a gentle touch.<br />Relaxation begins with the head.</>}
+            {lang === "zh" ? <><span className="hero-copy-line"><span className="hero-copy-clause">取東方養護之意，</span><span className="hero-copy-clause">循舒緩調理之法</span></span><span className="hero-copy-line"><span className="hero-copy-clause">由頭開始，漸入身心。</span></span></> : <><span className="hero-copy-line">Inspired by Eastern care, guided by a gentle touch.</span><span className="hero-copy-line">Relaxation begins with the head.</span></>}
           </p>
 
           {/* 五感療癒小標 */}
@@ -1273,7 +1271,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           </div>
 
           {/* 第二段內文 - 控制斷行 */}
-          <p className="animate-in-delay-4 hero-intro-2" style={{
+          <p className="animate-in-delay-4 hero-intro-2 hero-copy" style={{
             fontSize: "14px",
             lineHeight: 2,
             color: "rgba(74, 68, 58, 0.8)",
@@ -1282,7 +1280,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
             fontWeight: 400,
             textAlign: "center"
           }}>
-            {lang === "zh" ? <>頭皮養護、頭肩頸按摩與髮浴，<span className="mobile-break"><br /></span>在嘉義，留一段時間給自己。</> : <>Scalp care, head massage and hair bathing.<br />A calm space to unwind in Chiayi.</>}
+            {lang === "zh" ? <><span className="hero-copy-line"><span className="hero-copy-clause">頭皮養護、</span><span className="hero-copy-clause">頭肩頸按摩與髮浴，</span></span><span className="hero-copy-line"><span className="hero-copy-clause">在嘉義，</span><span className="hero-copy-clause">留一段時間給自己。</span></span></> : <><span className="hero-copy-line">Scalp care, head massage and hair bathing.</span><span className="hero-copy-line">A calm space to unwind in Chiayi.</span></>}
           </p>
 
           {/* CTA 按鈕 */}

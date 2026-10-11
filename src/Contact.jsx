@@ -218,6 +218,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
                   <button onClick={() => window.open(CONFIG.LINE_URL, "_blank", "noopener,noreferrer")} style={{
+                    minHeight: "44px",
                     padding: "8px 20px", fontSize: "12px", letterSpacing: "1px",
                     background: "#06C755", border: "none",
                     color: "white", borderRadius: "4px", cursor: "pointer", fontFamily: "inherit",

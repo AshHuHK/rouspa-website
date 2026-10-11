@@ -141,6 +141,8 @@
 4. 填寫完整姓名、手機及選填備註，檢查摘要後按「確認預約」。
 5. 保存成功畫面的預約編號與「查看、取消或改期」私人連結，並確認實際安排技師。提交成功不一定代表已確認：是否需要門店人工確認，依當下「預約確認」設定。
 
+手機切換上一／下一步或顯示成功回執時，畫面會對齊目前步驟標題，讓摘要與表單從上方開始閱讀；同一步驟內的普通可約資料更新不會重設捲動位置。確認畫面的姓名、手機及備註有固定欄位標籤，填寫後仍可辨識。指定技師的月曆日期格分行顯示起迄時間，點選日期後另顯示完整當日上班時段；跨午夜以「翌日」標示。月曆仍只依正式班表、服務資格、已佔用時間與床位顯示可約日期，顯示改善不會增加名額。
+
 姓名去除前後空白後須為 1–80 字；手機經格式清理後須為 8–15 位數字，可有開頭 `+`；備註最多 1,000 字。若相同手機已有顧客資料，姓名必須與原資料一致（英文不分大小寫、去除前後空白）。輸入另一個姓名不會把會員姓名覆寫。姓名不符請門店核對會員資料；停用或封存資料須先由門店恢復，不能靠重新預約復活。
 
 第一次成功預約會以姓名及手機自動建立會員，無需 Email 或另外註冊。會員資料已存在時沿用同一筆；預約資料和會員資料共用該身分。預約 API 對既有顧客設有近期建立次數限制：同一顧客過去 24 小時內已有 5 筆預約紀錄時拒絕再新增，計數包含已取消的預約。
@@ -312,11 +314,13 @@
 
 「人員與排班 → 智能排班／排班日曆」可維護固定每週模板，以及指定日期上班／休班。可選多日、連選／拖選，批次套用時間，或刪除指定日期設定回到每週模板。一次批次接受 1–62 個日期；新增／更改日期限今天至今天＋366 天。跨夜結束時間須比開始晚，最多 2880 分鐘。
 
+手機可逐日點選，或按「選擇連續日期」，先點起日、再點迄日，即選取兩端之間的連續日期；反向點選也可。範圍取自目前可見月曆，過去日期不能選。可「清除起日」重新開始，或「退出連續日期」回到單日點選；滑鼠仍可按住拖選，鍵盤可用 Enter／空白鍵選日期。切換月份或人員會清除未完成的連選起日；切換人員載入該人今日的實際班表，切換月份須重新選日期，未選日期不能套用或恢復設定。**選日期只是未儲存的畫面選擇**，須核對上班／休班與時間，再按「套用到所選日期」才寫入正式班表；頁面上下捲動不會改班表。保存及恢復每週設定仍接受伺服器日期、權限與既有預約衝突校驗。
+
 店主直接修改不受 1–7 日自助期限限制。刪除指定日期後恢復的週模板也要能容納既有預約；若沒週模板會恢復休班，同樣可能因既有預約而失敗。
 
 「休假／封鎖」以完整開始、結束時間封鎖，可用於請假、休息、訓練等，不等同整日休班。新增／修改不能與上述未結束預約相交。店面每週或特殊日期營業修改同樣不能讓未結束預約落在店休或營業範圍外。系統不會自動調顧客時間來配合班表。
 
-來源：[員工操作畫面](src/StaffPortal.jsx) `EmployeeSchedulePlanner`；[自助期間、申請及讀取](supabase/migrations/202610070001_staff_schedule_booking_flow.sql) `spa_staff_schedule_plan`／`spa_staff_schedule_request`／`spa_schedule_admin`／`spa_schedule_policy_save`；[最新提交與核准及共同衝突保護](supabase/migrations/202610080002_booking_schedule_consistency.sql) `spa_staff_schedule_submit`／`spa_staff_schedule_request_review`／`roster_booking_guard`／`leave_booking_guard`／`store_booking_guard`；[店主批次與週模板](supabase/migrations/202610050001_member_rewards_smart_roster.sql) `spa_weekly_shift_save`／`spa_daily_shift_bulk_save`／`spa_daily_shift_bulk_delete`；[店主畫面](src/BusinessOS.jsx) `ScheduleReviewPanel`／`SmartRoster`。
+來源：[員工操作畫面](src/StaffPortal.jsx) `EmployeeSchedulePlanner`；[自助期間、申請及讀取](supabase/migrations/202610070001_staff_schedule_booking_flow.sql) `spa_staff_schedule_plan`／`spa_staff_schedule_request`／`spa_schedule_admin`／`spa_schedule_policy_save`；[最新提交與核准及共同衝突保護](supabase/migrations/202610080002_booking_schedule_consistency.sql) `spa_staff_schedule_submit`／`spa_staff_schedule_request_review`／`roster_booking_guard`／`leave_booking_guard`／`store_booking_guard`；[店主批次與週模板](supabase/migrations/202610050001_member_rewards_smart_roster.sql) `spa_weekly_shift_save`／`spa_daily_shift_bulk_save`／`spa_daily_shift_bulk_delete`；[店主畫面](src/BusinessOS.jsx) `ScheduleReviewPanel`／`SmartRoster`；[店主日期選擇](src/RosterDatePicker.jsx)。
 
 <a id="calendar"></a>
 

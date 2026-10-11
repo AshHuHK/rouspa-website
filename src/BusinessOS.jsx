@@ -15,6 +15,7 @@ import ProductEditor from './ProductEditor.jsx';
 import PayrollPolicyEditor from './PayrollPolicyEditor.jsx';
 import PosWorkspace from './PosWorkspace.jsx';
 import { tenureLabel } from './lib/staff-tenure.js';
+import RosterDatePicker from './RosterDatePicker.jsx';
 
 const moduleLabels={dashboard:'營運首頁',bookings:'預約與日程',customers:'會員與儲值金',pos:'門店 POS',team:'人員與排班',payroll:'薪資與提成',catalog:'服務・商品・庫存',reviews:'評價',reports:'經營報表',access:'角色與權限',settings:'系統設定',self:'我的薪資與績效'};
 const overtimeNames={weekday:'平日延長工時',rest_day:'休息日出勤',national_holiday:'國定／特別休假',regular_holiday:'例假日出勤'};
@@ -132,11 +133,12 @@ function operationsDayAria(item,date){if(!item)return date;const hours=item.stor
 
 function SmartRoster({data,staffId,setStaffId,canManage,onReload}){
  const staff=data.staff.find(s=>s.id===staffId)||data.staff.find(s=>(s.employment_status||(s.active?'active':'inactive'))==='active'&&!s.archived_at);
- const today=taipeiDate(),[month,setMonth]=useState(today.slice(0,7)),[selected,setSelected]=useState([today]),[dragAnchor,setDragAnchor]=useState(null);
+ const today=taipeiDate(),[month,setMonth]=useState(today.slice(0,7)),[selected,setSelected]=useState([today]),[pickerReset,setPickerReset]=useState(0);
  const [working,setWorking]=useState(true),[start,setStart]=useState(600),[end,setEnd]=useState(1080),[note,setNote]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [weekDay,setWeekDay]=useState(1),[weekWorking,setWeekWorking]=useState(true),[weekStart,setWeekStart]=useState(600),[weekEnd,setWeekEnd]=useState(1080),[weekDirty,setWeekDirty]=useState(false);
  const weekSource=useRef({staffId:null,day:null,value:null});
  const weekly=(data.shifts||[]).filter(row=>row.staff_id===staff?.id),daily=(data.daily_shifts||[]).filter(row=>row.staff_id===staff?.id),cells=monthCells(month);
+ useEffect(()=>{if(!staff)return;setMonth(today.slice(0,7));choose(today);},[staff?.id]);
  useEffect(()=>{
   if(busy)return;
   const incoming=weeklyRosterFields(weekly.find(row=>row.weekday===weekDay)),previous=weekSource.current;
@@ -146,23 +148,21 @@ function SmartRoster({data,staffId,setStaffId,canManage,onReload}){
   if(next.officialChanged)setNotice('正式每週班表已更新；您尚未儲存的選擇已保留，請核對後再儲存。');
   weekSource.current={staffId:staff?.id,day:weekDay,value:incoming};
  },[staff?.id,weekDay,data.shifts,busy]);
- useEffect(()=>{const stop=()=>setDragAnchor(null);window.addEventListener('pointerup',stop);return()=>window.removeEventListener('pointerup',stop);},[]);
  if(!staff)return null;
  const scheduleFor=date=>{const override=daily.find(row=>row.business_date===date);if(override)return {...override,source:'daily'};const template=weekly.find(row=>row.weekday===dateWeekday(date));return template?{...template,is_working:true,source:'weekly'}:{is_working:false,source:'none'};};
- const choose=date=>{if(date<today)return;setSelected([date]);setDragAnchor(date);const current=scheduleFor(date);setWorking(current.is_working);setStart(current.start_minute??600);setEnd(current.end_minute??1080);setNote(current.source==='daily'?(current.note||''):'');setError('');setNotice('');};
- const dragTo=date=>{if(!dragAnchor||date<today)return;setSelected(datesBetween(dragAnchor,date));};
+ const choose=date=>{if(date<today)return;setSelected([date]);const current=scheduleFor(date);setWorking(current.is_working);setStart(current.start_minute??600);setEnd(current.end_minute??1080);setNote(current.source==='daily'?(current.note||''):'');setError('');setNotice('');};
+ const changeMonth=step=>{setMonth(value=>moveMonth(value,step));setSelected([]);setError('');setNotice('');};
  const saveDaily=async()=>{if(!selected.length||busy)return;setBusy(true);setError('');setNotice('');try{await rpc('spa_daily_shift_bulk_save',{p_staff:staff.id,p_dates:selected,p_is_working:working,p_start:Number(start),p_end:Number(end),p_note:note});await onReload();setNotice(`已同步 ${selected.length} 日排班，官網可預約時段已更新。`);}catch(e){setError(errorText(e));}finally{setBusy(false);}};
  const restore=async()=>{if(!selected.length||busy)return;setBusy(true);setError('');setNotice('');try{await rpc('spa_daily_shift_bulk_delete',{p_staff:staff.id,p_dates:selected});await onReload();setNotice(`已讓 ${selected.length} 日恢復使用每週排班。`);}catch(e){setError(errorText(e));}finally{setBusy(false);}};
  const saveWeekly=async()=>{if(busy)return;setBusy(true);setError('');setNotice('');try{await rpc('spa_weekly_shift_save',{p_staff:staff.id,p_weekday:weekDay,p_is_working:weekWorking,p_start:Number(weekStart),p_end:Number(weekEnd)});setWeekDirty(false);await onReload();setNotice(`每週${'日一二三四五六'[weekDay]}排班已更新。`);}catch(e){setError(errorText(e));}finally{setBusy(false);}};
  return <section id="smart-roster" className="card roster-workspace">
-  <div className="roster-heading"><div><p className="eyebrow">SMART ROSTER</p><h2>智能排班日曆</h2><p className="muted">先設定固定每週班表，再點選或拖過連續日期建立當日覆蓋。所有變更即時聯動前台可預約技師。</p></div><label>排班人員<select value={staff.id} onChange={e=>{setStaffId(e.target.value);setSelected([today]);}}>{data.staff.filter(s=>(s.employment_status||(s.active?'active':'inactive'))==='active'&&!s.archived_at).map(s=><option key={s.id} value={s.id}>{s.name} · {s.job_title_name||s.title}</option>)}</select></label></div>
+  <div className="roster-heading"><div><p className="eyebrow">SMART ROSTER</p><h2>智能排班日曆</h2><p className="muted">先設定固定每週班表，再點選或拖過連續日期建立當日覆蓋。所有變更即時聯動前台可預約技師。</p></div><label>排班人員<select aria-label="排班人員" disabled={busy} value={staff.id} onChange={e=>{setSelected([]);setStaffId(e.target.value);}}>{data.staff.filter(s=>(s.employment_status||(s.active?'active':'inactive'))==='active'&&!s.archived_at).map(s=><option key={s.id} value={s.id}>{s.name} · {s.job_title_name||s.title}</option>)}</select></label></div>
   <div className="roster-layout"><div>
-   <div className="roster-month-nav"><button aria-label="上個月" onClick={()=>setMonth(value=>moveMonth(value,-1))}>‹</button><strong>{month.replace('-',' 年 ')} 月</strong><button aria-label="下個月" onClick={()=>setMonth(value=>moveMonth(value,1))}>›</button><button onClick={()=>{setMonth(today.slice(0,7));choose(today);}}>今天</button></div>
-   <div className="roster-week-labels">{['一','二','三','四','五','六','日'].map(day=><span key={day}>週{day}</span>)}</div>
-   <div className="roster-calendar" onPointerLeave={()=>setDragAnchor(null)}>{cells.map(date=>{const schedule=scheduleFor(date),inMonth=date.startsWith(month),isSelected=selected.includes(date),past=date<today;return <button type="button" key={date} disabled={past} className={`${inMonth?'':'outside'} ${isSelected?'selected':''} ${schedule.source==='daily'?'override':''} ${!schedule.is_working?'off':''}`} onPointerDown={e=>{e.preventDefault();choose(date);}} onPointerEnter={()=>dragTo(date)}><span>{Number(date.slice(-2))}</span><small>{schedule.is_working?`${minuteLabel(schedule.start_minute)}–${minuteLabel(schedule.end_minute)}`:'休班'}</small><em>{schedule.source==='daily'?'特別':schedule.source==='weekly'?'每週':'未排'}</em></button>;})}</div>
+   <div className="roster-month-nav"><button disabled={busy} aria-label="上個月" onClick={()=>changeMonth(-1)}>‹</button><strong>{month.replace('-',' 年 ')} 月</strong><button disabled={busy} aria-label="下個月" onClick={()=>changeMonth(1)}>›</button><button disabled={busy} onClick={()=>{setMonth(today.slice(0,7));choose(today);setPickerReset(value=>value+1);}}>今天</button></div>
+   <RosterDatePicker key={`${staff.id}:${month}:${pickerReset}`} cells={cells} month={month} today={today} selected={selected} scheduleFor={scheduleFor} onSelectDate={choose} onSelectRange={(first,last)=>setSelected(datesBetween(first,last))}/>
    <div className="roster-legend"><span><i className="weekly"/>每週設定</span><span><i className="override"/>指定日期</span><span><i className="off"/>休班</span></div>
   </div><aside className="roster-editor">
-   <div><p className="eyebrow">SELECTED DATES</p><h3>{selected.length===1?selected[0]:`${selected[0]} ～ ${selected[selected.length-1]}`}</h3><p className="muted">已選 {selected.length} 日；可在日曆上按住並拖過連續日期。</p></div>
+   <div><p className="eyebrow">SELECTED DATES</p><h3>{!selected.length?'請先選擇日期':selected.length===1?selected[0]:`${selected[0]} ～ ${selected[selected.length-1]}`}</h3><p className="muted">已選 {selected.length} 日；手機可用「選擇連續日期」點起日與迄日，滑鼠可拖選。</p></div>
    <Field label="排班狀態"><select disabled={!canManage||busy} value={String(working)} onChange={e=>setWorking(e.target.value==='true')}><option value="true">上班／開放預約</option><option value="false">休班／不開放預約</option></select></Field>
    {working&&<TimeRange start={start} end={end} setStart={setStart} setEnd={setEnd} disabled={!canManage||busy}/>}<Field label="備註"><input disabled={!canManage||busy} maxLength={500} value={note} onChange={e=>setNote(e.target.value)} placeholder={working?'例如：連續早班':'例如：排休'}/></Field>
    {error&&<p role="alert" className="alert">{error}</p>}{notice&&<p role="status" className="success">{notice}</p>}{canManage&&<div className="actions"><button className="primary" disabled={busy||!selected.length} onClick={saveDaily}>{busy?'儲存中…':'套用到所選日期'}</button><button disabled={busy||!selected.length} onClick={restore}>恢復每週設定</button></div>}
