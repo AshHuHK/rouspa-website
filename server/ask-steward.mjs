@@ -7,6 +7,10 @@ import { resolveStewardPeriod, PeriodError } from './steward-period.mjs';
 const MAX_BODY = 64 * 1024;
 const ORIGINS = new Set(['https://www.rouspa.tw', 'https://rouspa.tw']);
 const BASE_URL = 'https://api.kimi.com/coding/v1';
+// Keep the production assistant on one reviewed provider profile. In particular,
+// a stale deployment environment variable must not silently roll K2.8 back to K3.
+const MODEL = 'kimi-for-coding'; // Kimi K2.8 Preview on Kimi Code.
+const REASONING_EFFORT = 'high';
 class StewardError extends Error {
  constructor(status, code, message) { super(message); this.status = status; this.code = code; }
 }
@@ -101,8 +105,8 @@ export function createStewardHandler({fetcher=fetch, env=process.env, now=()=>ne
    const snapshot=await gather({session,page:input.page,scope:input.scope,period:input.period,range:input.range,question:input.question,rpc:gateway.rpc,now:now()});
    const beforeProvider=await gateway.rpc('spa_session');
    if (!beforeProvider?.role || fingerprint(beforeProvider)!==fingerprint(session) || !validatePageAccess(beforeProvider,input.page)) throw denied();
-   const model=env.KIMI_MODEL || 'k3';
-   const effort=env.KIMI_REASONING_EFFORT || 'high';
+   const model=MODEL;
+   const effort=REASONING_EFFORT;
    const instant=now();
    const selectedRange=snapshot.resolvedRange || input.range;
    const context={pageLabel:snapshot.pageLabel,scope:input.scope,scopeLabel:input.scope==='page'?'目前頁面':session.role==='owner'?'全店授權業務':'本人與授權營運',periodLabel:input.periodLabel,range:selectedRange,asOf:instant.toISOString(),taipeiTime:instant.toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false}),role:session.role};

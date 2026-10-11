@@ -113,7 +113,7 @@ function AccountSteward({ userKey, page, pageLabel, range, disabled, onAccessDen
  return <aside ref={surface} className="ops-steward" aria-label="問管家 AI 助理" onKeyDown={event => { if (event.key === 'Escape' && open) { event.stopPropagation(); closePanel(true); } }}>
   <button ref={launcher} type="button" className="ops-steward-launcher" disabled={disabled} aria-label={open ? '收合問管家 AI 助理' : '開啟問管家 AI 助理'} aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={() => open ? closePanel() : setOpen(true)}><StewardIcon/><span>問管家</span><small>AI</small></button>
   {open && <section id={panelId} className="ops-steward-panel" role="region" aria-labelledby={headingId}>
-   <header className="ops-steward-heading"><div><span>KIMI · 營運助理</span><h2 id={headingId}>問管家</h2></div><button type="button" className="ops-steward-close" aria-label="關閉問管家" onClick={() => closePanel(true)}>✕</button></header>
+   <header className="ops-steward-heading"><div><span>KIMI · HIGH · 營運助理</span><h2 id={headingId}>問管家</h2></div><button type="button" className="ops-steward-close" aria-label="關閉問管家" onClick={() => closePanel(true)}>✕</button></header>
    <p className="ops-steward-intro" id={helpId}>自動讀取有權限的業務摘要，核對營運狀況。</p>
    <div className="ops-steward-context"><span>依你的權限核對</span><span>唯讀諮詢 · 不會更動資料</span></div>
    <div className="ops-steward-period"><label htmlFor={periodId}>核對期間</label><select id={periodId} value={period} disabled={busy} onChange={event => setPeriod(event.target.value)}>{periods.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select><p>提問中的日期優先，範圍由系統核對。</p></div>

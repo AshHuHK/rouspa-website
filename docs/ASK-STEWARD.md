@@ -6,7 +6,7 @@
 
 Vercel Production Secret `KIMI_API_KEY` 保存已提供的 Kimi Code 訂閱密鑰。密鑰不進入 Vite、公開環境變數、GitHub、手冊或回覆。改環境變數後需要新部署。
 
-預設使用 `https://api.kimi.com/coding/v1`、模型 `k3`、`high` 推理，真實識別 `ROU-SPA-Steward/1.0`。已用訂閱密鑰成功完成實際請求；不以其他工具身份繞過認證。這與 Moonshot 開放平台的地址、密鑰及模型配置不同。若之後要更換服務，僅由維護者在服務端修改 `KIMI_BASE_URL`、`KIMI_MODEL`、`KIMI_REASONING_EFFORT`，不得由瀏覽器傳入。
+使用 `https://api.kimi.com/coding/v1`、模型 ID `kimi-for-coding`（目前對應 Kimi K2.8 Preview）、`high` 思考強度，真實識別 `ROU-SPA-Steward/1.0`。`kimi-for-coding` 是 Kimi Code 的滾動模型 ID；供應商日後原位升級時須重新核對版本。已用訂閱密鑰成功完成實際請求並確認回傳推理內容；不以其他工具身份繞過認證。這與 Moonshot 開放平台的地址、密鑰及模型配置不同。模型與思考檔位鎖定在服務端發佈設定，舊的 `KIMI_MODEL`／`KIMI_REASONING_EFFORT` 環境值不會使正式站退回舊模型；瀏覽器也不能傳入或改寫模型。更換模型須修改服務端設定、測試並重新部署。
 
 ## 資料與權限
 
@@ -40,9 +40,15 @@ Vercel Production Secret `KIMI_API_KEY` 保存已提供的 Kimi Code 訂閱密�
 - 店主12個模組、員工4個模組與匿名拒絕全部核對；錯誤來源形狀不再被當成零筆。
 - `npm run build` 正常；本機字型補齊「問管家」新文案。
 - 桌面1440、手機320／390及橫屏740×360驗證按鈕與頁面不溢出；送出、取消、鍵盤、401／403清除及帳號切換通過。
-- 真實 Kimi Code `k3/high` 使用完整手冊及匿名測試摘要返回200；正式配額表與接口存在，匿名無執行權。
+- 真實 Kimi Code 模型曾以當時的 `k3/high` 使用完整手冊及匿名測試摘要返回200；正式配額表與接口存在，匿名無執行權。現行模型設定見上方「服務端設定」。
 - 同次修復「調庫存」RPC名稱與「批次隱藏」動作接線。
 - 正式後台已用有效店主帳號取得 Kimi 回答及手冊／營運來源；待辦類別數改由伺服器直接提供，只計有實際事項的類別，回答格式使用純文字。
+
+## Kimi K2.8 切換驗證（2026-10-11）
+
+- Kimi Code 模型清單確認 `kimi-for-coding` 可用；官方對應版本為 Kimi K2.8 Preview。
+- 使用 `kimi-for-coding` 與 `reasoning_effort=high` 完成真實服務端請求，HTTP 200，回答與推理欄位均非空。
+- 前端不接收或提交模型、思考強度及密鑰；模型與思考檔位由服務端發佈設定固定，舊環境值不能覆蓋。
 
 ## 自動跨模組分析驗證（2026-10-08）
 
