@@ -1,5 +1,5 @@
 {
-  "reviewed_at": "2026-10-11T01:09:20.184Z",
+  "reviewed_at": "2026-10-11T20:17:53.452Z",
   "manual_sha256": "bb2e5223af16a84bf0d196054ad7216da45b36f7e02088d5b6279bf15fd11aca",
   "sources": {
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
@@ -9,7 +9,7 @@
     "server/steward-context.mjs": "312500eb48c507c9329826ec50818a615316343c82a7423973f9b58360df30b7",
     "server/steward-period.mjs": "77f60bd099b89aa335101c3b27bca392d1a3502067919dfffa64ae7966dd2f87",
     "src/Admin.jsx": "ea0ee0fd58f61929448632e4c36744dc31765412f6cce089ec4665a47a8330e6",
-    "src/App.jsx": "b67e8d6852e03e994dbee932e897d054d945175eaff79dbe4a058120e50c30a6",
+    "src/App.jsx": "a2d3a18bb8ad33c812132ab7328240fbf108e8ea86bc73c0cd9c866d993c6c46",
     "src/AskSteward.jsx": "20fac738a757a6595e019d2bb7b0906abf9ec92e5d07fbff9a2f4873c79d8169",
     "src/Attendance.jsx": "8d868dcc806ce01a7d72b74b598f74e31fc42c6466b66f8758d4023abf7ce775",
     "src/BookingLookup.jsx": "65be6b5a7006bf77e81e3b84cc2a90267524ee9edb947e4b2cfa0649a49f9884",
@@ -46,7 +46,7 @@
     "src/lib/product-media.js": "e316844ba281f85b6a04f1e1271277be7e2c0f4b6898f0abfba3d2cc7d21d279",
     "src/lib/public-booking-presentation.js": "c87b141812bc85e20c91b7db3cf287ea90661190cc18be13c3ac6f89986ee684",
     "src/lib/public-config.js": "fc7998d680656d6aa366d55790ff1349aec4094a3a62d6f874984bf7cf232b12",
-    "src/lib/public-copy.js": "cd3193aaa724590d47465c943f38511f3c6d141b48cec525e75dab036bfd9ec0",
+    "src/lib/public-copy.js": "6d0ba448b68bf06ce024ab05f3c241584b5b61670ffd90b6dc43a06af9870faf",
     "src/lib/public-data.js": "372213c6ff80c8c75b9da7518a3fd819a38678b76db57a238e8cc7c0bee6ca0a",
     "src/lib/public-rpc.js": "a02ab5879253c4b128363a7f28ac35718397ef3438a85d5c44f1a7dc2e7ba182",
     "src/lib/rebooking.js": "dec9db36126aaa32b348f38ceec3e54e8501542a7c33fc52d71a75fc9481b6b1",

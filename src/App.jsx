@@ -19,7 +19,7 @@ const i18n = {
     brand: "柔療髮浴",
     brandEn: "ROU SPA",
     brandSub: "東方頭療・經絡舒緩",
-    announcement: { opening: "門店將於12月份試營運", thanks: "敬請期待，感謝關注" },
+    announcement: { opening: "門店將於12月份試營運，", thanks: "敬請期待，感謝關注。" },
     nav: { home: "首頁", services: "服務項目", booking: "立即預約", lookup: "查詢預約", shop: "特色產品", contact: "聯繫我們" },
     hero: {
       title: "以柔養生",

@@ -3,7 +3,7 @@ export const STORE = {
   ADDRESS_ZH: '嘉義市西區蘭井街421號',
   ADDRESS_EN: 'No. 421, Lanjing St., West Dist., Chiayi City',
   PHONE: '0978-918-737',
-  EMAIL: 'rosa12345@gmail.com',
+  EMAIL: 'rosa1232425@gmail.com',
   LINE_URL: 'https://line.me/R/ti/p/@258llual',
   LINE_ID: '@258llual',
   WECHAT_ID: '',

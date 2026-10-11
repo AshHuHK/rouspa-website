@@ -68,10 +68,10 @@
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 4px 16px;
+  gap: 4px 0;
   margin: 0;
-  font: 600 17px/1.8 var(--public-font);
-  letter-spacing: 1px;
+  font: 650 20px/1.7 var(--public-font);
+  letter-spacing: 1.2px;
 }
 .public-opening-banner p span { max-width: 100%; text-wrap: balance; }
 
@@ -93,8 +93,8 @@
   .public-nav .mobile-nav .public-language-switch { grid-column: 1 / -1; justify-self: center; min-width: 100px; border-color: #876b4f; }
 }
 @media(max-width:640px) {
-  .public-opening-banner { padding: 13px 16px; }
-  .public-opening-banner p { flex-direction: column; gap: 2px; font-size: 15px; letter-spacing: .5px; }
+  .public-opening-banner { padding: 15px 16px; }
+  .public-opening-banner p { flex-direction: column; gap: 2px; font-size: 18px; line-height: 1.65; letter-spacing: .7px; }
 }
 @media(max-width:360px) {
   .public-nav-inner { padding: 8px 16px; }
