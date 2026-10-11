@@ -5,10 +5,10 @@ import { PRODUCT_PHOTO_ACCEPT, productMediaError, uploadProductPhoto, validatePr
 import './product-editor.css';
 
 function initialProduct(row, categories) {
-  return row ? { ...row, price: Number(row.price_cents) / 100, cost: row.cost_cents == null ? '' : Number(row.cost_cents) / 100 } : {
+  return row ? { ...row, public_visible: Boolean(row.website_visible && row.store_visible), price: Number(row.price_cents) / 100, cost: row.cost_cents == null ? '' : Number(row.cost_cents) / 100 } : {
     sku: '', name: '', name_en: '', category_id: categories.find(category => category.code === 'uncategorized' && category.active && !category.archived_at)?.id || '',
     description: '', description_en: '', image_url: '', price: 0, cost: '', barcode: '', unit_label: '件', unit_label_en: '',
-    low_stock_threshold: 2, status: 'draft', website_visible: false, store_visible: false, display_order: 0,
+    low_stock_threshold: 2, status: 'draft', public_visible: false, website_visible: false, store_visible: false, display_order: 0,
   };
 }
 
@@ -64,7 +64,8 @@ export default function ProductEditor({ row, categories, saved }) {
     try {
       // Capture and validate the form before uploading. Inputs remain disabled
       // through both steps, keeping the final image and product draft together.
-      const payload = { ...fields, id: row?.id || '', price_cents: cents(fields.price), cost_cents: fields.cost === '' ? '' : cents(fields.cost), low_stock_threshold: Number(fields.low_stock_threshold), display_order: Number(fields.display_order) };
+      const published = fields.status === 'active' && Boolean(fields.public_visible);
+      const payload = { ...fields, id: row?.id || '', public_visible: published, website_visible: published, store_visible: published, price_cents: cents(fields.price), cost_cents: fields.cost === '' ? '' : cents(fields.cost), low_stock_threshold: Number(fields.low_stock_threshold), display_order: Number(fields.display_order) };
       let photoUrl = file ? '' : validateProductPhotoUrl(fields.image_url);
       if (file) {
         setStage('正在上傳照片…');
@@ -114,7 +115,7 @@ export default function ProductEditor({ row, categories, saved }) {
           <Field label="SKU"><input required maxLength={80} value={fields.sku || ''} onChange={event => set('sku', event.target.value)} /></Field>
           <Field label="條碼"><input value={fields.barcode || ''} onChange={event => set('barcode', event.target.value)} /></Field>
           <Field label="商品分類"><select required value={fields.category_id || ''} onChange={event => set('category_id', event.target.value)}><option value="" disabled>請選分類</option>{categories.filter(category => category.active && !category.archived_at || category.id === row?.category_id).map(category => <option key={category.id} value={category.id}>{category.name}{!category.active || category.archived_at ? '（停用）' : ''}</option>)}</select></Field>
-          <Field label="狀態"><select value={fields.status} onChange={event => set('status', event.target.value)}><option value="draft">草稿</option><option value="active">上架</option><option value="archived">封存</option></select></Field>
+          <Field label="商品狀態"><select value={fields.status} onChange={event => { const status = event.target.value; setFields(current => ({ ...current, status, public_visible: status === 'active' })); }}><option value="draft">草稿（不可銷售）</option><option value="active">銷售中</option><option value="archived">封存</option></select></Field>
           <Field wide label="中文產品資訊"><textarea value={fields.description || ''} onChange={event => set('description', event.target.value)} placeholder="產品特色、容量／規格、成分、使用方式與注意事項" /></Field>
           <Field wide label="英文產品資訊"><textarea value={fields.description_en || ''} onChange={event => set('description_en', event.target.value)} placeholder="Product features, size, ingredients and usage" /></Field>
         </div>
@@ -128,9 +129,9 @@ export default function ProductEditor({ row, categories, saved }) {
           <Field label="英文規格／庫存單位"><input value={fields.unit_label_en || ''} onChange={event => set('unit_label_en', event.target.value)} placeholder="例：250 ml / bottle" /></Field>
           <Field label={`低庫存提醒（${fields.unit_label || '庫存單位'}）`}><input type="number" min="0" step="1" value={fields.low_stock_threshold} onChange={event => set('low_stock_threshold', event.target.value)} /></Field>
           <Field label="排序"><input type="number" step="1" value={fields.display_order} onChange={event => set('display_order', event.target.value)} /></Field>
-          <div className="wide product-display-options"><label><input type="checkbox" checked={!!fields.website_visible} onChange={event => set('website_visible', event.target.checked)} />官網顯示</label><label><input type="checkbox" checked={!!fields.store_visible} onChange={event => set('store_visible', event.target.checked)} />商店顯示</label></div>
+          <div className="wide product-display-options"><label><input type="checkbox" disabled={fields.status !== 'active'} checked={!!fields.public_visible} onChange={event => set('public_visible', event.target.checked)} />發布到官網商品頁</label></div>
         </div>
-        <p className="muted">售價與成本輸入新台幣元；庫存數量依規格／單位計數。新增商品後可用「調庫存」入庫。</p>
+        <p className="muted">選擇「銷售中」會預設同步發布官網；若關閉官網發布，商品仍可在門店 POS 銷售。POS 另要求分類有效且庫存大於 0。售價與成本輸入新台幣元；新增商品後可用「調庫存」入庫。</p>
       </section>
     </fieldset>
     {error && <p className="alert" role="alert">{error}</p>}

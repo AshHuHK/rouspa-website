@@ -44,14 +44,15 @@ await reject(()=>as(employee,'select spa_private.payroll_preview($1,$2,null)',ra
 
 const customer=await admin('spa_customer_save',[null,'薪資連動測試','0988111222','','一般會員','',null]);
 await db.query('update spa_customers set preferred_staff_id=$2 where id=$1',[customer,staff[0].id]);
-const request=randomUUID(),sale=await admin('spa_pos_checkout',[request,customer,[{item_type:'service',item_id:service.id,quantity:1,staff_id:staff[0].id},{item_type:'product',item_id:product.id,quantity:2,staff_id:staff[0].id}],12345,'cash','折扣分配測試']);
+const request=randomUUID(),saleItems=[{item_type:'service',item_id:service.id,quantity:1,staff_id:staff[0].id},{item_type:'product',item_id:product.id,quantity:2,staff_id:staff[0].id}],sale=await admin('spa_pos_checkout_with_coupon',[request,customer,saleItems,12345,'cash','折扣分配測試']);
 let lines=(await db.query('select * from spa_order_items where order_id=$1',[sale.id])).rows;
 const serviceLine=lines.find(line=>line.item_type==='service'),productLine=lines.find(line=>line.item_type==='product');
 check(lines.reduce((sum,line)=>sum+Number(line.net_total_cents),0)===Number(sale.total_cents),'net POS lines reconcile exactly to actual discounted cash total');
 check(serviceLine.net_total_cents<serviceLine.line_total_cents&&productLine.net_total_cents<productLine.line_total_cents,'mixed order discounts apply to both service and product revenue');
 check(serviceLine.duration_minutes_snapshot===45&&serviceLine.designated_client_snapshot===true,'POS captures service duration and designated-client facts at sale');
 check(Number(productLine.commission_cents)===Math.round(Number(productLine.net_total_cents)*0.2),'product commission is based on net amount after discount');
-check((await admin('spa_pos_checkout',[request,customer,[{item_type:'product',item_id:product.id,quantity:1,staff_id:null}],0,'cash','retry'])).id===sale.id,'POS request retries do not create duplicate wages or inventory movements');
+check((await admin('spa_pos_checkout_with_coupon',[request,customer,saleItems,12345,'cash','折扣分配測試'])).id===sale.id,'same-payload POS retries do not create duplicate wages or inventory movements');
+await reject(()=>admin('spa_pos_checkout_with_coupon',[request,customer,[{item_type:'product',item_id:product.id,quantity:1,staff_id:null}],0,'cash','retry']),/REQUEST_CONFLICT/);
 let wage=await rowFor();
 check(Number(wage.service_sales_cents)===Number(serviceLine.net_total_cents)&&Number(wage.product_sales_cents)===Number(productLine.net_total_cents),'salary reads the same discounted line amounts as POS');
 check(Number(wage.service_commission_cents)===Math.round(Number(serviceLine.net_total_cents)*0.1)&&Number(wage.product_commission_cents)===Number(productLine.commission_cents),'salary service/product percentage units reconcile with net line amounts');
@@ -67,10 +68,10 @@ const report=await admin('spa_report',range);
 check(Number(report.staff.find(s=>s.id===staff[0].id).revenue_cents)===Number(sale.total_cents),'staff operating report uses net line revenue consistent with store total');
 check(Number(report.staff.find(s=>s.id===staff[0].id).minutes)===45,'staff operating report uses frozen POS duration');
 await db.query('update spa_services set duration_minutes=45 where id=$1',[service.id]);
-const zeroRequest=randomUUID(),zeroSale=await admin('spa_pos_checkout',[zeroRequest,null,[{item_type:'product',item_id:product.id,quantity:1,staff_id:staff[0].id}],Number(product.price_cents),'cash','全額折扣']);
+const zeroRequest=randomUUID(),zeroSale=await admin('spa_pos_checkout_with_coupon',[zeroRequest,null,[{item_type:'product',item_id:product.id,quantity:1,staff_id:staff[0].id}],Number(product.price_cents),'cash','全額折扣']);
 check(Number(zeroSale.total_cents)===0&&zeroSale.status==='paid','fully discounted POS orders complete with a valid zero total');
 check((await db.query('select count(*)::int n from spa_cash_entries where request_id=$1',[zeroRequest])).rows[0].n===0,'zero-total order creates no fake zero-dollar cash movement');
-await reject(()=>admin('spa_pos_checkout',[randomUUID(),null,null,0,'cash','invalid']),/INVALID_INPUT/);
+await reject(()=>admin('spa_pos_checkout_with_coupon',[randomUUID(),null,null,0,'cash','invalid']),/INVALID_INPUT/);
 
 // Approved attendance is the wage source; roster hours alone never manufacture
 // payable attendance. Seconds round down, matching attendance review/export.
@@ -141,7 +142,7 @@ const appointment=(await db.query('select id from spa_appointments where manage_
 await admin('spa_appointment_reassign',[appointment,staff[1].id,'現場改派']);
 await db.query("update spa_appointments set status='completed' where id=$1",[appointment]);
 await reject(()=>admin('spa_payroll_run_save',[...range,null,true]),/PAYROLL_UNSETTLED_SERVICES/);
-const checkout=await admin('spa_checkout',[randomUUID(),appointment,0,0,null,0,'cash']);
+const checkout=await admin('spa_checkout_with_coupon',[randomUUID(),appointment,0,0,null,0,'cash']);
 const actual=await rowFor(staff[1].id);
 check(Number(actual.designated_clients)===1&&Number(actual.designated_bonus_cents)===Math.round(Number(checkout.revenue_cents)*0.05),'requested designation maps its bonus to actual reassigned therapist even without current member preference');
 await db.query('update spa_customers set preferred_staff_id=null where id=(select customer_id from spa_appointments where id=$1)',[appointment]);
@@ -155,7 +156,7 @@ await reject(()=>admin('spa_payroll_adjustment_save',[staff[0].id,'2026-10-14','
 await reject(()=>admin('spa_overtime_save',[staff[0].id,'2026-10-14','weekday',1,'locked']),/PAYROLL_LOCKED/);
 await reject(()=>admin('spa_refund',[randomUUID(),appointment,'locked']),/PAYROLL_LOCKED/);
 await reject(()=>admin('spa_appointment_reassign',[appointment,staff[0].id,'locked']),/PAYROLL_LOCKED/);
-await reject(()=>admin('spa_pos_checkout',[randomUUID(),null,[{item_type:'product',item_id:product.id,quantity:1,staff_id:staff[0].id}],0,'cash','locked']),/PAYROLL_LOCKED/);
+await reject(()=>admin('spa_pos_checkout_with_coupon',[randomUUID(),null,[{item_type:'product',item_id:product.id,quantity:1,staff_id:staff[0].id}],0,'cash','locked']),/PAYROLL_LOCKED/);
 await reject(()=>admin('spa_payroll_run_save',['2026-10-15','2026-11-14',null,false]),/PAYROLL_OVERLAP/);
 await db.query('update spa_appointments set note=$2 where id=$1',[appointment,'不影響薪資的備註']);
 await db.query('update spa_orders set note=$2 where id=$1',[sale.id,'不影響薪資的備註']);

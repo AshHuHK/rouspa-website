@@ -78,12 +78,12 @@ try {
  async function addStaff(code,name, employment=title(code).allowed_employment_types[0]) {
   return (await db.query("insert into spa_staff(name,title,job_title_id,employment_type_code,hire_date,contract_started_on,active,employment_status,is_bookable)values($1,$2,$3,$4,'2026-01-01',$5,true,'active',true)returning id",[name,title(code).name,title(code).id,employment,employment==='contractor'?'2026-01-01':null])).rows[0].id;
  }
- const junior=await addStaff('ft_junior','測試初級'),trial=await addStaff('ft_probation','測試試用'),part=await addStaff('pt_technician','測試兼職'),futurePart=await addStaff('pt_technician','測試未達出勤'),contractor=await addStaff('contract_technician','測試承攬'),counter=await addStaff('reception','測試櫃台'),ownerStaff=await addStaff('owner','測試店主');
+ const junior=await addStaff('ft_junior','測試初級'),ordering=await addStaff('ft_junior','測試同單排序'),trial=await addStaff('ft_probation','測試試用'),part=await addStaff('pt_technician','測試兼職'),futurePart=await addStaff('pt_technician','測試未達出勤'),contractor=await addStaff('contract_technician','測試承攬'),counter=await addStaff('reception','測試櫃台'),ownerStaff=await addStaff('owner','測試店主');
  await db.query("insert into spa_roles(user_id,role,staff_id,active,login_name)values($1,'therapist',$2,true,'redesign_tech'),($3,'therapist',$4,true,'redesign_counter')",[employee,junior,counterUser,counter]);
  await admin('spa_compensation_profile_save_v3',[rule,{...await profile('reception','full_time'),base_pay_cents:3200000,active:true}]);
  async function service(minutes,price) {
   const id=(await db.query("insert into spa_services(code,name,duration_minutes,buffer_minutes,price_cents,category_id,active,status,online_booking_enabled)values($1,$2,$3,0,$4,(select id from spa_service_categories where code='addons'),true,'active',false)returning id",['t_'+randomUUID().replaceAll('-','').slice(0,12),'測試服務',minutes,price])).rows[0].id;
-  for(const staff of [junior,trial,part,futurePart,contractor,counter,ownerStaff])await db.query('insert into spa_staff_services(staff_id,service_id,enabled)values($1,$2,true)',[staff,id]);
+  for(const staff of [junior,ordering,trial,part,futurePart,contractor,counter,ownerStaff])await db.query('insert into spa_staff_services(staff_id,service_id,enabled)values($1,$2,true)',[staff,id]);
   return id;
  }
  const inexpensive=await service(60,10000),crossing=await service(120,1000000),normal=await service(60,100000);
@@ -96,7 +96,7 @@ try {
   return result;
  }
  const wage=async(staff,period=range,id=rule)=>(await admin('spa_payroll_preview',[...period,id])).find(row=>row.staff_id===staff);
- await reject(()=>admin('spa_pos_checkout',[randomUUID(),null,[{item_type:'product',item_id:product.id,quantity:1,staff_id:null}],0,'cash','']),/SALE_STAFF_REQUIRED/);
+ await reject(()=>admin('spa_pos_checkout_with_coupon',[randomUUID(),null,[{item_type:'product',item_id:product.id,quantity:1,staff_id:null}],0,'cash','',null,null]),/SALE_STAFF_REQUIRED/);
  await reject(()=>sell(counter,normal,1,'2026-10-15'),/SERVICE_COMMISSION_TECHNICIAN_ONLY/);
  await reject(()=>sell(ownerStaff,normal,1,'2026-10-15'),/SERVICE_COMMISSION_TECHNICIAN_ONLY/);
  await reject(()=>sell(junior,normal,100,'2026-10-15'),/INVALID_ITEM/);
@@ -130,6 +130,22 @@ try {
  equal(Number((await wage(trial)).service_commission_cents),0,'probation does not accidentally gain later ordinary percentages');
  await db.query('update spa_services set duration_minutes=60,price_cents=123 where id=$1',[crossing]);
  equal(Number((await wage(junior)).service_commission_cents),25000,'catalogue changes do not rewrite sold duration or paid net revenue');
+
+ // Two service lines in one POS order share paid_at. Their cart positions, not
+ // random item UUIDs, decide which service crosses the 65-hour tier boundary.
+ await sell(ordering,inexpensive,64,'2026-10-01');
+ const orderedSale=randomUUID(),firstLine='ffffffff-ffff-4fff-8fff-fffffffffff1',secondLine='00000000-0000-4000-8000-000000000001';
+ await db.query("insert into spa_orders(id,request_id,created_by,note)values($1,$2,$3,'同單排序測試')",[orderedSale,randomUUID(),owner]);
+ await db.query(`insert into spa_order_items(id,order_id,service_id,item_type,name_snapshot,unit_price_cents,quantity,line_total_cents,staff_id,commission_cents,designation_explicit,designated_client_snapshot,self_sourced_client_snapshot)
+  values($1,$2,$3,'service','先加入低價服務',10000,1,10000,$4,0,true,false,false)`,[firstLine,orderedSale,inexpensive,ordering]);
+ await db.query(`insert into spa_order_items(id,order_id,service_id,item_type,name_snapshot,unit_price_cents,quantity,line_total_cents,staff_id,commission_cents,designation_explicit,designated_client_snapshot,self_sourced_client_snapshot)
+  values($1,$2,$3,'service','後加入高價服務',100000,1,100000,$4,0,true,false,false)`,[secondLine,orderedSale,normal,ordering]);
+ await db.query("update spa_orders set subtotal_cents=110000,total_cents=110000,status='paid',method='cash',paid_at='2026-10-16T10:00:00+08:00' where id=$1",[orderedSale]);
+ equal((await db.query('select line_position from spa_order_items where order_id=$1 order by line_position',[orderedSale])).rows.map(item=>Number(item.line_position)).join(','),'1,2','same-order service lines retain JSON/insertion order');
+ equal(Number((await wage(ordering)).service_commission_cents),5000,'the high-value second cart line, not the lower UUID, receives the post-threshold rate');
+ const orderedDetails=(await admin('spa_payroll_sources',[ordering,...range,rule])).sources.commission_details.filter(item=>item.source_id===firstLine||item.source_id===secondLine);
+ equal(orderedDetails.map(item=>item.source_id).join(','),`${firstLine},${secondLine}`,'formal ordered payroll follows order id then persisted line position');
+ check(orderedDetails.every(item=>!('source_order_id' in item)&&!('line_position' in item)),'internal ordering keys do not change the saved source-detail contract');
 
  async function attendance(staff,firstDay) {
   for(let offset=0;offset<5;offset++) {
@@ -188,7 +204,7 @@ try {
  await reject(()=>call(employee,'spa_appointment_commission_flags',[appointment,true,'非店主不能認定']),/FORBIDDEN/);
  await admin('spa_appointment_commission_flags',[appointment,true,'確認此堂由原承攬者自帶']);
  check((await admin('spa_admin_bookings',range)).find(row=>row.id===appointment).self_sourced_client,'owner appointment list exposes the confirmed self-sourced flag');
- await admin('spa_checkout',[randomUUID(),appointment,0,0,null,0,'cash']);
+ await admin('spa_checkout_with_coupon',[randomUUID(),appointment,0,0,null,0,'cash',null]);
  check((await admin('spa_payroll_sources',[contractor,...range,rule])).sources.services.find(row=>row.id===appointment).self_sourced_client,'appointment source uses retained self-sourced settlement snapshot');
  await reject(()=>admin('spa_appointment_reassign',[appointment,counter,'錯誤指定櫃台']),/SERVICE_COMMISSION_TECHNICIAN_ONLY/);
  const reassigned=await admin('spa_appointment_reassign',[appointment,secondContractor,'改由另一位實際服務']);

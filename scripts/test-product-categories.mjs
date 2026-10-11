@@ -75,7 +75,7 @@ check(catalog.product_categories.find(row => row.id === category)?.code === 'bod
 publicData = await storefront();
 check(publicData.categories[0].name === '日常潤養' && publicData.categories[0].name_en === 'Daily care', 'public category labels change together with admin labels');
 
-const sale = await admin('spa_pos_checkout', [randomUUID(), null, [{ item_type: 'product', item_id: legacyProduct, quantity: 1, staff_id: staff }], 0, 'cash', '分類成交快照測試']);
+const sale = await admin('spa_pos_checkout_with_coupon', [randomUUID(), null, [{ item_type: 'product', item_id: legacyProduct, quantity: 1, staff_id: staff }], 0, 'cash', '分類成交快照測試']);
 const snapshot = (await db.query('select name_snapshot,unit_price_cents,staff_id,quantity,net_total_cents from spa_order_items where order_id=$1', [sale.id])).rows;
 const inventoryBefore = Number((await db.query('select sum(delta) quantity from spa_inventory_entries where product_id=$1', [legacyProduct])).rows[0].quantity);
 const archived = await admin('spa_product_save', [{ sku: 'ARCHIVED-CATEGORY-TEST', name: '封存保養品', category_id: category, price_cents: 9999, status: 'archived', website_visible: false, store_visible: false }]);

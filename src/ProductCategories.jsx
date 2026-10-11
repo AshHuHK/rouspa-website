@@ -16,12 +16,13 @@ function message(error) {
 export default function ProductCategories({ categories = [], products = [], canManage = false, onReload }) {
   const [modal, setModal] = useState(null);
   const count = id => products.filter(product => product.category_id === id).length;
+  const currentCount = id => products.filter(product => product.category_id === id && product.status !== 'archived').length;
   const saved = async () => { setModal(null); await onReload(); };
   const sorted = [...categories].sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0) || a.name.localeCompare(b.name, 'zh-Hant'));
   return <section className="card">
-    <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}><div><h3>商品分類</h3><p className="muted">分類名稱、章字與排序共用於官網及 POS。停用分類會停止新展示及銷售；既有庫存和訂單保留。</p></div>{canManage && <button type="button" onClick={() => setModal({ kind: 'edit', row: null })}>新增分類</button>}</div>
-    {!sorted.length ? <Empty>尚無商品分類，請先新增。</Empty> : <div className="table-wrap"><table><thead><tr><th>分類</th><th>排序</th><th>商品數</th><th>狀態</th>{canManage && <th>操作</th>}</tr></thead><tbody>{sorted.map(category => <tr key={category.id}>
-      <td><strong>{category.display_mark ? `${category.display_mark} · ` : ''}{category.name}</strong><small className="table-sub">{category.name_en || category.code}</small></td><td>{category.display_order}</td><td>{count(category.id)}</td><td><span className="badge">{category.active && !category.archived_at ? '啟用' : '停用'}</span></td>
+    <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}><div><h3>商品分類</h3><p className="muted">分類名稱、章字與排序共用於官網及 POS。商品數顯示「未封存／全部」；停用分類會停止新展示及銷售，既有庫存和訂單保留。</p></div>{canManage && <button type="button" onClick={() => setModal({ kind: 'edit', row: null })}>新增分類</button>}</div>
+    {!sorted.length ? <Empty>尚無商品分類，請先新增。</Empty> : <div className="table-wrap"><table><thead><tr><th>分類</th><th>排序</th><th>商品數（未封存／全部）</th><th>狀態</th>{canManage && <th>操作</th>}</tr></thead><tbody>{sorted.map(category => <tr key={category.id}>
+      <td><strong>{category.display_mark ? `${category.display_mark} · ` : ''}{category.name}</strong><small className="table-sub">{category.name_en || category.code}</small></td><td>{category.display_order}</td><td>{currentCount(category.id)}／{count(category.id)}</td><td><span className="badge">{category.active && !category.archived_at ? '啟用' : '停用'}</span></td>
       {canManage && <td><div className="actions"><button type="button" onClick={() => setModal({ kind: 'edit', row: category })}>編輯</button><button type="button" className="danger" onClick={() => setModal({ kind: 'delete', row: category })}>刪除</button></div></td>}
     </tr>)}</tbody></table></div>}
     {modal && <Modal title={modal.kind === 'delete' ? '刪除商品分類' : `${modal.row ? '編輯' : '新增'}商品分類`} onClose={() => setModal(null)}>

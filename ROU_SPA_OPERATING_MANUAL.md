@@ -101,7 +101,9 @@
 
 店主先看「營運首頁」的營運待辦及時段接客容量，核對當天營業、班表／休假、超出建議容量待聯絡、一般待確認預約、即將到店／逾時未到、療程結束待確認。員工先完成當次定位上班打卡，看自己的服務排程及門店月表。到店、完成與未到等狀態由有權限人員核對實際情況後更新，不因排定時間自動完成。
 
-服務後確認實際技師，再標記完成及使用該筆預約結帳；未結帳不先計薪資提成。商品或不需預約排程的當次服務由店主 POS 記錄，避免把同一筆現實服務在預約結帳及 POS 各登一次。付款方式只是記錄已收款／已核對入帳，不會替門店執行刷卡或銀行付款。
+店主首頁的「今日營業收入」與經營報表採同一交易日口徑：今日建立的預約結帳減今日退款，再加今日已付款 POS；它不是含儲值／套票預收與小費的「實收款」。另顯示今日已完成但尚無結帳紀錄的筆數，避免完成數和應收工作混在一起。
+
+服務後確認實際技師，再標記完成及使用該筆預約結帳；未結帳不先計薪資提成。預約列表的「已結帳／已退款」狀態由伺服器獨立回傳，不以目前帳號能否查看金額判斷，因此沒有財務明細權限的排程角色也不會把已收款項目誤認為待結帳。商品或不需預約排程的當次服務由店主 POS 記錄，避免把同一筆現實服務在預約結帳及 POS 各登一次。付款方式只是記錄已收款／已核對入帳，不會替門店執行刷卡或銀行付款。
 
 ### 收班與例行核對
 
@@ -266,7 +268,7 @@
 
 門店可審核評價為待審核、已公開或未公開並填店家回覆。只有「已公開」評價進官網，公開回傳評分、文字、回覆、時間及實際技師，不包含顧客姓名／手機；顧客自填在評價內的個資仍屬原文字。官網目前最多取最新 20 則。員工個人頁可看自己的評價及公開狀態，列表最多最近 100 則，總評價數是所選期間的完整數量。
 
-核銷在門店收款／POS 選該會員有效券，一次交易最多選一券；券額加在折扣中，只能用未過期且未使用的自己的券。療程套票扣次與券不能同時使用；不是所有支付方式都禁止券，錢包／其他折扣是否可用依結帳驗證。已核銷交易全額退款、作廢或刪除時，券回到 active，但原到期時間不展延，若已到期仍不可再用。
+核銷在門店收款／POS 選該會員有效券，一次交易最多選一券；券額加在折扣中，只能用未過期且未使用的自己的券。評價券用於**以後**的療程或 POS，不能折抵發出該券的來源預約；即使顧客在來源療程完成、尚未結帳時先評價領券，來源療程結帳也會拒絕核銷，且券、錢包、現金及結帳資料都不會部分變更。療程套票扣次與券不能同時使用；不是所有支付方式都禁止券，錢包／其他折扣是否可用依結帳驗證。已核銷交易全額退款、作廢或刪除時，券回到 active，但原到期時間不展延，若已到期仍不可再用。
 
 來源：[顧客查詢與存取範圍](supabase/migrations/202610010003_customer_booking.sql)、[最新存取及核銷](supabase/migrations/202610080004_role_consistency.sql)、[會員登入與評價券](supabase/migrations/202610050001_member_rewards_smart_roster.sql)、[顧客可用時段基礎](supabase/migrations/202610070001_staff_schedule_booking_flow.sql) `spa_customer_availability`、[最新顧客／後台改期及容量判斷](supabase/migrations/202610110001_soft_capacity_and_title_retirement.sql) `spa_customer_reschedule`／`spa_admin_reschedule`、[分組規則](src/lib/booking-state.js)、[再次預約](src/lib/rebooking.js)、[查詢畫面](src/BookingLookup.jsx)、[會員畫面](src/Member.jsx)、[私人評價畫面](src/BookingPortal.jsx)。
 
@@ -445,19 +447,19 @@
 
 服務只有上架＋有效＋開放線上預約才進預約菜單；官網展示另外受官網顯示控制，因此「官網隱藏」與「停止預約」是不同開關。歷史預約既定價格及時長不因後來修改服務而變。
 
-商品新增／編輯分成「產品照片」「產品資訊」「價格、庫存與展示」。可填 SKU（保存大寫）、條碼、中英文名、產品資訊（特色、容量／規格、成分、使用方式與注意事項）、分類、單價、選填成本、中英文規格／庫存單位（件／瓶／盒等）、低庫存門檻、排序、狀態、官網顯示與商店顯示。官網商品卡片保留產品資訊的換行，照片無法載入時回退分類章字，不出現破圖。新商品預設草稿、零售價格 0、低庫存門檻 2、單位「件」、兩種展示關閉；新增商品不自動產生庫存。成本目前用於保存商品資料／成交成本快照，經營報表沒有自動毛利或進銷存成本分析。
+商品新增／編輯分成「產品照片」「產品資訊」「價格、庫存與展示」。可填 SKU（保存大寫）、條碼、中英文名、產品資訊（特色、容量／規格、成分、使用方式與注意事項）、分類、單價、選填成本、中英文規格／庫存單位（件／瓶／盒等）、低庫存門檻、排序、商品狀態及一個「發布到官網商品頁」開關。狀態分草稿、銷售中、封存；改選「銷售中」時預設打開官網發布，仍可手動關閉成為僅門店 POS 銷售。公開開關會同步舊的官網／商店兩欄，避免畫面一邊顯示上架、公開 API 卻因另一欄關閉而消失；舊資料兩欄不一致時保守視為未公開，不會在升級時意外曝光。官網商品卡片保留產品資訊的換行，照片無法載入時回退分類章字，不出現破圖。新商品預設草稿、零售價格 0、低庫存門檻 2、單位「件」、官網發布關閉；新增商品不自動產生庫存。成本目前用於保存商品資料／成交成本快照，經營報表沒有自動毛利或進銷存成本分析。
 
 照片可直接選檔、本地預覽，或改用完整 HTTP(S) 圖片網址。選檔僅接受 JPG、PNG、WebP，非空且最多 5 MiB（5,242,880 bytes）；檔頭須與格式相符。選擇照片或移除照片時尚未改動正式商品，按「儲存商品」才先上傳、再保存商品資料。僅已登入且有 `catalog.manage` 的有效帳號可上傳，沿用目錄權限；專用公開 `product-media` 儲存區只存公開產品照片，不存顧客、薪資或人事附件。每次照片用獨立 UUID 路徑，不覆寫舊圖。
 
 照片檢查或保存期間會停用表單避免重複提交。上傳失敗不保存商品，錯誤與表單保留；上傳等待超過 45 秒可再按儲存，沿用同一次尚未完成的上傳。已成功上傳但商品保存失敗時，重試沿用照片網址，不再上傳同一張。移除照片只清除商品的圖片關聯，沒有刪雲端舊照片的按鈕，避免影響共用圖片；關閉未保存表單不改商品，已成功上傳的照片則可能留在儲存區。新增商品不因選照片自動上架，原有草稿／展示／庫存規則照常。
 
-庫存 = 全部庫存流水 `delta` 加總；調庫存填整數正增／負減及理由，不能減到負庫存；POS 出售扣數量。低庫存判斷為當前庫存 ≤ 門檻。公開商店只載入上架＋官網顯示＋商店顯示的商品，零庫存在系統設定可選顯示售罄（預設）或隱藏；店內 POS 無論該設定都不賣零庫存商品。
+庫存 = 全部庫存流水 `delta` 加總；調庫存填整數正增／負減及理由，不能減到負庫存；POS 出售扣數量。手動調整與 POS 銷售會鎖定同一商品後再核對餘額，並發提交也不能各自讀到舊庫存而扣成負數。手動調整另保存操作請求編號：網路結果不明時，同編號同內容重試不重複增減；同編號改數量、商品或原因會拒絕。低庫存判斷為當前庫存 ≤ 門檻。公開商店只載入銷售中＋官網發布＋有效分類的商品，零庫存在系統設定可選顯示售罄（預設）或隱藏；店內 POS 不看官網發布開關，但只列銷售中、有效分類且庫存 > 0 的商品。
 
 服務刪除輸入 `DELETE` 後，有預約、套票或服務訂單歷史則安全封存、停止預約／官網顯示；無使用歷史才刪服務及技能連結。商品有訂單歷史則封存及關閉展示；無訂單歷史則連庫存流水一起永久刪除。因此只曾補庫存但無訂單的商品仍可能永久刪除，其庫存調整歷史也會刪除。
 
-批次「上架」服務會同時啟用官網及線上預約，批次「隱藏」會關閉官網及線上預約；商品上架／隱藏則同時控制官網及商店展示。批次封存改狀態並停止有效服務。批次服務上架也可能把加購的 `online_booking_enabled` 打開，但公開預約目錄仍只列三種主療程；單筆加購編輯會強制關閉線上預約，應維持一致設定。庫存調整使用實際庫存調整函式，保存數量與理由後重新載入。
+批次「上架」服務會同時啟用官網及線上預約，批次「隱藏」會關閉官網及線上預約。商品批次「官網＋POS 上架」會改為銷售中並公開，分類停用／封存时会拒绝；「官網下架（保留 POS）」只關閉公開，商品仍維持銷售中；批次封存才同時停止官網及 POS。批次服務上架也可能把加購的 `online_booking_enabled` 打開，但公開預約目錄仍只列三種主療程；單筆加購編輯會強制關閉線上預約，應維持一致設定。商品分類卡顯示「未封存／全部」數量，避免把已封存歷史誤當目前在售數。庫存調整保存數量與理由後重新載入。
 
-來源：[BusinessOS.jsx](src/BusinessOS.jsx)（`CatalogOS`、`ServiceEditor`、`WebsiteCardsEditor`、`InventoryEditor`）、[ProductEditor.jsx](src/ProductEditor.jsx)、[product-media.js](src/lib/product-media.js)、[Shop.jsx](src/Shop.jsx)、[202610030005_business_operating_system.sql](supabase/migrations/202610030005_business_operating_system.sql)（`spa_product_save`、`spa_inventory_adjust`、`spa_catalog_bulk`、`spa_store_catalog`）、[202610040001_compensation_pos_titles.sql](supabase/migrations/202610040001_compensation_pos_titles.sql)（`spa_catalog_delete`）、[202610040006_service_addons.sql](supabase/migrations/202610040006_service_addons.sql)、[202610040007_standalone_addon_category.sql](supabase/migrations/202610040007_standalone_addon_category.sql)（服務保存）、[202610100006_product_media.sql](supabase/migrations/202610100006_product_media.sql)（產品照片權限及儲存區）、[202610100007_home_catalog_labels.sql](supabase/migrations/202610100007_home_catalog_labels.sql)（目前目錄顯示名稱；不重寫歷史快照）。
+來源：[BusinessOS.jsx](src/BusinessOS.jsx)（`CatalogOS`、`ServiceEditor`、`WebsiteCardsEditor`、`InventoryEditor`）、[ProductEditor.jsx](src/ProductEditor.jsx)、[product-media.js](src/lib/product-media.js)、[Shop.jsx](src/Shop.jsx)、[202610030005_business_operating_system.sql](supabase/migrations/202610030005_business_operating_system.sql)（`spa_product_save`、`spa_inventory_adjust`、`spa_catalog_bulk`、`spa_store_catalog`）、[202610040001_compensation_pos_titles.sql](supabase/migrations/202610040001_compensation_pos_titles.sql)（`spa_catalog_delete`）、[202610040006_service_addons.sql](supabase/migrations/202610040006_service_addons.sql)、[202610040007_standalone_addon_category.sql](supabase/migrations/202610040007_standalone_addon_category.sql)（服務保存）、[202610100006_product_media.sql](supabase/migrations/202610100006_product_media.sql)（產品照片權限及儲存區）、[202610100007_home_catalog_labels.sql](supabase/migrations/202610100007_home_catalog_labels.sql)（目前目錄顯示名稱；不重寫歷史快照）、[202610110002_product_sales_consistency.sql](supabase/migrations/202610110002_product_sales_consistency.sql)（商品公開／POS 通道、庫存鎖及分類驗證）。
 
 
 商品分類現在可在目錄的「商品分類」新增、改中英文名稱／章字／排序、停用與刪除。穩定分類代碼建立後不修改，商品必須屬於分類，原無分類者轉「未分類」。停用分類同步隱藏官網商品並禁止 POS 新銷售，不刪庫存、歷史訂單或原抽成；原商品可留在停用分類方便更正，但新增／轉入必須選有效分類。刪分類需輸入 `DELETE`，有任何商品（含封存商品）時必須選另一有效分類遷移，交易 ID 與快照不變；沒有商品才可直接刪。官網只顯示含目前可展示商品的有效分類，切換分類停用後會返回全部，不留空白分類頁。
@@ -482,13 +484,13 @@ POS 定價取伺服器當下目錄 `price_cents × 數量`，總額為明細原�
 
 成功銷售保存訂單及明細名稱、SKU、單價、成本（商品）、數量、實際技師／銷售人員、服務時長、指定客資格及當時基本提成比例。商品產生負庫存流水，訂單總額 > 0 時產生一筆 `pos` 現金流水。服務不扣商品庫存。當前 POS 沒有儲值或套票支付控制；這些支付在預約收款流程使用。POS 頁面也沒有一般訂單退款／作廢按鈕，不能把資料重設當成正常退款流程。
 
-訂單折扣依每筆原額比例分到明細，以累計整數分分攤避免尾差：每筆淨額 = `floor(累計原額 × 訂單總額 ÷ 全單原額) − floor(前筆累計原額 × 訂單總額 ÷ 全單原額)`；全單原額為 0 則各淨額為 0。各明細淨額總和必等於實收訂單金額。成交基本提成估算改用該淨額乘成交比例；服務正式薪資依所選版本逐堂階梯重算；商品薪資直接採折後淨額的成交比例快照，不因後改設定回算。
+訂單折扣依購物車明細順序，把每筆原額按比例分配，以累計整數分避免尾差：每筆淨額 = `floor(累計原額 × 訂單總額 ÷ 全單原額) − floor(前筆累計原額 × 訂單總額 ÷ 全單原額)`；全單原額為 0 則各淨額為 0。明細順序會保存，不能用隨機資料 ID 決定最後 1 分歸誰；各明細淨額總和必等於實收訂單金額。成交基本提成估算改用該淨額乘成交當日有效的職稱／聘僱版本比例並保存快照；服務正式薪資依所選版本逐堂階梯重算；商品薪資直接採折後淨額的成交比例快照，不因後改設定回算。
 
 例如服務 NT$1,000＋商品 NT$500，折扣 NT$150，總額 NT$1,350；原額比例分攤後服務淨額 NT$900、商品淨額 NT$450，各自歸實際技師及銷售人員。若還有優惠券，它會作為總折扣一起比例分攤，沒有只扣某商品或某療程的設定。
 
 同次提交會保存請求編號及完整內容，網路重試相同編號／相同內容返回原結果，不重複扣庫存或收款；同編號改內容會拒絕 `REQUEST_CONFLICT`。這是重試保護，不會判斷不同編號是否代表同一筆現實交易。
 
-來源：[PosWorkspace.jsx](src/PosWorkspace.jsx)、[202610100003_payroll_redesign.sql](supabase/migrations/202610100003_payroll_redesign.sql)、[202610080003_payroll_consistency.sql](supabase/migrations/202610080003_payroll_consistency.sql)（`spa_pos_checkout`、`payroll_pos_allocate`、`payroll_sale_snapshot`）、[202610080004_role_consistency.sql](supabase/migrations/202610080004_role_consistency.sql)（`spa_pos_checkout_with_coupon`）。
+來源：[PosWorkspace.jsx](src/PosWorkspace.jsx)、[202610100003_payroll_redesign.sql](supabase/migrations/202610100003_payroll_redesign.sql)、[202610080003_payroll_consistency.sql](supabase/migrations/202610080003_payroll_consistency.sql)（`spa_pos_checkout`、`payroll_pos_allocate`、`payroll_sale_snapshot`）、[202610080004_role_consistency.sql](supabase/migrations/202610080004_role_consistency.sql)（`spa_pos_checkout_with_coupon`）、[202610110002_product_sales_consistency.sql](supabase/migrations/202610110002_product_sales_consistency.sql)（穩定明細順序、折扣分攤及提成版本快照）。
 
 <a id="checkout"></a>
 
@@ -506,11 +508,11 @@ POS 定價取伺服器當下目錄 `price_cents × 數量`，總額為明細原�
 
 例如 NT$5,000 套票 3 堂，內部 500000 分：前兩堂各認列 166666 分，最後一堂 166668 分，總和仍等於 NT$5,000；茶飲另外收取及認列。套票購買當日進入現金收入及未兌換套票餘額，服務收入等使用時才逐堂認列。
 
-收款方式提供現金、刷卡、轉帳；畫面只是記錄所選方法及金額，沒有在本專案中串接實際刷卡扣款。預約手動折扣及優惠券總折扣不可超過原額。預約折扣有 `finance.manage` 權限檢查；一般員工在目前權限設計不能執行收款。
+收款方式提供現金、刷卡、轉帳；畫面只是記錄所選方法及金額，沒有在本專案中串接實際刷卡扣款。POS 與預約收款都逐項顯示原額、折扣／優惠券、儲值、小費及本次應收；「本次應收」代表現在就要完成的收款，系統目前沒有掛帳／之後收款的應收帳款台帳。預約手動折扣及優惠券總折扣不可超過原額，儲值也不可超過折後應付及會員餘額；畫面會先阻止無效金額，伺服器仍再驗證。預約折扣有 `finance.manage` 權限檢查；一般員工在目前權限設計不能執行收款。
 
-預約退款需要有收款、填寫原因且有財務管理權。退款恢復原儲值扣用及套票一堂，產生原現收＋小費的負現金流水，以原收款方式記錄，並標記收款退款時間／原因；退款服務不再計薪，預約完成數本身仍保留。已結算期間先重開才可退款。使用優惠券的交易退款時券恢復 `active`、清掉核銷引用，但維持原到期日；原到期日已過仍不能用，退款不延長券期限。重複退款不再重複補回。
+預約退款需要有收款、填寫原因且有財務管理權。退款恢復原儲值扣用及套票一堂，產生原現收＋小費的負現金流水，以原收款方式記錄，並標記收款退款時間／原因；退款服務不再計薪，預約完成數本身仍保留。已結算期間先重開才可退款。每次退款保存操作請求與預約、收款及原因；同編號同內容重試不重複補回，同編號改預約／原因會拒絕，歷史已退款但沒有該次請求記錄則回報已退款。使用優惠券的交易退款時券恢復 `active`、清掉核銷引用，但維持原到期日；原到期日已過仍不能用，退款不延長券期限。
 
-來源：[Admin.jsx](src/Admin.jsx)（`Checkout`、退款表單）、[202610080003_payroll_consistency.sql](supabase/migrations/202610080003_payroll_consistency.sql)（`spa_checkout`、`spa_refund`）、[202610080004_role_consistency.sql](supabase/migrations/202610080004_role_consistency.sql)（`spa_checkout_with_coupon`、`release_sale_coupon`）。
+來源：[Admin.jsx](src/Admin.jsx)（`Checkout`、退款表單）、[202610080003_payroll_consistency.sql](supabase/migrations/202610080003_payroll_consistency.sql)（`spa_checkout`、`spa_refund`）、[202610080004_role_consistency.sql](supabase/migrations/202610080004_role_consistency.sql)（`spa_checkout_with_coupon`、`release_sale_coupon`）、[202610110002_product_sales_consistency.sql](supabase/migrations/202610110002_product_sales_consistency.sql)（結帳狀態、金額防呆及成交提成快照一致性）。
 
 <a id="reports"></a>
 
@@ -675,7 +677,7 @@ POS 定價取伺服器當下目錄 `price_cents × 數量`，總額為明細原�
 
 ### 普通服務：逐堂累進，不用全月平均價格
 
-按實際服務時間排序，再用來源類型、來源 ID、POS 同明細第幾堂作穩定排序。預約每筆 1 堂；POS 數量 N 拆 N 堂，每堂淨收入以累計整數分分攤，合計恰好等於該明細淨額。服務時長取成交快照。
+按實際服務時間排序，相同時間先依來源類型；預約再依預約 ID，POS 則依訂單 ID、保存的購物車明細順序、同明細第幾堂及明細 ID 作穩定排序。預約每筆 1 堂；POS 數量 N 拆 N 堂，每堂淨收入以累計整數分分攤，合計恰好等於該明細淨額。服務時長取成交快照。
 
 正／兼職服務分鐘每自然月從 0 累計；承攬合作堂數按設定保留跨月累計。每堂跨過階梯時，把該堂淨收入按相應分鐘／堂數拆成分段：`段淨額＝floor(該堂淨額 × 已到本段終點的堂內指標 ÷ 該堂指標) − floor(該堂淨額 × 已到本段起點的堂內指標 ÷ 該堂指標)`；`段抽成＝round(段淨額 × 段比例 ÷ 10000)`，逐段逐堂加總。0% 的前段仍顯示可核對。
 
@@ -814,7 +816,7 @@ POS 定價取伺服器當下目錄 `price_cents × 數量`，總額為明細原�
 
 若來源預約產生的券已用於範圍外交易，重設該來源預約會被 `RESET_COUPON_IN_USE` 阻擋，防止留下已消費卻無來源的獎勵。需先處理相關核銷交易，或選擇包含兩條鏈的合理全部營運範圍。刪除使用券的訂單／結帳會先釋放核銷，恢復原到期日；不重新給 90 天期限。
 
-JSON 備份包含所選鏈的預約、結帳、評價、儲值／套票扣用、現金、booking actions、訂單及明細、訂單庫存／收款、評價建議、薪資 run／item／來源快照、工時／加班／加扣、打卡／定位事件／補卡及更正申請、相關券／sale requests及支出。重設後會新增重設稽核及時間，查詢 token 對刪掉預約可能失效。
+JSON 備份包含所選鏈的預約、結帳、評價、儲值／套票扣用、現金、booking actions、訂單及明細、訂單庫存／收款、評價建議、薪資 run／item／來源快照、工時／加班／加扣、打卡／定位事件／補卡及更正申請、相關券、sale requests、退款請求指紋及支出。重設後會新增重設稽核及時間，查詢 token 對刪掉預約可能失效。
 
 備份是下載 JSON 的原始資料導出；目前應用沒有一鍵「匯入備份／恢復」功能。不要把成功下載視為已驗證可自動恢復；要保留文件並在真正需恢復時由維護人員核對關聯及導入方案。日期邊界按台灣零時到迄日下一天零時（半開區間），預約／工時／加扣按自身業務日期，薪資 run 按週期交集，所以各範圍計數不能直接相加等於一個「總筆數」。
 

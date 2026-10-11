@@ -46,7 +46,8 @@ export default function PosWorkspace({ catalog, customers, onReload }) {
   let discountCents = null;
   try { discountCents = cents(discount || 0); } catch {}
   const couponDiscount = Number(coupons.find(value => value.id === coupon)?.amount_cents || 0);
-  const total = cart.reduce((value, item) => value + Number(item.price_cents) * item.quantity, 0) - (discountCents ?? 0) - couponDiscount;
+  const subtotal = cart.reduce((value, item) => value + Number(item.price_cents) * item.quantity, 0);
+  const total = subtotal - (discountCents ?? 0) - couponDiscount;
   const canCheckout = !busy && !couponLoading && !couponError && cart.length > 0 && !cartInvalid && total >= 0 && discountCents != null && discountCents >= 0;
   async function checkout() {
     if (running.current || !canCheckout) return;
@@ -101,11 +102,12 @@ export default function PosWorkspace({ catalog, customers, onReload }) {
         <Field label="折扣 NT$（元）"><input type="number" min="0" step="0.01" value={discount} onChange={event => setDiscount(event.target.value)}/></Field>
         <Field label="收款方式"><select value={method} onChange={event => setMethod(event.target.value)}><option value="cash">現金</option><option value="card">刷卡</option><option value="transfer">轉帳</option></select></Field>
         <Field label="備註"><textarea maxLength={1000} value={note} onChange={event => setNote(event.target.value)}/></Field>
-        <div className="metric">應收 {money(Math.max(0, total))}</div>
+        <div className="pos-receivable" aria-label="本次收款明細"><p><span>商品／服務小計</span><strong>{money(subtotal)}</strong></p><p><span>手動折扣</span><strong>− {money(discountCents ?? 0)}</strong></p><p><span>優惠券</span><strong>− {money(couponDiscount)}</strong></p><p className="metric"><span>本次應收（即時收款）</span><strong>{money(Math.max(0, total))}</strong></p></div>
         {couponDiscount > 0 && <p className="muted">已扣優惠券 {money(couponDiscount)}，成功收款後才核銷。</p>}
         {cartInvalid && <p className="alert">每筆服務與商品都必須指定有效人員；請核對人員資格、分類、上架狀態及庫存。</p>}
         {(discountCents == null || discountCents < 0) && <p className="alert">折扣請填有效的新台幣金額，最多兩位小數。</p>}
         {total < 0 && <p className="alert">總折扣不可超過本次銷售金額。</p>}
+        <p className="muted">「本次應收」是這張 POS 訂單現在要完成的收款；按下確認後訂單直接記為已付款，不會建立掛帳或日後應收帳款。</p>
         <button className="primary" disabled={!canCheckout} onClick={checkout}>{busy ? '收款中…' : '確認收款'}</button>
       </section></div>
     </fieldset>

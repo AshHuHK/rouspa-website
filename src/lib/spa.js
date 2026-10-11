@@ -61,6 +61,7 @@ const errors = {
   RESET_COUPON_IN_USE: '此範圍的評價券已用於範圍外的交易。請先處理該筆交易，或選擇包含兩筆記錄的全部營運範圍，再重設。',
   COUPON_UNAVAILABLE: '優惠券不屬於此會員、已使用或已到期，請重新選擇。',
   COUPON_WITH_PACKAGE: '優惠券不能與療程套票同時使用。',
+  COUPON_SOURCE_APPOINTMENT: '這張評價券供之後消費使用，不能折抵發券的同一筆療程。',
   PRICE_CHANGED: '目錄價格已更新，請核對更新後的應收金額，再確認收款。此次沒有扣庫存或核銷優惠券。',
   INVALID_SERVICE: '此療程已停用或不能線上預約，請重新選擇。',
   PAYROLL_PENDING_ATTENDANCE: '此期間有未下班、待審核打卡或補卡申請，請先完成出勤審核再結算。',

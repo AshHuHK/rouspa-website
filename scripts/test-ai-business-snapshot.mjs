@@ -53,7 +53,7 @@ await db.query('insert into spa_appointment_staff_changes(appointment_id,previou
 await db.query("insert into spa_staff_schedule_submissions(staff_id,schedule_month,submitted_by) values($1,'2026-10-01',$2),($3,'2026-10-01',$2)",[staff[0].id,owner,staff[1].id]);
 await db.query("insert into spa_staff_schedule_change_requests(staff_id,business_date,desired_working,desired_start_minute,desired_end_minute,reason,requested_by,status) values($1,'2026-10-12',true,600,1080,'PRIVATE_REQUEST_SECRET',$2,'pending'),($3,'2026-10-12',true,600,1080,'OTHER_REQUEST_SECRET',$2,'approved')",[staff[0].id,owner,staff[1].id]);
 await db.query("insert into spa_time_off(staff_id,starts_at,ends_at,reason) values($1,'2026-10-12T10:00:00+08:00','2026-10-12T11:00:00+08:00','PRIVATE_TIME_OFF_SECRET')",[staff[0].id]);
-const pos=await admin('spa_pos_checkout',[randomUUID(),customer,[{item_type:'service',item_id:service.id,quantity:2,staff_id:staff[0].id},{item_type:'product',item_id:product.id,quantity:3,staff_id:staff[1].id}],12345,'cash','PRIVATE_POS_SECRET']);
+const pos=await admin('spa_pos_checkout_with_coupon',[randomUUID(),customer,[{item_type:'service',item_id:service.id,quantity:2,staff_id:staff[0].id},{item_type:'product',item_id:product.id,quantity:3,staff_id:staff[1].id}],12345,'cash','PRIVATE_POS_SECRET']);
 await db.query("update spa_orders set paid_at='2026-10-08T16:00:00Z' where id=$1",[pos.id]);
 const lines=(await db.query('select * from spa_order_items where order_id=$1',[pos.id])).rows;
 const serviceLine=lines.find(i=>i.item_type==='service'),productLine=lines.find(i=>i.item_type==='product');

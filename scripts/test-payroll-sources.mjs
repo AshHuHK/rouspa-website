@@ -45,11 +45,11 @@ async function appointment(date,time,person=staff.id,tea=0){
  values($1,$2,$3,$4,$5,$6,$7::timestamptz,$7::timestamptz+interval '45 minutes',$7::timestamptz+interval '60 minutes','completed',$8,$9,$10,'designated') returning *`,[randomUUID(),customer,person,room,service.id,date,`${date}T${time}:00+08:00`,service.name,service.price_cents,tea])).rows[0];
 }
 const settled=await appointment('2026-10-06','10:00',staff.id,10000),unsettled=await appointment('2026-10-07','10:00'),refunded=await appointment('2026-10-08','10:00');
-const checkout=await admin('spa_checkout',[randomUUID(),settled.id,5000,20000,null,3000,'cash']);
-await admin('spa_checkout',[randomUUID(),refunded.id,0,0,null,0,'cash']);
+const checkout=await admin('spa_checkout_with_coupon',[randomUUID(),settled.id,5000,20000,null,3000,'cash']);
+await admin('spa_checkout_with_coupon',[randomUUID(),refunded.id,0,0,null,0,'cash']);
 await admin('spa_refund',[randomUUID(),refunded.id,'測試退款']);
 await appointment('2026-10-09','10:00',other.id);
-const sale=await admin('spa_pos_checkout',[randomUUID(),customer,[{item_type:'service',item_id:service.id,quantity:2,staff_id:staff.id},{item_type:'product',item_id:product.id,quantity:2,staff_id:staff.id},{item_type:'product',item_id:product.id,quantity:1,staff_id:other.id}],12345,'cash','來源折扣']);
+const sale=await admin('spa_pos_checkout_with_coupon',[randomUUID(),customer,[{item_type:'service',item_id:service.id,quantity:2,staff_id:staff.id},{item_type:'product',item_id:product.id,quantity:2,staff_id:staff.id},{item_type:'product',item_id:product.id,quantity:1,staff_id:other.id}],12345,'cash','來源折扣']);
 const time=await admin('spa_time_entry_save',[null,staff.id,'2026-10-06','2026-10-06T10:00:00+08:00','2026-10-06T18:00:35+08:00',30,'核准工時']);
 const attendance=(await db.query(`insert into spa_attendance(staff_id,work_date,clock_in,clock_out,effective_start,effective_end,break_minutes,status,time_entry_id)
  values($1,'2026-10-06','2026-10-06T10:00:00+08:00','2026-10-06T18:00:35+08:00','2026-10-06T10:00:00+08:00','2026-10-06T18:00:35+08:00',30,'approved',$2) returning id`,[staff.id,time])).rows[0].id;
@@ -127,9 +127,9 @@ await reject(()=>admin('spa_payroll_run_save',[...range,rule,true]),/PAYROLL_PEN
 await db.query("update spa_time_entries set status='rejected' where status='draft'");
 await db.query("update spa_overtime_entries set status='rejected' where status='draft'");
 await reject(()=>admin('spa_payroll_run_save',[...range,rule,true]),/PAYROLL_UNSETTLED_SERVICES/);
-await admin('spa_checkout',[randomUUID(),unsettled.id,0,0,null,0,'cash']);
+await admin('spa_checkout_with_coupon',[randomUUID(),unsettled.id,0,0,null,0,'cash']);
 const otherUnsettled=(await db.query("select id from spa_appointments where staff_id=$1 and status='completed' and not exists(select 1 from spa_checkouts where appointment_id=spa_appointments.id)",[other.id])).rows[0].id;
-await admin('spa_checkout',[randomUUID(),otherUnsettled,0,0,null,0,'cash']);
+await admin('spa_checkout_with_coupon',[randomUUID(),otherUnsettled,0,0,null,0,'cash']);
 await admin('spa_payroll_run_save',[...range,rule,true]);
 const closed=await sources(),frozen=JSON.stringify(closed.wage),frozenSources=JSON.stringify(closed.sources),frozenRules=JSON.stringify(closed.rule_reference);
 check(closed.basis==='finalized'&&closed.evidence_mode==='snapshot'&&closed.reconciliation.historical_sources_complete,'finalized detail uses retained wage and source snapshot');

@@ -63,6 +63,9 @@ check((await call(null,'spa_customer_booking_list',[privateLink.access_token])).
 await reject(()=>call(employee,'spa_customer_coupons_admin',[customer]),/FORBIDDEN/);
 await reject(()=>admin('spa_checkout_with_coupon',[randomUUID(),wrongTarget.id,0,0,null,0,'cash',reward.id]),/COUPON_UNAVAILABLE/);
 await reject(()=>admin('spa_checkout_with_coupon',[randomUUID(),target.id,0,0,randomUUID(),0,'cash',reward.id]),/COUPON_WITH_PACKAGE/);
+await reject(()=>admin('spa_checkout_with_coupon',[randomUUID(),source.id,0,0,null,0,'cash',reward.id]),/COUPON_SOURCE_APPOINTMENT/);
+check((await db.query('select count(*) n from spa_checkouts where appointment_id=$1',[source.id])).rows[0].n===0,'a review coupon cannot settle the appointment that issued it');
+check((await db.query('select status from spa_coupons where id=$1',[reward.id])).rows[0].status==='active','rejected source-appointment redemption leaves the coupon active');
 const request=randomUUID(),args=[request,target.id,1000,0,null,0,'cash',reward.id];
 const sale=await admin('spa_checkout_with_coupon',args);
 check(Number(sale.discount_cents)===6000&&Number(sale.revenue_cents)===Number(service.price_cents)-6000,'coupon and manual discount share the checkout net amount');
