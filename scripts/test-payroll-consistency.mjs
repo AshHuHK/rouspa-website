@@ -16,7 +16,7 @@ create function public.consistency_test_now() returns timestamptz language sql s
 const directory=new URL('../supabase/migrations/',import.meta.url);
 for(const file of(await readdir(directory)).sort())await db.exec((await readFile(new URL(file,directory),'utf8')).replaceAll('now()','public.consistency_test_now()'));
 const owner=randomUUID(),employee=randomUUID(),otherEmployee=randomUUID();
-const staff=(await db.query("select id,job_title_id,employment_type_code from spa_staff where active and employment_status='active' order by display_order limit 2")).rows;
+const staff=(await db.query("select s.id,s.job_title_id,s.employment_type_code from spa_staff s join spa_job_titles j on j.id=s.job_title_id where s.active and s.employment_status='active' and s.is_bookable and j.work_category='technician' order by s.display_order limit 2")).rows;
 await db.query('insert into auth.users(id,email) values($1,$2),($3,$4),($5,$6)',[owner,'owner@example.test',employee,'staff@example.test',otherEmployee,'other@example.test']);
 await db.query("insert into spa_roles(user_id,role,staff_id,active,login_name) values($1,'owner',null,true,null),($2,'therapist',$3,true,'payroll_test'),($4,'therapist',$5,true,'payroll_other')",[owner,employee,staff[0].id,otherEmployee,staff[1].id]);
 async function as(user,sql,args=[]){await db.exec('begin');try{await db.exec('set local role '+(user?'authenticated':'anon'));await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[user||'',JSON.stringify({iat:Math.floor(Date.now()/1000)})]);const result=await db.query(sql,args);await db.exec('commit');return result.rows;}catch(error){await db.exec('rollback');throw error;}}

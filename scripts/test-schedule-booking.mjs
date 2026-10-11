@@ -14,7 +14,7 @@ for(const file of (await readdir(directory)).sort()){
  if(file>='202610070001_staff_schedule_booking_flow.sql')sql=sql.replaceAll('now()','spa_private.schedule_test_now()');
  await db.exec(sql);
 }
-const owner=randomUUID(),employee=randomUUID(),staff=(await db.query("select id from spa_staff where active and employment_status='active' order by display_order limit 2")).rows;
+const owner=randomUUID(),employee=randomUUID(),staff=(await db.query("select id from spa_staff where active and employment_status='active' and is_bookable order by display_order limit 2")).rows;
 await db.query('insert into auth.users(id,email) values($1,$2),($3,$4)',[owner,'owner@schedule.test',employee,'staff@schedule.test']);
 await db.query("insert into spa_roles(user_id,role,staff_id,active,login_name) values($1,'owner',null,true,null),($2,'therapist',$3,true,'schedule_staff')",[owner,employee,staff[0].id]);
 async function as(role,user,sql,args=[]){await db.exec('begin');try{await db.exec(`set local role ${role}`);await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[user||'',JSON.stringify({iat:1800000000})]);const result=await db.query(sql,args);await db.exec('commit');return result.rows;}catch(e){await db.exec('rollback');throw e;}}

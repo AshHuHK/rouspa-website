@@ -44,7 +44,7 @@ check((await admin('spa_session')).role==='owner','owner remains unchanged');
 
 const service=(await db.query("select * from spa_services where active and online_booking_enabled order by display_order limit 1")).rows[0];
 const product=(await db.query("select * from spa_products where status='active' order by display_order limit 1")).rows[0];
-const room=(await db.query('select id from spa_rooms where active limit 1')).rows[0].id;
+const room=(await db.query('select id from spa_rooms limit 1')).rows[0].id;
 const customer=(await db.query("insert into spa_customers(name,phone,customer_type,status) values('核對會員','0991000001','member','active') returning id")).rows[0].id;
 const other=(await db.query("insert into spa_customers(name,phone,customer_type,status) values('另一會員','0991000002','member','active') returning id")).rows[0].id;
 async function appointment(client,day){return (await db.query(`insert into spa_appointments(request_id,customer_id,staff_id,room_id,service_id,business_date,starts_at,ends_at,blocked_until,status,service_name,price_cents)

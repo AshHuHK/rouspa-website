@@ -22,24 +22,46 @@ for(const file of (await readdir(directory)).filter(file=>file.endsWith('.sql'))
  await db.exec(sql);
 }
 const owner=randomUUID(),employee=randomUUID();
-const staff=(await db.query("select id from spa_staff where active and employment_status='active' order by display_order")).rows.map(row=>row.id);
+const staff=(await db.query("select id from spa_staff where active and employment_status='active' and is_bookable order by display_order")).rows.map(row=>row.id);
 await db.query('insert into auth.users(id,email) values($1,$2),($3,$4)',[owner,'owner@consistency.test',employee,'staff@consistency.test']);
 await db.query("insert into spa_roles(user_id,role,staff_id,active,login_name) values($1,'owner',null,true,null),($2,'therapist',$3,true,'consistency_staff')",[owner,employee,staff[0]]);
 async function as(user,sql,args=[]){await db.exec('begin');try{await db.exec('set local role '+(user?'authenticated':'anon'));await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[user||'',JSON.stringify({iat:1800000000})]);const result=await db.query(sql,args);await db.exec('commit');return result.rows;}catch(error){await db.exec('rollback');throw error;}}
 const rpc=async(user,name,args=[])=> (await as(user,`select public.${name}(${args.map((_,index)=>'$'+(index+1)).join(',')}) result`,args))[0]?.result;
 const rows=(user,name,args=[])=>as(user,`select * from public.${name}(${args.map((_,index)=>'$'+(index+1)).join(',')})`,args);
 const service=(await db.query("select id from spa_services where active and status='active' and online_booking_enabled order by display_order limit 1")).rows[0].id;
+await reject(()=>rpc(employee,'spa_booking_capacity_save',[5]),/FORBIDDEN/);
+await reject(()=>rpc(owner,'spa_booking_capacity_save',[0]),/INVALID_INPUT/);
+await rpc(owner,'spa_booking_capacity_save',[5]);
+check((await db.query('select simultaneous_capacity from spa_settings')).rows[0].simultaneous_capacity===5,'owner can update the single soft-cap setting through its permission-checked RPC');
+await rpc(owner,'spa_booking_capacity_save',[4]);
+await db.query('update spa_settings set auto_confirm=true');
 await db.query('insert into spa_staff_services(staff_id,service_id,enabled) select unnest($1::uuid[]),$2,true on conflict(staff_id,service_id) do update set enabled=true',[staff,service]);
-const date='2026-11-12',rosterDate='2026-11-13';
+const date='2026-11-12',rosterDate='2026-11-13',capacityDate=date;
 for(const day of [date,rosterDate]){
  await rpc(owner,'spa_business_day_override_save',[day,true,600,1320,'測試營業時間']);
  for(const person of staff)await rpc(owner,'spa_daily_shift_save',[person,day,true,600,1320,'測試班表']);
 }
-async function book(day,start,who=null,phone='090'+String(++phoneNumber).padStart(7,'0')){const result=await rpc(null,'spa_create_booking',[randomUUID(),service,day,`${day}T${start}:00+08:00`,who,'整合測試客人',phone,0,'']);return (await db.query('select * from spa_appointments where manage_token=$1',[result.manage_token])).rows[0];}
+async function book(day,start,who=null,phone='090'+String(++phoneNumber).padStart(7,'0')){const receipt=await rpc(null,'spa_create_booking',[randomUUID(),service,day,`${day}T${start}:00+08:00`,who,'整合測試客人',phone,0,'']);const booking=(await db.query('select * from spa_appointments where manage_token=$1',[receipt.manage_token])).rows[0];return {...booking,receipt};}
 let phoneNumber=1;
 let slot=(await rows(null,'spa_public_slots',[service,date,null])).find(row=>row.time_label==='10:00');
-check(slot.available_staff_count===4,'six eligible staff are capped by four beds');
+check(slot.available_staff_count===staff.length,'public availability is based on every qualified free technician, without a bed-number cap');
 const allocations=[];for(let i=0;i<3;i++)allocations.push(await book(date,'10:00'));
+check(staff.length>=5,'fixture has enough qualified technicians to exercise a fifth simultaneous reservation');
+const capacityBookings=[];for(const person of staff.slice(0,5))capacityBookings.push(await book(capacityDate,'18:00',person));
+check(capacityBookings.slice(0,4).every(booking=>booking.status==='confirmed'&&!booking.capacity_attention_required&&booking.room_id===null),'the first four simultaneous reservations auto-confirm without bed assignment');
+const overCapacity=capacityBookings[4];
+check(overCapacity.status==='pending'&&overCapacity.capacity_attention_required&&overCapacity.capacity_count_snapshot===5&&overCapacity.capacity_limit_snapshot===4,'the fifth reservation is retained as pending with an exact soft-cap snapshot');
+check(overCapacity.receipt.capacity_attention_required===true&&overCapacity.receipt.capacity_count===5&&overCapacity.receipt.capacity_limit===4,'public receipt tells the customer that staff must confirm the over-cap arrangement');
+const adminCapacity=(await rpc(owner,'spa_admin_bookings',[capacityDate,capacityDate])).find(row=>row.id===overCapacity.id);
+check(adminCapacity.capacity_exceeded===true&&adminCapacity.capacity_current_count===5&&adminCapacity.capacity_limit===4&&!('room_id' in adminCapacity),'owner view shows the live capacity warning without a bed identity');
+const capacityTodo=await rpc(owner,'spa_operations_convenience');
+check(capacityTodo.capacity.pending_attention_count===1&&capacityTodo.todos.find(task=>task.key==='capacity_attention')?.count===1,'fifth reservation drives one owner call-back reminder');
+await rpc(owner,'spa_set_status',[overCapacity.id,'confirmed','已致電確認安排']);
+const resolvedCapacity=(await rpc(owner,'spa_admin_bookings',[capacityDate,capacityDate])).find(row=>row.id===overCapacity.id);
+check(resolvedCapacity.status==='confirmed'&&!resolvedCapacity.capacity_attention_required&&!resolvedCapacity.capacity_exceeded&&resolvedCapacity.capacity_current_count===5,'owner confirmation records phone coordination and clears the booking warning while retaining the real simultaneous count');
+const resolvedTodo=await rpc(owner,'spa_operations_convenience');
+check(resolvedTodo.capacity.pending_attention_count===0&&resolvedTodo.todos.find(task=>task.key==='capacity_attention')?.count===0,'owner confirmation immediately clears the call-back reminder');
+await db.query("update spa_appointments set status='cancelled' where id=any($1::uuid[])",[capacityBookings.map(booking=>booking.id)]);
 const identity=allocations[0],identityPhone=(await db.query('select phone from spa_customers where id=$1',[identity.customer_id])).rows[0].phone;
 await reject(()=>rpc(null,'spa_create_booking',[randomUUID(),service,date,`${date}T17:00:00+08:00`,null,'竄改的姓名',identityPhone,0,'']),/CUSTOMER_NAME_MISMATCH/);
 check((await db.query('select name from spa_customers where id=$1',[identity.customer_id])).rows[0].name==='整合測試客人','booking cannot overwrite the name used to access existing member history');
@@ -52,12 +74,17 @@ await db.query("update spa_customers set status='active',archived_at=now() where
 await reject(()=>rpc(null,'spa_create_booking',[randomUUID(),service,date,`${date}T17:00:00+08:00`,null,'整合測試客人',identityPhone,0,'']),/CUSTOMER_UNAVAILABLE/);
 await rpc(owner,'spa_customer_restore',[identity.customer_id]);
 slot=(await rows(null,'spa_public_slots',[service,date,null])).find(row=>row.time_label==='10:00');
-check(slot.available_staff_count===1,'three occupied beds leave exactly one simultaneous slot');
+check(slot.available_staff_count===staff.length-3,'three assigned technicians leave every other qualified technician available');
 const free=staff.find(person=>!allocations.some(booking=>booking.staff_id===person));
 const allocationAccess=(await rpc(null,'spa_booking_link_access',[allocations[0].manage_token])).access_token;
 await rpc(owner,'spa_time_off_save',[free,`${date}T12:00:00+08:00`,`${date}T13:00:00+08:00`,'休假測試']);
 check(!(await rows(null,'spa_public_slots',[service,date,free])).find(row=>row.time_label==='12:00').available,'approved leave removes staff from public booking slots');
 await reject(()=>rpc(null,'spa_customer_reschedule',[allocationAccess,allocations[0].id,randomUUID(),date,`${date}T12:00:00+08:00`,free,'想換時段']),/SLOT_TAKEN/);
+const customerMoveSlot=(await rows(null,'spa_customer_availability',[allocationAccess,allocations[0].id,date,allocations[0].staff_id])).find(row=>row.time_label==='16:00');
+check(customerMoveSlot?.available,'customer reschedule availability uses the same technician-only allocation after bed retirement');
+const customerMove=await rpc(null,'spa_customer_reschedule',[allocationAccess,allocations[0].id,randomUUID(),date,customerMoveSlot.starts_at,allocations[0].staff_id,'顧客自行改期']);
+check(customerMove.status==='confirmed'&&Date.parse(customerMove.starts_at)===Date.parse(customerMoveSlot.starts_at)&&!customerMove.capacity_attention_required,'customer can complete an under-cap reschedule without any bed assignment');
+check((await db.query('select room_id from spa_appointments where id=$1',[allocations[0].id])).rows[0].room_id===null,'customer reschedule clears legacy room data on the live appointment');
 check(!(await rows(owner,'spa_reschedule_availability',[allocations[0].id,date,free])).find(row=>row.time_label==='12:00').available,'owner and customer rescheduling respect the same leave');
 check((await rpc(null,'spa_public_available_staff',[service,date,`${date}T17:00:00+08:00`])).every(row=>!('workload_minutes' in row)),'public technician choices do not expose private workload totals');
 check((await rpc(null,'spa_public_available_staff',[service,date,`${date}T17:01:00+08:00`])).length===0,'time-first choices reject an unaligned start time');
@@ -70,7 +97,7 @@ await db.query("update spa_appointments set status='in_service' where id=$1",[or
 await reject(()=>db.query('insert into spa_time_off(staff_id,starts_at,ends_at,reason) values($1,$2,$3,$4)',[staff[0],`${rosterDate}T14:45:00+08:00`,`${rosterDate}T15:30:00+08:00`,'緩衝仍被占用']),/EXISTING_BOOKINGS/);
 await reject(()=>rpc(owner,'spa_daily_shift_save',[staff[0],rosterDate,false,600,1320,'休班']),/EXISTING_BOOKINGS/);
 await reject(()=>rpc(owner,'spa_business_day_override_save',[rosterDate,false,600,1320,'休店']),/EXISTING_BOOKINGS/);
-await reject(()=>db.query("insert into spa_appointments(request_id,customer_id,staff_id,room_id,service_id,business_date,starts_at,ends_at,blocked_until,status,service_name,price_cents) values($1,$2,$3,$4,$5,$6,$7,$8,$9,'in_service','測試療程',110000)",[randomUUID(),original.customer_id,staff[1],original.room_id,service,rosterDate,`${rosterDate}T14:15:00+08:00`,`${rosterDate}T15:00:00+08:00`,`${rosterDate}T15:15:00+08:00`]),/SLOT_TAKEN/);
+await reject(()=>db.query("insert into spa_appointments(request_id,customer_id,staff_id,room_id,service_id,business_date,starts_at,ends_at,blocked_until,status,service_name,price_cents) values($1,$2,$3,$4,$5,$6,$7,$8,$9,'in_service','測試療程',110000)",[randomUUID(),original.customer_id,staff[0],null,service,rosterDate,`${rosterDate}T14:15:00+08:00`,`${rosterDate}T15:00:00+08:00`,`${rosterDate}T15:15:00+08:00`]),/SLOT_TAKEN/);
 const weekday=new Date(`${rosterDate}T00:00:00Z`).getUTCDay();
 await rpc(owner,'spa_weekly_shift_save',[staff[0],weekday,true,600,720]);
 await reject(()=>rpc(owner,'spa_daily_shift_delete',[staff[0],rosterDate]),/EXISTING_BOOKINGS/);

@@ -26,7 +26,7 @@ check((await count('spa_orders'))===0&&(await count('spa_order_items'))===0,'ord
 check((await db.query("select count(*)::int n from spa_cash_entries where category='pos'")).rows[0].n===0,'order reset removes linked POS revenue');
 check((await db.query('select sum(delta)::int n from spa_inventory_entries where product_id=$1',[product])).rows[0].n===stock,'order reset restores inventory');
 // A review reset preserves the financial reward and re-review cannot issue twice.
-const service=(await db.query('select id,name,price_cents from spa_services where active order by display_order limit 1')).rows[0],room=(await db.query('select id from spa_rooms where active limit 1')).rows[0].id,appointment=randomUUID();
+const service=(await db.query('select id,name,price_cents from spa_services where active order by display_order limit 1')).rows[0],room=(await db.query('select id from spa_rooms limit 1')).rows[0].id,appointment=randomUUID();
 await db.query("insert into spa_appointments(id,request_id,customer_id,staff_id,room_id,service_id,business_date,starts_at,ends_at,blocked_until,status,service_name,price_cents) values($1,$2,$3,$4,$5,$6,'2026-08-01','2026-08-01T10:00:00+08:00','2026-08-01T10:45:00+08:00','2026-08-01T11:00:00+08:00','completed',$7,$8)",[appointment,randomUUID(),customer,staff,room,service.id,service.name,service.price_cents]);
 const token=(await db.query('select review_token from spa_appointments where id=$1',[appointment])).rows[0].review_token;
 await call(null,'spa_submit_review',[token,5,'測試']);const coupon=(await db.query('select id from spa_coupons where appointment_id=$1',[appointment])).rows[0].id;

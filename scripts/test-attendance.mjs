@@ -97,7 +97,7 @@ await call(owner,'spa_attendance_request_review',[missing,true,'核對門店紀�
 check((await call(employee,'spa_attendance_self',range)).rows.some(r=>r.flags.includes('manual_request')&&r.status==='approved'&&!r.clock_in),'approved missing punch keeps honest lack of raw location');
 // Dashboard month view uses the final dated roster, current active team, leave,
 // actual appointment staff and bed from one permission-checked read model.
-const fixture=(await db.query("select (select id from spa_services where active order by display_order limit 1) service,(select id from spa_rooms where active order by name limit 1) room")).rows[0],customer=randomUUID(),appointment=randomUUID();
+const fixture=(await db.query("select (select id from spa_services where active order by display_order limit 1) service,(select id from spa_rooms order by name limit 1) room")).rows[0],customer=randomUUID(),appointment=randomUUID();
 await db.query("insert into spa_customers(id,name,phone) values($1,'月曆測試客人','0900000001')",[customer]);
 await db.query("insert into spa_time_off(staff_id,starts_at,ends_at,reason) values($1,'2026-10-06T13:00:00+08:00','2026-10-06T14:00:00+08:00','教育訓練')",[staff[0].id]);
 await db.query("insert into spa_appointments(id,request_id,customer_id,staff_id,room_id,service_id,business_date,starts_at,ends_at,blocked_until,status,service_name,price_cents) values($1,$2,$3,$4,$5,$6,'2026-10-06','2026-10-06T10:30:00+08:00','2026-10-06T11:15:00+08:00','2026-10-06T11:30:00+08:00','confirmed','月曆測試療程',110000)",[appointment,randomUUID(),customer,staff[0].id,fixture.room,fixture.service]);
@@ -106,7 +106,7 @@ const monthView=await call(employee,'spa_monthly_operations',['2026-10-27']),mon
 check(monthView.from==='2026-10-01'&&monthView.to==='2026-10-31'&&monthView.days.length===31,'monthly operations normalizes and bounds the selected month');
 check(monthDay.shifts.some(row=>row.staff_id===staff[0].id&&row.source==='daily'&&row.start_minute===600&&row.end_minute===1080),'monthly operations uses dated roster over weekly template');
 check(monthDay.leaves.some(row=>row.staff_id===staff[0].id&&row.reason==='教育訓練')&&monthDay.off_count>=1,'monthly operations shows overlapping leave once in the off count');
-check(monthDay.appointments.some(row=>row.id===appointment&&row.staff_id===staff[0].id&&row.room_id===fixture.room&&row.customer_name==='月小姐'),'employee calendar keeps actual staff and bed while reducing customer identity to surname');
+check(monthDay.appointments.some(row=>row.id===appointment&&row.staff_id===staff[0].id&&!('room_id' in row)&&row.customer_name==='月小姐'),'employee calendar keeps actual staff, omits legacy bed assignment and reduces customer identity to surname');
 check((await call(owner,'spa_monthly_operations',['2026-10-01'])).days.find(day=>day.date==='2026-10-06').appointments.some(row=>row.id===appointment&&row.customer_name==='月曆測試客人'),'owner calendar retains the full customer name');
 check((await call(owner,'spa_monthly_operations',['2026-02-15'])).days.length===28,'monthly operations handles shorter months');
 await db.query("update spa_appointments set status='cancelled' where id=$1",[appointment]);

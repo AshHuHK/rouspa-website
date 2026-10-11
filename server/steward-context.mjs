@@ -33,7 +33,7 @@ function hours(row) {
  return { ...numericFields(row, ['weekday', 'opening_minute', 'closing_minute']), is_open: bool(row?.is_open), business_date: date(row?.business_date) };
 }
 function bookingSettings(row) {
- return { ...numericFields(row, ['opening_minute', 'closing_minute', 'slot_minutes', 'booking_days', 'cancellation_hours']), auto_confirm: bool(row?.auto_confirm), timezone: 'Asia/Taipei', currency: 'TWD' };
+ return { ...numericFields(row, ['opening_minute', 'closing_minute', 'slot_minutes', 'booking_days', 'cancellation_hours', 'simultaneous_capacity']), auto_confirm: bool(row?.auto_confirm), timezone: 'Asia/Taipei', currency: 'TWD' };
 }
 function services(rows) {
  return list(rows).slice(0, 40).map(row => ({ name: label(row.name), ...numericFields(row, ['duration_minutes', 'buffer_minutes', 'price_cents', 'member_price_cents']), active: bool(row.active), status: enumValue(row.status, ['active', 'draft', 'archived']), online_booking_enabled: bool(row.online_booking_enabled), website_visible: bool(row.website_visible) }));
@@ -42,13 +42,13 @@ function catalog(data) {
  return { booking: bookingSettings(data?.settings), business_hours: list(data?.business_hours).slice(0, 7).map(hours), today_hours: hours(data?.today_hours), services: services(data?.services), addons: services(data?.website_addons), publicly_bookable_staff_count: list(data?.staff).length };
 }
 function dashboard(data, session) {
- return { date: date(data?.date), ...numericFields(data, ['appointments', 'pending', 'completed', 'cancelled', 'staff_working', 'rooms_active']), ...(session.role === 'owner' ? numericFields(data, ['revenue_cents', 'new_members', 'low_stock']) : {}), today_hours: hours(data?.today_hours) };
+ return { date: date(data?.date), ...numericFields(data, ['appointments', 'pending', 'completed', 'cancelled', 'staff_working', 'simultaneous_capacity', 'capacity_attention_count']), ...(session.role === 'owner' ? numericFields(data, ['revenue_cents', 'new_members', 'low_stock']) : {}), today_hours: hours(data?.today_hours) };
 }
-const todoKeys = ['pending_bookings', 'arrivals', 'completion', 'unsettled', 'attendance', 'corrections', 'missing_clockout', 'schedule_requests', 'missing_schedule', 'payroll_drafts', 'low_stock', 'reviews', 'my_schedule', 'my_clockout', 'my_attendance', 'my_requests', 'my_submission'];
+const todoKeys = ['capacity_attention', 'pending_bookings', 'arrivals', 'completion', 'unsettled', 'attendance', 'corrections', 'missing_clockout', 'schedule_requests', 'missing_schedule', 'payroll_drafts', 'low_stock', 'reviews', 'my_schedule', 'my_clockout', 'my_attendance', 'my_requests', 'my_submission'];
 function convenience(data, session) {
- const beds = list(data?.beds), todos = list(data?.todos).filter(row => todoKeys.includes(row.key) && validatePageAccess(session, row.module));
+ const todos = list(data?.todos).filter(row => todoKeys.includes(row.key) && validatePageAccess(session, row.module) && (row.key !== 'capacity_attention' || session.role === 'owner'));
  const active = todos.filter(row => number(row.count) > 0);
- return { today: date(data?.today), bed_counts: counted(beds, 'state', ['free', 'reserved', 'treatment', 'buffer']), overlapping_bed_count: beds.filter(row => (number(row.overlap_count) ?? 0) > 1).length,
+ return { today: date(data?.today), capacity: { ...numericFields(data?.capacity, ['limit', 'current_guests', 'pending_attention_count']), currently_exceeded: bool(data?.capacity?.currently_exceeded) },
   active_todo_category_count: active.length, todo_counts: Object.fromEntries(todos.map(row => [row.key, number(row.count)])),
   todos: active.map(row => ({ key: row.key, count: number(row.count), severity: enumValue(row.severity, ['urgent', 'normal', 'waiting']), module: row.module })), next_month_self_edit_open: bool(data?.edit_open) };
 }
@@ -60,7 +60,7 @@ function bookings(data, session, namedStaff = false) {
   if (!byStaff.has(row.staff_id)) byStaff.set(row.staff_id, { staff: namedStaff ? label(row.therapist) || `技師 ${byStaff.size + 1}` : `技師 ${byStaff.size + 1}`, assigned: 0, completed: 0, reassigned: 0 });
   const staff = byStaff.get(row.staff_id); staff.assigned++; if (row.status === 'completed') staff.completed++; if ((number(row.staff_change_count) ?? 0) > 0) staff.reassigned++;
  }
- return { count: rows.length, status_counts: counted(rows, 'status', bookingStatuses), actual_staff: [...byStaff.values()].slice(0, 40), actual_staff_count: byStaff.size, reassigned_count: rows.filter(row => (number(row.staff_change_count) ?? 0) > 0).length,
+ return { count: rows.length, status_counts: counted(rows, 'status', bookingStatuses), capacity_attention_count: rows.filter(row => row.capacity_exceeded === true).length, actual_staff: [...byStaff.values()].slice(0, 40), actual_staff_count: byStaff.size, reassigned_count: rows.filter(row => (number(row.staff_change_count) ?? 0) > 0).length,
   // Without finance visibility a null checkout means hidden, not uncollected.
   ...(has(session, 'finance.view') ? { completed_unsettled_count: rows.filter(row => row.status === 'completed' && !row.checkout).length } : {}) };
 }
@@ -127,7 +127,7 @@ function reports(data, namedStaff = false) {
   staff: list(data?.staff).slice(0, 24).map((row, index) => ({ staff: namedStaff ? label(row.name) || `技師 ${index + 1}` : `技師 ${index + 1}`, ...numericFields(row, ['completed', 'minutes', 'revenue_cents', 'commission_cents', 'rating', 'reviews']) })), daily: list(data?.daily).slice(0, 31).map(row => ({ date: date(row.date), ...numericFields(row, ['net_cents']) })) };
 }
 function settings(data) {
- return { booking: bookingSettings(data?.booking), business_hours: list(data?.business_hours).slice(0, 7).map(hours), overrides: list(data?.business_overrides).slice(0, 24).map(hours), resources_count: list(data?.resources).length, active_resources_count: list(data?.resources).filter(row => row.active).length, automatic_assignment_enabled: bool(data?.assignment?.enabled), assignment_strategy: enumValue(data?.assignment?.strategy, ['lowest_workload', 'round_robin']) };
+ return { booking: bookingSettings(data?.booking), business_hours: list(data?.business_hours).slice(0, 7).map(hours), overrides: list(data?.business_overrides).slice(0, 24).map(hours), automatic_assignment_enabled: bool(data?.assignment?.enabled), assignment_strategy: enumValue(data?.assignment?.strategy, ['lowest_workload', 'round_robin']) };
 }
 function reviews(data) {
  const rows = list(data?.reviews), ratings = rows.map(row => number(row.rating)).filter(value => value >= 1 && value <= 5);
@@ -199,8 +199,8 @@ function validShape(name, value) {
  switch (name) {
   case 'spa_ai_business_snapshot': return object(value) && value.schema_version === 1 && ['store', 'self'].includes(value.scope) && object(value.period) && canonicalRange(value.period) && value.units?.money === 'cents' && value.units?.time === 'minutes' && value.units?.timezone === 'Asia/Taipei' && Object.entries(snapshotSourceContract).every(([key, expected]) => value.source_contract?.[key] === expected) && numbers(value.bookings, snapshotBookingFields) && numbers(value.sales, snapshotSalesFields) && arrays(value, ['staff']) && rowsHave(value.staff, snapshotStaffFields.filter(key => key !== 'average_rating')) && numbers(value.scheduling, snapshotSchedulingFields) && numbers(value.attendance, snapshotAttendanceFields) && object(value.payroll) && ['preview', 'finalized', 'unsupported_range', 'rule_unavailable'].includes(value.payroll.status) && arrays(value.payroll, ['rows']) && rowsHave(value.payroll.rows, ['total_cents']) && (['unsupported_range', 'rule_unavailable'].includes(value.payroll.status) || numbers(value.payroll, ['total_cents'])) && (value.scope !== 'store' || (numbers(value.finances, snapshotFinanceFields) && numbers(value.customers, snapshotCustomerFields) && numbers(value.current, snapshotCurrentFields)));
   case 'spa_catalog': return arrays(value, ['services', 'website_addons', 'business_hours', 'staff']) && numbers(value.settings, ['opening_minute', 'closing_minute', 'booking_days', 'slot_minutes']) && rowsHave(value.services, ['price_cents', 'duration_minutes']);
-  case 'spa_dashboard': return numbers(value, ['appointments', 'pending', 'completed', 'cancelled', 'staff_working', 'rooms_active']) && object(value.today_hours);
-  case 'spa_operations_convenience': return arrays(value, ['beds', 'todos']) && rowsHave(value.beds, ['overlap_count']) && rowsHave(value.todos, ['count']);
+  case 'spa_dashboard': return numbers(value, ['appointments', 'pending', 'completed', 'cancelled', 'staff_working', 'simultaneous_capacity', 'capacity_attention_count']) && object(value.today_hours);
+  case 'spa_operations_convenience': return arrays(value, ['todos']) && object(value.capacity) && numbers(value.capacity, ['limit', 'current_guests', 'pending_attention_count']) && rowsHave(value.todos, ['count']);
   case 'spa_admin_bookings': return Array.isArray(value) && value.every(row => object(row) && typeof row.staff_id === 'string' && bookingStatuses.includes(row.status));
   case 'spa_customers_list': return rowsHave(value, ['balance_cents', 'visits', 'no_shows', 'total_spend_cents']);
   case 'spa_catalog_admin': return arrays(value, ['services', 'products']) && rowsHave(value.services, ['price_cents', 'duration_minutes']) && rowsHave(value.products, ['price_cents', 'inventory', 'low_stock_threshold']);
@@ -209,7 +209,7 @@ function validShape(name, value) {
   case 'spa_staff_self': return numbers(value.metrics, ['completed', 'settled_completed', 'unsettled_completed', 'minutes', 'work_minutes', 'commission_cents', 'total_cents']) && object(value.profile) && arrays(value, ['shifts', 'daily_shifts', 'time_off']);
   case 'spa_attendance_self': return arrays(value, ['rows', 'requests']) && numbers(value.settings, ['max_shift_minutes', 'grace_minutes', 'radius_m', 'max_accuracy_m']);
   case 'spa_report': return numbers(value, ['bookings', 'completed', 'cancelled', 'no_show', 'revenue_cents', 'cash_in_cents', 'cash_out_cents', 'wallet_liability_cents']) && arrays(value, ['cash_entries', 'staff', 'daily']);
-  case 'spa_settings_os': return numbers(value.booking, ['opening_minute', 'closing_minute', 'slot_minutes', 'booking_days']) && arrays(value, ['resources', 'business_hours', 'business_overrides']) && object(value.assignment);
+  case 'spa_settings_os': return numbers(value.booking, ['opening_minute', 'closing_minute', 'slot_minutes', 'booking_days', 'simultaneous_capacity']) && arrays(value, ['business_hours', 'business_overrides']) && object(value.assignment);
   case 'spa_reviews_admin': return arrays(value, ['reviews', 'feedback']) && rowsHave(value.reviews, ['rating']);
   case 'spa_access_admin': return arrays(value, ['roles', 'permissions']) && value.roles.every(row => typeof row.code === 'string' && Array.isArray(row.permissions));
   default: return false;
@@ -272,7 +272,7 @@ export async function gatherStewardContext({ session, page, range, scope = 'busi
  };
  if (has(session, 'dashboard.view')) {
   add('spa_dashboard', 'dashboard', '今日營運數字', data => dashboard(data, session));
-  add('spa_operations_convenience', 'operations', '即時床位與待辦數量', data => convenience(data, session));
+  add('spa_operations_convenience', 'operations', '即時接客容量與待辦數量', data => convenience(data, session));
  }
  if ((business && owner) || (!business && page === 'bookings')) add('spa_admin_bookings', 'bookings', '所選日期預約統計', data => bookings(data, session, business && owner), args, true);
  if ((business && owner) || (!business && ['customers', 'pos'].includes(page))) add('spa_customers_list', 'customers', '會員與儲值彙總', customers);
@@ -284,7 +284,7 @@ export async function gatherStewardContext({ session, page, range, scope = 'busi
   add('spa_attendance_self', 'attendance', '本人出勤狀態彙總', ownAttendance, args, true);
  }
  if ((business && owner) || (!business && page === 'reports')) add('spa_report', 'reports', '所選日期經營報表彙總', data => reports(data, business && owner), args, true);
- if ((business && owner) || (!business && page === 'settings')) add('spa_settings_os', 'settings', '門店預約營業與床位設定', settings);
+ if ((business && owner) || (!business && page === 'settings')) add('spa_settings_os', 'settings', '門店預約營業與接客容量設定', settings);
  if ((business && owner) || (!business && page === 'reviews')) add('spa_reviews_admin', 'reviews', '評價狀態與評分彙總', reviews);
  if ((business && owner) || (!business && page === 'access')) add('spa_access_admin', 'access', '角色與權限配置', access);
  if (!business) {

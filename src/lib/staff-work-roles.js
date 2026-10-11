@@ -1,4 +1,4 @@
-const legacyTechnicianCodes = new Set(['therapist', 'senior_therapist', 'head_therapist', 'part_time']);
+const legacyTechnicianCodes = new Set(['therapist', 'senior_therapist', 'part_time']);
 
 export const workCategoryNames = { owner: '店主', counter: '櫃台', technician: '技師', legacy: '舊職稱・待對應' };
 

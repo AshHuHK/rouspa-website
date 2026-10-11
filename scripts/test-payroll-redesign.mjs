@@ -184,7 +184,7 @@ try {
  await db.query('insert into spa_staff_services(staff_id,service_id,enabled)values($1,$2,true)',[secondContractor,normal]);
  const customer=await admin('spa_customer_save',[null,'合成指定測試','0988333444','','一般會員','',null]);
  const appointment=(await db.query(`insert into spa_appointments(request_id,customer_id,staff_id,room_id,service_id,business_date,starts_at,ends_at,blocked_until,status,service_name,service_name_snapshot,duration_minutes_snapshot,price_cents,booking_preference)
- values($1,$2,$3,(select id from spa_rooms where active order by name limit 1),$4,'2026-10-18','2026-10-18T10:00:00+08:00','2026-10-18T11:00:00+08:00','2026-10-18T11:00:00+08:00','completed','合成療程','合成療程',60,100000,'designated')returning id`,[randomUUID(),customer,contractor,normal])).rows[0].id;
+ values($1,$2,$3,(select id from spa_rooms order by name limit 1),$4,'2026-10-18','2026-10-18T10:00:00+08:00','2026-10-18T11:00:00+08:00','2026-10-18T11:00:00+08:00','completed','合成療程','合成療程',60,100000,'designated')returning id`,[randomUUID(),customer,contractor,normal])).rows[0].id;
  await reject(()=>call(employee,'spa_appointment_commission_flags',[appointment,true,'非店主不能認定']),/FORBIDDEN/);
  await admin('spa_appointment_commission_flags',[appointment,true,'確認此堂由原承攬者自帶']);
  check((await admin('spa_admin_bookings',range)).find(row=>row.id===appointment).self_sourced_client,'owner appointment list exposes the confirmed self-sourced flag');

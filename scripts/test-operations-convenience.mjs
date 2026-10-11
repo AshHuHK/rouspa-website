@@ -19,7 +19,7 @@ create function spa_private.convenience_test_now() returns timestamptz language 
 const directory=new URL('../supabase/migrations/',import.meta.url);
 for(const file of (await readdir(directory)).filter(file=>file.endsWith('.sql')).sort()){
  let source=await readFile(new URL(file,directory),'utf8');
- if(['202610080006_operations_convenience.sql','202610080010_operations_event_reminders.sql'].includes(file))source=source.replaceAll('now()','spa_private.convenience_test_now()');
+ if(['202610080006_operations_convenience.sql','202610080010_operations_event_reminders.sql','202610110001_soft_capacity_and_title_retirement.sql'].includes(file))source=source.replaceAll('now()','spa_private.convenience_test_now()');
  await db.exec(source);
 }
 await db.exec(`create or replace function spa_private.public_booking_last_date() returns date language sql stable security definer set search_path='' as $$
@@ -29,7 +29,7 @@ await db.query('insert into auth.users(id,email) values($1,$2),($3,$4),($5,$6)',
 const people=(await db.query("select * from spa_staff where active and employment_status='active' and archived_at is null order by display_order limit 4")).rows;
 check(people.length===4,'fixture has four active therapists');
 await db.query("insert into spa_roles(user_id,role,staff_id,login_name) values($1,'owner',null,null),($2,'therapist',$3,'convenience_staff')",[owner,employee,people[0].id]);
-const rooms=(await db.query('select * from spa_rooms where active order by name')).rows;
+const rooms=(await db.query('select * from spa_rooms order by name')).rows;
 const service=(await db.query("select * from spa_services where active and online_booking_enabled order by display_order limit 1")).rows[0];
 const product=(await db.query("select * from spa_products where status='active' order by display_order limit 1")).rows[0];
 const customer=(await db.query("insert into spa_customers(name,phone,customer_type,status) values('測試客人','0991888001','member','active') returning id")).rows[0].id;
@@ -65,21 +65,15 @@ if(inventory!==1)await db.query("insert into spa_inventory_entries(product_id,de
 await db.query("insert into spa_reviews(appointment_id,rating,comment,created_at) values($1,5,'舒適的服務','2026-10-08T12:00:00+08:00')",[buffer.id]);
 
 const count=response=>Object.fromEntries(response.todos.map(task=>[task.key,task.count]));
-const bed=(response,index)=>response.beds.find(item=>item.id===rooms[index].id);
 await reject(()=>call(null),/permission denied|FORBIDDEN/);
 await reject(()=>call(outsider),/FORBIDDEN/);
 let admin=await call(owner),staff=await call(employee);
 check(admin.today==='2026-10-09'&&admin.target_month==='2026-11-01'&&!admin.edit_open,'Taiwan date drives overnight date and day-eight lock');
 check(admin.window.from==='2026-07-11'&&admin.window.to==='2026-11-30','todo query window is bounded to 90 days back and next month end');
-check(admin.beds.length===4,'board derives the four enabled store beds');
-check(bed(admin,0).state==='treatment'&&bed(admin,0).current.business_date==='2026-10-08','overnight checked-in treatment remains assigned to its original business date');
-check(bed(admin,1).state==='buffer','completed service retains its existing blocked buffer');
-check(bed(admin,2).state==='reserved'&&bed(admin,2).current===null&&bed(admin,2).next.id===reserved.id,'near-future reservation is visible before start');
-check(bed(admin,3).state==='free'&&bed(admin,3).next.id===next.id,'cancelled appointment never occupies bed; next future booking remains visible');
-check(admin.beds.every(item=>item.overlap_count<=1),'bed board preserves database non-overlap allocation');
-check(bed(admin,0).current.customer_name==='測試客人'&&bed(staff,0).current.customer_name==='測客人','staff response is gender-neutral surname only while owner retains full identity');
-check(!JSON.stringify(staff).includes('0991888001')&&!JSON.stringify(staff).includes('不應提供給員工')&&!JSON.stringify(staff).includes('manage_token')&&!JSON.stringify(staff).includes('price_cents'),'staff board exposes no customer phone, private notes, access tokens or finances');
-check(bed(staff,0).current.is_own===true&&bed(staff,1).current.is_own===false,'own service highlight maps to actual assigned technician');
+check(admin.capacity.limit===4&&admin.capacity.current_guests===1&&!admin.capacity.currently_exceeded,'live operations summarizes the soft simultaneous capacity without assigning beds');
+check(admin.capacity.pending_attention_count===0&&!('beds' in admin),'operations response omits legacy bed identities and reports no invented warning');
+check(staff.capacity.limit===4&&staff.capacity.current_guests===1,'employees see the same safe aggregate capacity instead of customer allocations');
+check(!JSON.stringify(staff).includes('0991888001')&&!JSON.stringify(staff).includes('不應提供給員工')&&!JSON.stringify(staff).includes('manage_token')&&!JSON.stringify(staff).includes('price_cents')&&!JSON.stringify(staff).includes(treatment.id),'staff capacity response exposes no customer identity, booking identity, private notes, access tokens or finances');
 check(!staff.is_owner&&staff.todos.every(item=>item.key.startsWith('my_')&&['self','bookings'].includes(item.module)),'staff receives only own permitted reminders');
 check(count(admin).pending_bookings===1,'pending booking count excludes history outside destination window');
 check(count(admin).arrivals===2&&count(admin).unsettled===1,'near arrival, overdue unarrived booking and completed unsettled count derive actual appointment state');
@@ -96,7 +90,7 @@ check(admin.todos.filter(item=>!['low_stock'].includes(item.key)).every(item=>it
 const revision=(packet,key)=>packet.todos.find(task=>task.key===key)?.revision;
 check(admin.todos.every(task=>/^[a-f0-9]{32}$/.test(task.revision)),'reminder revisions are opaque hashes, with no record IDs');
 check(JSON.stringify(admin.todos.map(t=>[t.key,t.revision]))===JSON.stringify((await call(owner)).todos.map(t=>[t.key,t.revision])),'unchanged source data keeps revisions stable');
-check(new Date(admin.next_refresh_at).valueOf()===new Date('2026-10-09T00:40:00+08:00').valueOf(),'one-shot refresh targets the nearest real bed boundary');
+check(new Date(admin.next_refresh_at).valueOf()===new Date('2026-10-09T00:40:00+08:00').valueOf(),'one-shot refresh targets the nearest real schedule boundary');
 const pendingId=(await db.query("select id from spa_appointments where status='pending' and business_date='2026-11-02'")).rows[0].id;
 const priorPendingRevision=revision(admin,'pending_bookings'),priorStaffRevision=revision(staff,'my_schedule');
 await db.query("update spa_appointments set status='cancelled' where id=$1",[pendingId]);
@@ -109,7 +103,7 @@ check(new Date((await call(owner)).next_refresh_at).valueOf()===new Date('2026-1
 await db.query("update convenience_test_clock set instant='2026-10-09T00:30:00+08:00'");
 const dueAttendance=(await db.query(`insert into spa_attendance(staff_id,work_date,clock_in,status)
  select $1,'2026-10-08',spa_private.convenience_test_now()-make_interval(mins=>max_shift_minutes)+interval '2 minutes','open' from spa_attendance_settings returning id`,[people[2].id])).rows[0].id;
-check(new Date((await call(owner)).next_refresh_at).valueOf()===new Date('2026-10-09T00:32:00+08:00').valueOf(),'open attendance schedules its exact overdue threshold ahead of the bed transition');
+check(new Date((await call(owner)).next_refresh_at).valueOf()===new Date('2026-10-09T00:32:00+08:00').valueOf(),'open attendance schedules its exact overdue threshold ahead of the next schedule transition');
 await db.query("update convenience_test_clock set instant='2026-10-09T00:32:00+08:00'");
 check(count(await call(owner)).missing_clockout===2,'exact max-shift equality creates overdue reminder without another poll');
 await db.query('delete from spa_attendance where id=$1',[dueAttendance]);
@@ -118,14 +112,13 @@ const before=(await db.query(`select (select count(*) from spa_appointments) boo
 await call(owner);await call(employee);
 check(JSON.stringify(before)===JSON.stringify((await db.query(`select (select count(*) from spa_appointments) bookings,(select count(*) from spa_attendance) attendance,(select count(*) from spa_audit) audit,(select count(*) from spa_orders) orders`)).rows[0]),'refresh is read-only and never changes allocation, attendance, orders or audit');
 await db.query("update convenience_test_clock set instant='2026-10-09T00:45:00+08:00'");admin=await call(owner);
-check(bed(admin,0).state==='buffer'&&bed(admin,1).state==='free','exact treatment end starts buffer; exact blocked-until boundary releases bed');
-check(bed(admin,2).state==='reserved','elapsed clock alone never claims a confirmed customer has arrived');
+check(admin.capacity.current_guests===1,'treatment capacity uses the actual service interval and excludes cleanup buffers');
 await db.query("update spa_appointments set status='checked_in' where id=$1",[reserved.id]);
-check(bed(await call(owner),2).state==='treatment','owner check-in is reflected immediately on the bed board');
+check((await call(owner)).capacity.current_guests===1,'check-in preserves the already reserved simultaneous guest count');
 await db.query("update spa_appointments set status='completed' where id=$1",[reserved.id]);
-check(bed(await call(owner),2).state==='buffer','early completion shows buffer without changing reservation capacity interval');
+check((await call(owner)).capacity.current_guests===0,'completed service leaves the live guest count even while technician cleanup remains protected');
 await db.query('update spa_appointments set staff_id=$1 where id=$2',[people[3].id,treatment.id]);
-check(bed(await call(employee),0).current.is_own===false,'reassignment removes original technician own-service highlight');
+check(!JSON.stringify(await call(employee)).includes(treatment.id),'technician reassignment never leaks appointment identity through the aggregate capacity response');
 await db.query("insert into spa_staff_schedule_submissions(staff_id,schedule_month,submitted_by) values($1,'2026-11-01',$2)",[people[0].id,employee]);
 staff=await call(employee);
 check(!staff.todos.some(item=>item.key==='my_submission')&&count(await call(owner)).missing_schedule===0,'completed schedule submission clears both employee and owner reminders');
@@ -141,9 +134,9 @@ await db.query("update convenience_test_clock set instant='2026-10-07T23:59:59+0
 check((await call(employee)).edit_open,'server Taiwan day-seven schedule window remains open');
 await db.query("update convenience_test_clock set instant='2026-10-08T00:00:00+08:00'");
 check(!(await call(employee)).edit_open,'server Taiwan midnight on day eight closes self scheduling');
-await db.query('update spa_rooms set active=false where id=$1',[rooms[3].id]);
-check((await call(owner)).beds.length===3,'disabling an existing resource automatically removes it from live board');
 await db.query('update spa_rooms set active=true where id=$1',[rooms[3].id]);
+check(!('beds' in await call(owner)),'reactivating a legacy room cannot restore bed-level tracking to operations');
+await db.query('update spa_rooms set active=false where id=$1',[rooms[3].id]);
 await db.query("update convenience_test_clock set instant='2026-10-09T00:30:00+08:00'");
 if(process.env.CONVENIENCE_QA_FILE)await writeFile(process.env.CONVENIENCE_QA_FILE,JSON.stringify({owner:await call(owner),employee:await call(employee)},null,2));
 await db.close();console.log(`Operations convenience checks passed: ${checks}`);

@@ -19,6 +19,7 @@ html,body,#root{margin:0;width:100%;min-width:0}body{overflow-x:clip}img,svg{max
 .booking-contact-field{display:grid;gap:7px}.booking-contact-form label{color:#725336;font-size:14px;line-height:1.6}
 .booking-contact-form input,.booking-contact-form textarea{width:100%}
 .public-home a[href="#member"]{display:inline-flex;align-items:center;justify-content:center;min-height:44px}
+.booking-capacity-notice{max-width:560px;margin:16px auto;padding:13px 15px;border:1px solid rgba(163,96,55,.35);border-radius:10px;background:rgba(183,117,70,.1);color:#74452e;line-height:1.7;text-align:left}
 @media(max-width:650px){.booking-calendar-grid button small{font-size:10px}.booking-calendar-week span{font-size:11px}.booking-calendar-grid button:has(.booking-day-hours){min-height:66px}.booking-calendar-grid button .booking-day-hours{font-size:10px}.booking-flow-progress li span{font-size:10px}}
 @media(max-width:340px){.booking-calendar-grid button .booking-day-hours{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.booking-experience>section{animation:none}}

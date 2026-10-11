@@ -8,6 +8,8 @@ const statusNames = { active: '在職', departed: '已離職', inactive: '停用
 
 export default function StaffProfileEditor({ row, data, catalog, saved }) {
   const titles = data.job_titles.filter(title => title.active && (!title.legacy || title.id === row?.job_title_id));
+  const assignedTitle = row?.job_title_id ? data.job_titles.find(title => title.id === row.job_title_id) : null;
+  const retiredTitle = assignedTitle && (!assignedTitle.active || assignedTitle.archived_at) ? assignedTitle : null;
   const firstTitle = titles.find(title => title.code === 'ft_probation') || titles.find(title => !title.legacy);
   const [form, setForm] = useState(row ? {
     ...row, employment_status: row.employment_status || (row.active ? 'active' : 'inactive'),
@@ -41,12 +43,14 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
       services: technician ? services : [] } });
   };
   return <MutationForm action={action} onSaved={saved}>
+    {retiredTitle&&<p className="alert" role="alert">原「首席調理師」職務已移除。人員、帳號、歷史預約、評價與薪資快照仍保留；請由店主明確選擇七階、兼職或承攬技師職稱後，才可重新接服務。</p>}
     {title?.legacy && <p className="alert">這位人員仍使用舊職稱。請由店主選定新職級；系統不會依年資擅自升等。對應前的新制度薪資只能試算，不能完成結算。</p>}
     <div className="form-grid">
       {text('姓名', 'name', 'text', { required: true, maxLength: 80 })}
       {text('英文姓名', 'name_en', 'text', { maxLength: 80 })}
       <Field label="職務／技師職級"><select required value={form.job_title_id || ''} onChange={event => selectTitle(event.target.value)}>
         <option value="" disabled>請選職稱</option>
+        {retiredTitle&&form.job_title_id===retiredTitle.id&&<option value={retiredTitle.id} disabled>舊職稱已移除，請重新選擇</option>}
         {Object.entries(workCategoryNames).map(([category, label]) => <optgroup key={category} label={label}>
           {titles.filter(item => item.work_category === category).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
         </optgroup>)}

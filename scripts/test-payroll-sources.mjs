@@ -16,7 +16,7 @@ create function public.payroll_source_test_now() returns timestamptz language sq
 const directory=new URL('../supabase/migrations/',import.meta.url);
 for(const file of(await readdir(directory)).filter(file=>file.endsWith('.sql')).sort())await db.exec((await readFile(new URL(file,directory),'utf8')).replaceAll('now()','public.payroll_source_test_now()'));
 const owner=randomUUID(),employee=randomUUID(),outsider=randomUUID();
-const people=(await db.query("select * from spa_staff where active and employment_status='active' order by display_order limit 2")).rows;
+const people=(await db.query("select s.* from spa_staff s join spa_job_titles j on j.id=s.job_title_id where s.active and s.employment_status='active' and j.work_category='technician' and s.is_bookable order by s.display_order limit 2")).rows;
 const staff=people[0],other=people[1],range=['2026-10-05','2026-10-15'];
 await db.query('insert into auth.users(id,email) values($1,$2),($3,$4),($5,$6)',[owner,'owner@sources.test',employee,'staff@sources.test',outsider,'outsider@sources.test']);
 await db.query("insert into spa_roles(user_id,role,staff_id,login_name) values($1,'owner',null,null),($2,'therapist',$3,'source_staff')",[owner,employee,staff.id]);
@@ -26,7 +26,7 @@ const admin=(name,args=[])=>call(owner,name,args);
 const sources=(id=staff.id,rule=null,user=owner)=>call(user,'spa_payroll_sources',[id,...range,rule]);
 const service=(await db.query("select * from spa_services where active and duration_minutes=45 order by display_order limit 1")).rows[0];
 const product=(await db.query("select * from spa_products where status='active' order by display_order limit 1")).rows[0];
-const room=(await db.query('select id from spa_rooms where active order by name limit 1')).rows[0].id;
+const room=(await db.query('select id from spa_rooms order by name limit 1')).rows[0].id;
 // These arbitrary-period/source-snapshot assertions intentionally exercise the
 // preserved legacy engine. Keep all migrations loaded and activate it explicitly;
 // the chronological full-month engine has its own test-payroll-redesign.mjs.

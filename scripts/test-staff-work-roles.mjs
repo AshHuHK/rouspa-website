@@ -31,9 +31,10 @@ for (const id of ['owner', 'counter', 'legacy-counter']) {
 for (const id of ['full-time', 'part-time', 'contractor', 'legacy-tech']) {
   check(isTechnician(staff.find(row => row.id === id)), `${id} retains its actual technician classification`);
 }
-for (const code of ['therapist', 'senior_therapist', 'head_therapist', 'part_time']) {
+for (const code of ['therapist', 'senior_therapist', 'part_time']) {
   check(isTechnician({ legacy: true, job_title_code: code }), `retained ${code} assignment remains a technician until explicit classification`);
 }
+check(!isTechnician({ legacy: true, job_title_code: 'head_therapist' }), 'retired head-therapist title no longer grants technician eligibility');
 check(!isTechnician({ legacy: true, job_title_code: 'unknown' }), 'an unknown legacy title never invents technician eligibility');
 check(!isTechnician({ legacy: false, job_title_code: 'therapist' }), 'legacy code alone cannot override an explicitly nonlegacy classification');
 assert.deepEqual(ids(posEligibleStaff(service, catalog)), ['contractor', 'full-time', 'legacy-tech', 'part-time']); checks++;

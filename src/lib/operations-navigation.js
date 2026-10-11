@@ -3,7 +3,8 @@ export function bookingMatchesContext(row, context) {
  if (context.status && row.status !== context.status) return false;
  if (context.statuses && !context.statuses.includes(row.status)) return false;
  if (context.staff_id && row.staff_id !== context.staff_id) return false;
- if (context.room_id && row.room_id !== context.room_id) return false;
+ if (context.capacity_attention && !row.capacity_exceeded) return false;
+ if (context.exclude_capacity_attention && row.capacity_exceeded) return false;
  if (context.unsettled && (row.status !== 'completed' || row.checkout)) return false;
  if (context.starts_before && !(new Date(row.starts_at) <= new Date(context.starts_before))) return false;
  if (context.ends_after && !(new Date(row.ends_at) > new Date(context.ends_after))) return false;
