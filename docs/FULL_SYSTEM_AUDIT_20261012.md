@@ -71,7 +71,7 @@
 | 後台連線恢復測試 | 18 項，含獨立逾時、網路錯誤及結構化失敗 |
 | 預約設定原子保存 | 10 項，含權限、範圍、成功保存及整體回滾 |
 | Production 網站構建 | 通過；大型 Excel 匯出函式庫仍有體積提示，屬匯出時延遲載入 |
-| iOS 共用程式 | 合約測試 95 項、網頁 bundle 構建與 Capacitor 同步通過；簽名／TestFlight／真機不屬於這次完成項 |
+| iOS 共用程式 | 合約測試 95 項、網頁 bundle 構建、Capacitor 同步及 GitHub 上 Xcode 無簽名編譯通過；簽名／TestFlight／真機不屬於這次完成項 |
 | 依賴安全檢查 | 當次 `npm audit` 0 個已知漏洞，不能代替業務或權限驗證 |
 | `git diff --check` | 通過 |
 
@@ -82,6 +82,16 @@
 3. `202610120003_atomic_booking_settings.sql`
 
 正式庫只讀驗收結果：未啟用 RLS 的 `spa_*` 業務表 **0**；非必要且能被瀏覽器角色執行的 private definer 函式由 **7 → 0**；共用身份額度、備份校驗及原子設定接口均存在。新增加購關聯表權限防護也由 migration 明確維持；正式表在修復前沒有發現未啟用 RLS 的業務表，不將本地舊 migration 的差異誤報為正式資料已公開。
+
+### 已完成的發布驗收
+
+- 程式提交：[`be369cd`](https://github.com/AshHuHK/rouspa-website/commit/be369cd0eb20e569c1cdcf7576bb686e02c032cc)，已推送 `main`。
+- [GitHub 自動檢查](https://github.com/AshHuHK/rouspa-website/actions/runs/38218071274)：網站全套測試、production build、64 項隔離瀏覽器驗證、iOS 無簽名編譯均成功。
+- [Vercel 正式部署](https://vercel.com/ashhuhks-projects/rouspa-website/6AZLgEfXaqbZtNaqDHq9AwCzHgg9)：`Ready`，來源為同一提交，台灣時間 2026-10-12 15:32 起完成發布。
+- 正式網域 `https://www.rouspa.tw/` 已載入新的 `main-CbIk4RNv.js`；公開接口回應 `200` 及 `X-Booking-Service-Version: 20261012-01`。
+- 正式站 390 像素手機預約月曆：顯示本月／下月，非同步展開後標題仍在距頂部約 89 像素位置，沒有再被推到底部；沒有提交新預約。
+- 正式站 320 像素服務、商品、聯絡頁：頁面及公開資料接口均 `200`，內容寬度等於畫面寬度，已載入圖片無破圖，無頁面程式錯誤及資料錯誤提示；新安全標頭生效。
+- 店主 Chrome 原有登入可正常查看營運首頁、待辦中心與月表。本次沒有修改真人帳號、密碼或權限，也沒有為驗收另建真人員工帳戶。
 
 ### 驗證邊界
 
