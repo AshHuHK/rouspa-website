@@ -17,6 +17,7 @@ import PosWorkspace from './PosWorkspace.jsx';
 import { tenureLabel } from './lib/staff-tenure.js';
 import RosterDatePicker from './RosterDatePicker.jsx';
 import { attendanceStatusLabels, dashboardAttendanceBoundaries, summarizeDashboardAttendance } from './lib/dashboard-attendance.js';
+import { useBookingClock } from './lib/useBookingClock.js';
 
 const moduleLabels={dashboard:'營運首頁',bookings:'預約與日程',customers:'會員與儲值金',pos:'門店 POS',team:'人員與排班',payroll:'薪資與提成',catalog:'服務・商品・庫存',reviews:'評價',reports:'經營報表',access:'角色與權限',settings:'系統設定',self:'我的薪資與績效'};
 const overtimeNames={weekday:'平日延長工時',rest_day:'休息日出勤',national_holiday:'國定／特別休假',regular_holiday:'例假日出勤'};
