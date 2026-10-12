@@ -26,7 +26,7 @@ const staff=(await db.query("select id from spa_staff where active and employmen
 await db.query('insert into auth.users(id,email) values($1,$2),($3,$4)',[owner,'owner@consistency.test',employee,'staff@consistency.test']);
 await db.query("insert into spa_roles(user_id,role,staff_id,active,login_name) values($1,'owner',null,true,null),($2,'therapist',$3,true,'consistency_staff')",[owner,employee,staff[0]]);
 async function as(user,sql,args=[]){await db.exec('begin');try{await db.exec('set local role '+(user?'authenticated':'anon'));await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[user||'',JSON.stringify({iat:1800000000})]);const result=await db.query(sql,args);await db.exec('commit');return result.rows;}catch(error){await db.exec('rollback');throw error;}}
-const rpc=async(user,name,args=[])=> (await as(user,`select public.${name}(${args.map((_,index)=>'$'+(index+1)).join(',')}) result`,args))[0]?.result;
+const rpc=async(user,name,args=[])=> {const result=(await as(user,`select public.${name}(${args.map((_,index)=>'$'+(index+1)).join(',')}) result`,args))[0]?.result;if(result?.error)throw new Error(result.error);return result;};
 const rows=(user,name,args=[])=>as(user,`select * from public.${name}(${args.map((_,index)=>'$'+(index+1)).join(',')})`,args);
 const service=(await db.query("select id from spa_services where active and status='active' and online_booking_enabled order by display_order limit 1")).rows[0].id;
 await reject(()=>rpc(employee,'spa_booking_capacity_save',[5]),/FORBIDDEN/);
@@ -63,15 +63,15 @@ const resolvedTodo=await rpc(owner,'spa_operations_convenience');
 check(resolvedTodo.capacity.pending_attention_count===0&&resolvedTodo.todos.find(task=>task.key==='capacity_attention')?.count===0,'owner confirmation immediately clears the call-back reminder');
 await db.query("update spa_appointments set status='cancelled' where id=any($1::uuid[])",[capacityBookings.map(booking=>booking.id)]);
 const identity=allocations[0],identityPhone=(await db.query('select phone from spa_customers where id=$1',[identity.customer_id])).rows[0].phone;
-await reject(()=>rpc(null,'spa_create_booking',[randomUUID(),service,date,`${date}T17:00:00+08:00`,null,'竄改的姓名',identityPhone,0,'']),/CUSTOMER_NAME_MISMATCH/);
+await reject(()=>rpc(null,'spa_create_booking',[randomUUID(),service,date,`${date}T17:00:00+08:00`,null,'竄改的姓名',identityPhone,0,'']),/CUSTOMER_IDENTITY_INVALID/);
 check((await db.query('select name from spa_customers where id=$1',[identity.customer_id])).rows[0].name==='整合測試客人','booking cannot overwrite the name used to access existing member history');
 await reject(()=>rpc(null,'spa_create_booking',[identity.request_id,service,date,identity.starts_at,staff[1],'整合測試客人',identityPhone,0,'']),/REQUEST_CONFLICT/);
 check((await rpc(null,'spa_create_booking',[identity.request_id,service,date,identity.starts_at,null,'整合測試客人',identityPhone,0,''])).reference===identity.reference,'identical booking retry returns the original receipt');
 await db.query("update spa_customers set status='blocked' where id=$1",[identity.customer_id]);
-await reject(()=>rpc(null,'spa_create_booking',[randomUUID(),service,date,`${date}T17:00:00+08:00`,null,'整合測試客人',identityPhone,0,'']),/CUSTOMER_UNAVAILABLE/);
+await reject(()=>rpc(null,'spa_create_booking',[randomUUID(),service,date,`${date}T17:00:00+08:00`,null,'整合測試客人',identityPhone,0,'']),/CUSTOMER_IDENTITY_INVALID/);
 check((await db.query('select status from spa_customers where id=$1',[identity.customer_id])).rows[0].status==='blocked','public booking cannot reactivate a blocked profile');
 await db.query("update spa_customers set status='active',archived_at=now() where id=$1",[identity.customer_id]);
-await reject(()=>rpc(null,'spa_create_booking',[randomUUID(),service,date,`${date}T17:00:00+08:00`,null,'整合測試客人',identityPhone,0,'']),/CUSTOMER_UNAVAILABLE/);
+await reject(()=>rpc(null,'spa_create_booking',[randomUUID(),service,date,`${date}T17:00:00+08:00`,null,'整合測試客人',identityPhone,0,'']),/CUSTOMER_IDENTITY_INVALID/);
 await rpc(owner,'spa_customer_restore',[identity.customer_id]);
 slot=(await rows(null,'spa_public_slots',[service,date,null])).find(row=>row.time_label==='10:00');
 check(slot.available_staff_count===staff.length-3,'three assigned technicians leave every other qualified technician available');

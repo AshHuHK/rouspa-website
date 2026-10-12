@@ -16,6 +16,10 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Install browser for isolated UI regressions
+        run: npx playwright install --with-deps chromium
+      - name: Test booking and staff UI recovery with synthetic data
+        run: npm run test:ui
   ios:
     name: Validate iOS operations app
     runs-on: macos-26

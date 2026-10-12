@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { STORE, hoursText } from "./lib/public-copy.js";
 import { updateBusinessSeo } from './lib/seo.js';
 import { usePublicCatalog } from './lib/usePublicData.js';
+import { PublicDataStatus } from './PublicDataStatus.jsx';
 
 // ============================================================
 // 聯繫資訊配置
@@ -46,7 +47,7 @@ const contactInfo = {
 export default function Contact({ lang = "zh", onNavigateHome }) {
   const [copied, setCopied] = useState("");
   const [copyError, setCopyError] = useState("");
-  const { data: catalog } = usePublicCatalog({ lang });
+  const { data: catalog, error: catalogError, loading: catalogLoading, refresh: refreshCatalog } = usePublicCatalog({ lang });
   useEffect(() => { if (catalog) updateBusinessSeo(catalog, 'contact', lang); }, [catalog, lang]);
   const t = contactInfo[lang];
   const isZh = lang === "zh";
@@ -75,15 +76,15 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
       <div className="contact-card-row" style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
         <div style={{ fontSize: "24px", marginTop: "2px" }}>{icon}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: "11px", color: "#a3823f", letterSpacing: "2px", marginBottom: "8px", fontWeight: 600 }}>{label}</div>
+          <div style={{ fontSize: "12px", color: "#80622d", letterSpacing: "2px", marginBottom: "8px", fontWeight: 600 }}>{label}</div>
           <div style={{ fontSize: "15px", fontWeight: 500, color: "#4a443a", letterSpacing: "1px", marginBottom: subValue ? "4px" : "0", lineHeight: 1.6 }}>{value}</div>
-          {subValue && <div style={{ fontSize: "12px", color: "rgba(74, 68, 58, 0.5)", lineHeight: 1.6 }}>{subValue}</div>}
+          {subValue && <div style={{ fontSize: "13px", color: "#746b5d", lineHeight: 1.6 }}>{subValue}</div>}
         </div>
         {action && (
           <button onClick={action} style={{
-            padding: "8px 16px", fontSize: "11px", letterSpacing: "1px",
+            minHeight: "44px", padding: "8px 16px", fontSize: "12px", letterSpacing: "1px",
             background: "transparent", border: "1px solid rgba(163,130,63,0.3)",
-            color: "#a3823f", borderRadius: "4px", cursor: "pointer",
+            color: "#80622d", borderRadius: "4px", cursor: "pointer",
             fontFamily: "inherit", transition: "all 0.3s", whiteSpace: "nowrap",
             fontWeight: 600
           }}
@@ -164,6 +165,7 @@ export default function Contact({ lang = "zh", onNavigateHome }) {
         </div>
       </div>
 
+      <PublicDataStatus error={catalogError} loading={catalogLoading} hasData={!!catalog} onRetry={refreshCatalog} lang={lang}/>
       {/* CONTACT CARDS */}
       <div style={{ maxWidth: "760px", margin: "0 auto", padding: "0 24px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "50px" }}>

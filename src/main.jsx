@@ -4,6 +4,7 @@ import App from './App.jsx';
 import BookingLookup from './BookingLookup.jsx';
 import { applySeo, routeFromLocation } from './lib/seo.js';
 import { createRebookingIntent } from './lib/rebooking.js';
+import { ApplicationBoundary } from './ApplicationBoundary.jsx';
 import './responsive.css';
 import './public-theme.css';
 import './public-navigation.css';
@@ -74,4 +75,4 @@ function Router() {
   return <App lang={lang} onNavigateShop={() => navigateTo('/shop/')} onNavigateContact={() => navigateTo('/contact/')} onLangChange={setLang} onRebook={rebook} rebookingIntent={rebookingIntent} onRebookingApplied={rebookingApplied} />;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<React.Suspense fallback={<div style={{padding:40,textAlign:"center"}}>載入中…</div>}><Router /></React.Suspense>);
+ReactDOM.createRoot(document.getElementById('root')).render(<ApplicationBoundary><React.Suspense fallback={<div style={{padding:40,textAlign:"center"}}>載入中…</div>}><Router /></React.Suspense></ApplicationBoundary>);

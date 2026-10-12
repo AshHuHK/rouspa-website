@@ -17,7 +17,7 @@ function ProductArtwork({ product, category, lang }) {
 }
 
 export default function Shop({ lang = "zh", onNavigateHome }) {
-  const { data: catalog, error } = usePublicData('spa_store_catalog', { lang, scopes: ['catalog'] });
+  const { data: catalog, error, loading, refresh } = usePublicData('spa_store_catalog', { lang, scopes: ['catalog'] });
   const [activeCategory,setActiveCategory]=useState("all");
   const isZh=lang==="zh";
   const {categories,products:allProducts}=useMemo(()=>publicProductCatalog(catalog||{}),[catalog]);
@@ -37,7 +37,7 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
       .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:24px}.product-card{background:#fff;border:1px solid rgba(163,130,63,.13);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(74,55,29,.05)}
       .product-artwork{aspect-ratio:1.25;background:#e5ded1 center/cover no-repeat;display:grid;place-items:center;color:#9a793e;position:relative}.product-artwork span{font-size:44px;border:1px solid rgba(154,121,62,.45);width:84px;height:84px;border-radius:50%;display:grid;place-items:center}.product-artwork small{position:absolute;bottom:18px;letter-spacing:3px}
       .product-copy{padding:22px}.product-copy h2{font-size:18px;font-weight:600;line-height:1.45;margin-bottom:8px}.product-copy p{white-space:pre-line;overflow-wrap:anywhere;font-size:13px;line-height:1.75;color:#746b5d;min-height:68px}.product-meta{border-top:1px solid #eee5d8;margin-top:18px;padding-top:16px;display:flex;justify-content:space-between;gap:12px;align-items:end}.product-price{font-family:'Cormorant Garamond',serif;color:#8b6a31;font-size:22px;font-weight:700}.product-unit{overflow-wrap:anywhere;font-size:11px;color:#867c6c}.stock{font-size:12px;padding:5px 9px;border-radius:20px;background:#eff5ec;color:#51714d}.stock.out{background:#f1ece7;color:#8a6d5b}
-      .shop-state{padding:44px;text-align:center;background:#fff;border:1px solid #e5dac7;border-radius:10px}.shop-visit{text-align:center;margin-top:70px;padding:54px 24px;background:#fff;border-radius:10px}.shop-visit p{line-height:1.8}.shop-visit a{color:#80622d}
+      .shop-state{padding:44px;text-align:center;background:#fff;border:1px solid #e5dac7;border-radius:10px}.shop-state p{margin-bottom:16px}.shop-state button{min-height:44px;padding:10px 20px;border:1px solid #80622d;border-radius:6px;background:#80622d;color:#fff;font:inherit;cursor:pointer}.shop-state button:disabled{opacity:.6;cursor:wait}.shop-visit{text-align:center;margin-top:70px;padding:54px 24px;background:#fff;border-radius:10px}.shop-visit p{line-height:1.8}.shop-visit a{color:#80622d}
       @media(max-width:640px){.shop-brand span{display:none}.shop-hero{padding-top:120px}.category-tabs{justify-content:flex-start}.product-copy p{min-height:0}}
     `}</style>
     <nav className="shop-nav">
@@ -46,12 +46,12 @@ export default function Shop({ lang = "zh", onNavigateHome }) {
     </nav>
     <header className="shop-hero"><small>COLLECTIONS</small><h1>{isZh?"柔療·好物選":"Curated wellness"}</h1><p>{isZh?"把柔和的養護帶回日常，探索門店精選好物。查看目前價格與供貨狀態，歡迎到店選購。":"Bring gentle care into your daily routine. Explore our curated products and view current store pricing and availability."}</p></header>
     <main className="shop-main">
-      {error&&<div className="shop-state" role="alert">{error}</div>}
-      {!catalog&&!error&&<div className="shop-state">{isZh?"正在載入商品…":"Loading products…"}</div>}
+      {error&&<div className="shop-state"><p role="alert">{error}</p>{catalog&&<p>{isZh?"以下保留上次成功載入的商品資料。":"Showing the last successfully loaded products."}</p>}<button type="button" disabled={loading} onClick={()=>refresh()}>{loading?(isZh?"重新載入中…":"Reloading…"):(isZh?"重新載入商品":"Retry products")}</button></div>}
+      {!catalog&&!error&&<div className="shop-state" role="status">{isZh?"正在載入商品…":"Loading products…"}</div>}
       {catalog&&<>
-        <div className="category-tabs" role="tablist" aria-label={isZh?"商品分類":"Product categories"}>
-          <button className={effectiveCategory==="all"?"active":""} onClick={()=>setActiveCategory("all")}>{isZh?"全部產品":"All products"}</button>
-          {categories.map(c=><button key={c.id} className={effectiveCategory===c.id?"active":""} onClick={()=>setActiveCategory(c.id)}>{name(c)}</button>)}
+        <div className="category-tabs" role="group" aria-label={isZh?"商品分類":"Product categories"}>
+          <button type="button" aria-pressed={effectiveCategory==="all"} className={effectiveCategory==="all"?"active":""} onClick={()=>setActiveCategory("all")}>{isZh?"全部產品":"All products"}</button>
+          {categories.map(c=><button type="button" key={c.id} aria-pressed={effectiveCategory===c.id} className={effectiveCategory===c.id?"active":""} onClick={()=>setActiveCategory(c.id)}>{name(c)}</button>)}
         </div>
         {!visible.length&&<div className="shop-state">{isZh?"此分類目前沒有上架商品。":"No published products in this category."}</div>}
         <div className="product-grid">{visible.map(p=>{const category=categories.find(c=>c.id===p.category_id),soldOut=Number(p.inventory)<=0;return <article className="product-card" key={p.id}>

@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from './public-config.js';
 import { createPublicRpc } from './public-rpc.js';
 import { isNativeOperationsApp, saveDownload } from './native-platform.js';
+import { createOperationsRpc } from './operations-rpc.js';
+import { isInvalidSession } from './rpc-result.js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
@@ -11,6 +13,12 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: !isNativeOperationsApp(), flowType: 'pkce' } }
 );
 const errors = {
+  INVALID_PRODUCT_IMAGE_URL: '產品照片請使用完整的 HTTPS 網址，且不能包含帳號或密碼。',
+  CUSTOMER_IDENTITY_INVALID: '姓名與手機資料無法核對，請確認原預約的完整姓名與手機，或透過私人連結／LINE 聯絡門店。',
+  OPERATIONS_REQUEST_TIMEOUT: '連線等候逾時，請重新整理核對。若剛才正在儲存或收款，結果可能已保存；核對後再用相同資料重試。',
+  OPERATIONS_NETWORK_ERROR: '門店資料暫時無法連線，請檢查網路並重新載入。',
+  ALREADY_REFUNDED: '這筆療程已完成退款，請關閉視窗並重新整理核對；不會再扣款或退款。',
+  BACKUP_STALE: '備份後資料已有變動，本次沒有重設。請重新檢查範圍、儲存最新備份後再試。',
   FUTURE_PAYROLL_ACTIVATION_NOT_SUPPORTED: '新版本建立後立即啟用，生效日不能晚於台灣今日；未支援未來自動切換。',
   JOB_CLASSIFICATION_REQUIRED: '請先在人員檔案選擇新制度的實際職稱；舊技師職稱只能保留原指派，不能新增或重新授予。',
   JOB_EMPLOYMENT_MISMATCH: '此職稱與聘僱類型不相符，請依店主、櫃台或技師職級重新選擇。',
@@ -123,6 +131,7 @@ const errors = {
   PAYROLL_RULE_IN_USE: '此版本已有薪資結算記錄，必須保留以供核對。'
 };
 const publicErrorsEn = {
+  CUSTOMER_IDENTITY_INVALID: 'The name and phone details could not be verified. Check the full name and phone used for your booking, or use your private link/contact the store.',
   BROWSER_RANDOM_UNAVAILABLE: 'This browser cannot create a secure request ID. Open https://www.rouspa.tw in an updated browser.',
   PUBLIC_REQUEST_TIMEOUT: 'The connection timed out. Retry with the same booking details, or check Find booking first.',
   PUBLIC_NETWORK_ERROR: 'Unable to connect to the booking service. Check your connection and retry, or contact us on LINE.',
@@ -149,6 +158,7 @@ const publicErrorsEn = {
 };
 export function errorText(error, lang = 'zh') {
   const message = error?.message || String(error);
+  if (isInvalidSession(error)) return lang === 'en' ? 'Your sign-in session is invalid. Please sign in again.' : '登入狀態已失效，請重新登入。';
   if (lang === 'en') {
     for (const [key, value] of Object.entries(publicErrorsEn)) if (message.includes(key)) return value;
     if (error?.code === 'PGRST202' || message.includes('schema cache')) return 'Online booking is unavailable. Please contact us on LINE.';
@@ -160,11 +170,7 @@ export function errorText(error, lang = 'zh') {
   if (error?.code === '23505') return '這筆資料已存在，請檢查手機號碼或帳號。';
   return '操作未成功，請稍後重試。若持續出現，請聯絡門店。';
 }
-export async function rpc(name, args = {}) {
-  const { data, error } = await supabase.rpc(name, args);
-  if (error) throw error;
-  return data;
-}
+export const rpc = createOperationsRpc(supabase);
 // Public pages must never inherit a stale employee/owner session from the same
 // browser. The same-origin relay uses only the publishable key, keeping booking,
 // lookup and member access independent from back-office authentication.

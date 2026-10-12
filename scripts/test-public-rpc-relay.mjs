@@ -19,6 +19,12 @@ async function invoke(body = { rpc: 'spa_catalog', args: {} }, options = {}) {
 
 const catalog = await invoke();
 check(catalog.statusCode === 200 && catalog.body.test, 'anonymous catalog response is passed through');
+for (const code of ['CUSTOMER_IDENTITY_INVALID','RATE_LIMIT','SLOT_TAKEN']) {
+  const result=await invoke({rpc:'spa_create_booking',args:{}},{fetchImpl:async()=>new Response(JSON.stringify({error:code,details:'must-not-leak'}))});
+  check(result.statusCode===(code==='RATE_LIMIT'?429:409)&&result.body.message===code&&!JSON.stringify(result.body).includes('must-not-leak'),'committed identity failures remain sanitized API failures: '+code);
+}
+const unknownStructured=await invoke(undefined,{fetchImpl:async()=>new Response(JSON.stringify({error:'private-db-failure',details:'private-customer'}))});
+check(unknownStructured.statusCode===503&&!JSON.stringify(unknownStructured.body).includes('private-'),'unknown successful-status error payload is never a booking receipt or private error disclosure');
 check(catalog.headers['cache-control'].includes('no-store') && catalog.headers['x-robots-tag'].includes('noindex') && catalog.headers['x-booking-service-version'] === PUBLIC_BOOKING_RELEASE, 'private responses are not cached or indexed and carry the diagnostic release');
 
 const payload = { p_request: 'b0a331d8-44e5-4a9e-a7dc-2e3cc87b1b35', p_name: 'Test only', p_phone: '0000000001' };

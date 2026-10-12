@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { publicRpc, errorText, dateTime, money, statusNames, taipeiDate, dateAfter } from './lib/spa.js';
 import { isInactiveBooking, canChangeBooking } from './lib/booking-state.js';
 import { useBookingClock } from './lib/useBookingClock.js';
@@ -14,6 +14,8 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
   const [access, setAccess] = useState(null), [rows, setRows] = useState([]), [searched, setSearched] = useState(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
   const [editing, setEditing] = useState(null), [view, setView] = useState('active');
+  const resultsId=useId(),groupButtons=useRef([]);
+  function chooseGroup(event,index){if(!['ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?1:1-index;setView(next===0?'active':'inactive');groupButtons.current[next]?.focus();}
   const now = useBookingClock(rows.flatMap(row => [row.ends_at, Date.parse(row.change_before) + 1])), request = useRef(0), inFlight = useRef(null);
   const en = lang === 'en', t = (zh, english) => en ? english : zh;
 
@@ -95,11 +97,11 @@ export default function BookingLookup({ lang = 'zh', standalone = false, private
     {searched && !rows.length && <p className="lookup-empty">{t('未找到符合的預約，請確認手機與姓名。', 'No matching bookings. Please check the phone and full name.')}</p>}
     {rows.length > 0 && <>
       <div className="lookup-tabs" role="tablist" aria-label={t('預約分組', 'Booking groups')}>
-        <button role="tab" aria-selected={view === 'active'} aria-controls="lookup-results" onClick={() => setView('active')}>Active · {t('有效預約', 'Upcoming')} ({active.length})</button>
-        <button role="tab" aria-selected={view === 'inactive'} aria-controls="lookup-results" onClick={() => setView('inactive')}>Nonactive · {t('已結束／取消', 'Past / cancelled')} ({inactive.length})</button>
+        <button ref={el=>{groupButtons.current[0]=el;}} id={`${resultsId}-active`} role="tab" tabIndex={view==='active'?0:-1} aria-selected={view === 'active'} aria-controls={resultsId} onKeyDown={event=>chooseGroup(event,0)} onClick={() => setView('active')}>Active · {t('有效預約', 'Upcoming')} ({active.length})</button>
+        <button ref={el=>{groupButtons.current[1]=el;}} id={`${resultsId}-inactive`} role="tab" tabIndex={view==='inactive'?0:-1} aria-selected={view === 'inactive'} aria-controls={resultsId} onKeyDown={event=>chooseGroup(event,1)} onClick={() => setView('inactive')}>Nonactive · {t('已結束／取消', 'Past / cancelled')} ({inactive.length})</button>
       </div>
       <p className="lookup-help">{t('依台灣時間即時分類。已完成、取消、未到店或服務結束時間已過，會歸入 Nonactive。', 'Updated using Taiwan time. Completed, cancelled, no-show and expired bookings are Nonactive.')}</p>
-      <div id="lookup-results" role="tabpanel">
+      <div id={resultsId} role="tabpanel" aria-labelledby={`${resultsId}-${view}`}>
       {!selected.length && <p className="lookup-empty">{t('這個分組目前沒有預約。', 'No bookings in this group.')}</p>}
       {selected.map(row => <article key={row.id} className={`lookup-card ${isInactiveBooking(row, now) ? 'is-inactive' : ''}`} data-booking-id={row.id}>
         <div className="lookup-card-heading"><h3>{row.service_name}</h3><span className="lookup-status">{(en ? statusNamesEn : statusNames)[row.status]}</span></div>

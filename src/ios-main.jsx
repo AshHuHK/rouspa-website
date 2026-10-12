@@ -7,6 +7,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import Admin from './Admin.jsx';
 import { supabase } from './lib/spa.js';
 import { isNativeOperationsApp, NATIVE_CATCHUP_EVENT } from './lib/native-platform.js';
+import { ApplicationBoundary } from './ApplicationBoundary.jsx';
 import './responsive.css';
 import './ios.css';
 
@@ -96,5 +97,5 @@ function OperationsApp() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode><OperationsApp /></React.StrictMode>,
+  <React.StrictMode><ApplicationBoundary><OperationsApp /></ApplicationBoundary></React.StrictMode>,
 );

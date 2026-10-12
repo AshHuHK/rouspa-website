@@ -53,4 +53,99 @@ await admin('spa_reset_business_data',['payroll','2026-08-01','2026-08-01','RESE
 for(const table of ['spa_time_entries','spa_attendance','spa_attendance_events','spa_attendance_requests','spa_payroll_source_snapshots'])check(await count(table)===0,'payroll reset clears '+table);
 await admin('spa_reset_business_data',['all',null,null,'RESET']);check(await count('spa_appointments')===0&&await count('spa_coupons')===0,'all reset deletes full appointment/reward chains');
 check(await count('spa_customers')===1&&await count('spa_staff')>0&&await count('spa_products')>0,'reset preserves customers, team and catalog configuration');
+const financePhone='09'+String(Math.floor(Math.random()*1e8)).padStart(8,'0');
+const financeCustomer=await admin('spa_customer_save_v2',[null,'財務重試測試',financePhone,'','一般會員','','guest',null]);
+async function rejected(fn,pattern){await assert.rejects(fn,pattern);checks++;}
+const topupRequest=randomUUID();
+await admin('spa_topup',[topupRequest,financeCustomer,12000,'cash','  重試儲值  ']);
+await admin('spa_topup',[topupRequest,financeCustomer,12000,'cash','重試儲值']);
+check((await db.query("select count(*)::int n from spa_wallet_entries where request_id=$1",[topupRequest])).rows[0].n===1,'topup retries compare normalized payload without duplicate credit');
+check((await db.query('select customer_type from spa_customers where id=$1',[financeCustomer])).rows[0].customer_type==='member','topup preserves member promotion');
+await rejected(()=>admin('spa_topup',[topupRequest,financeCustomer,12001,'cash','重試儲值']),/REQUEST_CONFLICT/);
+const adjustRequest=randomUUID();
+await admin('spa_wallet_adjust',[adjustRequest,financeCustomer,500,'  手動調整  ']);
+await admin('spa_wallet_adjust',[adjustRequest,financeCustomer,500,'手動調整']);
+check((await db.query("select count(*)::int n from spa_wallet_entries where request_id=$1",[adjustRequest])).rows[0].n===1,'wallet adjustment retries compare signed amount and normalized reason');
+await rejected(()=>admin('spa_wallet_adjust',[adjustRequest,financeCustomer,501,'手動調整']),/REQUEST_CONFLICT/);
+const packageRequest=randomUUID(),packageExpiry='2099-12-31T23:59:00+08:00';
+await admin('spa_package_sell',[packageRequest,financeCustomer,service.id,'  重試套票  ',2,40000,packageExpiry,'cash']);
+await admin('spa_package_sell',[packageRequest,financeCustomer,service.id,'重試套票',2,40000,packageExpiry,'cash']);
+check((await db.query('select count(*)::int n from spa_packages where request_id=$1',[packageRequest])).rows[0].n===1,'package retry compares all normalized purchase fields without duplicate sale');
+await rejected(()=>admin('spa_package_sell',[packageRequest,financeCustomer,service.id,'重試套票',3,40000,packageExpiry,'cash']),/REQUEST_CONFLICT/);
+const expenseRequest=randomUUID();
+await admin('spa_expense',[expenseRequest,1600,'card','  清潔用品  ']);
+await admin('spa_expense',[expenseRequest,1600,'card','清潔用品']);
+check((await db.query("select count(*)::int n from spa_cash_entries where request_id=$1 and category='expense'",[expenseRequest])).rows[0].n===1,'expense retry compares normalized amount, method and note');
+await rejected(()=>admin('spa_expense',[expenseRequest,1601,'card','清潔用品']),/REQUEST_CONFLICT/);
+await db.query('update spa_customers set archived_at=now() where id=$1',[financeCustomer]);
+await rejected(()=>admin('spa_topup',[topupRequest,financeCustomer,12000,'cash','重試儲值']),/INVALID_INPUT/);
+await rejected(()=>admin('spa_package_sell',[randomUUID(),financeCustomer,service.id,'封存會員套票',1,1000,packageExpiry,'cash']),/INVALID_INPUT/);
+await db.query("update spa_customers set archived_at=null,status='active' where id=$1",[financeCustomer]);
+
+// Nested JSON array order is part of a POS request payload and must invalidate
+// a backup even though top-level row collection order is intentionally ignored.
+const salePair=(await db.query("select s.id service_id,st.id staff_id from spa_services s join spa_staff_services ss on ss.service_id=s.id and ss.enabled join spa_staff st on st.id=ss.staff_id and st.active and st.employment_status='active' and st.archived_at is null join spa_job_titles jt on jt.id=st.job_title_id and jt.work_category='technician' where s.active and s.status='active' order by s.display_order limit 1")).rows[0];
+assert.ok(salePair,'nested payload fixture has an active service technician');checks++;
+const mutableSaleItems=[{item_type:'product',product_id:product,quantity:1,staff_id:staff},{item_type:'service',service_id:salePair.service_id,quantity:1,staff_id:salePair.staff_id}],mutableSaleRequest=randomUUID();
+await admin('spa_pos_checkout_with_coupon',[mutableSaleRequest,customer,mutableSaleItems,0,'cash','',null]);
+const mutableOrderArgs=['orders',day,day],beforePayloadReorder=await admin('spa_reset_backup_prepare',mutableOrderArgs);
+check(beforePayloadReorder.backup.sale_requests.some(row=>row.request_id===mutableSaleRequest),'order backup includes its original POS request payload');
+await db.query("update spa_sale_requests set payload=jsonb_set(payload,'{items}',$2::jsonb) where request_id=$1",[mutableSaleRequest,JSON.stringify([...mutableSaleItems].reverse())]);
+await rejected(()=>admin('spa_reset_business_data_guarded',[...mutableOrderArgs,'RESET',beforePayloadReorder.fingerprint]),/BACKUP_STALE/);
+check((await db.query('select count(*)::int n from spa_orders where request_id=$1',[mutableSaleRequest])).rows[0].n===1,'reordered nested POS payload invalidates backup without deleting its order');
+const reorderedPayloadBackup=await admin('spa_reset_backup_prepare',mutableOrderArgs);
+await admin('spa_reset_business_data_guarded',[...mutableOrderArgs,'RESET',reorderedPayloadBackup.fingerprint]);
+check((await db.query('select count(*)::int n from spa_orders where request_id=$1',[mutableSaleRequest])).rows[0].n===0,'unchanged reordered payload backup resets successfully');
+
+// A zero-value refund still reserves its request id. The reset backup binds
+// the complete appointment payload, and staff reassignment history is exported.
+const appointmentDay=(await db.query("select ((now() at time zone 'Asia/Taipei')::date+7)::text value")).rows[0].value;
+const serviceSlot=(await db.query('select * from public.spa_availability($1,$2,null)',[service.id,appointmentDay])).rows.find(row=>row.available);
+assert.ok(serviceSlot,'reset guard fixture has a public appointment slot');checks++;
+const booking=await call(null,'spa_create_booking',[randomUUID(),service.id,appointmentDay,serviceSlot.starts_at,null,'重設備份測試','09'+String(Math.floor(Math.random()*1e8)).padStart(8,'0'),0,'']);
+const guardedAppointment=(await db.query('select * from spa_appointments where manage_token=$1',[booking.manage_token])).rows[0];
+await db.query("update spa_appointments set status='completed',price_cents=0 where id=$1",[guardedAppointment.id]);
+await admin('spa_checkout_with_coupon',[randomUUID(),guardedAppointment.id,0,0,null,0,'cash',null]);
+const appointmentArgs=['appointments',appointmentDay,appointmentDay];
+const legacySourceId='reset-'+randomUUID();
+await db.query("insert into spa_legacy_imports(source_id,original,appointment_id,outcome,reason) values($1,$2::jsonb,$3,'imported',null)",[legacySourceId,JSON.stringify({source:'reset guard fixture'}),guardedAppointment.id]);
+const beforeAppointmentChange=await admin('spa_reset_backup_prepare',appointmentArgs);
+await db.query("update spa_legacy_imports set reason='changed after backup' where source_id=$1",[legacySourceId]);
+await rejected(()=>admin('spa_reset_business_data_guarded',[...appointmentArgs,'RESET',beforeAppointmentChange.fingerprint]),/BACKUP_STALE/);
+check((await db.query('select count(*)::int n from spa_appointments where id=$1',[guardedAppointment.id])).rows[0].n===1,'changed legacy import metadata invalidates backup without deleting its appointment');
+const refundRequest=randomUUID();
+await admin('spa_refund',[refundRequest,guardedAppointment.id,'零金額退款測試']);
+await rejected(()=>admin('spa_expense',[refundRequest,900,'cash','重用退款請求']),/REQUEST_CONFLICT/);
+const assignedStaff=guardedAppointment.staff_id;
+const replacementStaff=(await db.query("select s.id from spa_staff s join spa_job_titles jt on jt.id=s.job_title_id join spa_staff_services ss on ss.staff_id=s.id where ss.service_id=$1 and s.id<>$2 and ss.enabled and s.active and s.employment_status='active' and s.archived_at is null and jt.work_category='technician' order by s.id limit 1",[service.id,assignedStaff])).rows[0]?.id;
+assert.ok(replacementStaff,'reassignment fixture has a second qualified technician');checks++;
+await admin('spa_appointment_reassign',[guardedAppointment.id,replacementStaff,'備份一致性測試']);
+await rejected(()=>admin('spa_reset_business_data_guarded',[...appointmentArgs,'RESET',beforeAppointmentChange.fingerprint]),/BACKUP_STALE/);
+check((await db.query('select count(*)::int n from spa_appointments where id=$1',[guardedAppointment.id])).rows[0].n===1,'stale appointment backup leaves modified records intact');
+const currentAppointmentBackup=await admin('spa_reset_backup_prepare',appointmentArgs);
+check(currentAppointmentBackup.backup.appointment_staff_changes.some(row=>row.appointment_id===guardedAppointment.id),'appointment backup includes staff reassignment history');
+check(currentAppointmentBackup.backup.legacy_imports.some(row=>row.source_id===legacySourceId&&row.appointment_id===guardedAppointment.id),'appointment backup includes legacy import links that reset detaches');
+check(currentAppointmentBackup.backup.refund_requests.some(row=>row.request_id===refundRequest),'appointment backup includes refund request identity');
+const unchangedAppointmentBackup=await admin('spa_reset_backup_prepare',appointmentArgs);
+check(currentAppointmentBackup.fingerprint===unchangedAppointmentBackup.fingerprint,'reset fingerprint excludes volatile export timestamp');
+await admin('spa_reset_business_data_guarded',[...appointmentArgs,'RESET',unchangedAppointmentBackup.fingerprint]);
+check((await db.query('select count(*)::int n from spa_appointments where id=$1',[guardedAppointment.id])).rows[0].n===0,'unchanged guarded appointment reset succeeds');
+check((await db.query('select count(*)::int n from spa_appointment_staff_changes where appointment_id=$1',[guardedAppointment.id])).rows[0].n===0,'appointment reset removes exported reassignment history with its parent');
+check((await db.query('select appointment_id from spa_legacy_imports where source_id=$1',[legacySourceId])).rows[0].appointment_id===null,'appointment reset preserves legacy import row after detaching its backed-up appointment link');
+
+// A newly eligible expense after backup invalidates the token; an unchanged
+// second export can then be reset successfully.
+const expenseArgs=['expenses',day,day];
+const firstExpenseRequest=randomUUID();
+await admin('spa_expense',[firstExpenseRequest,2100,'cash','第一筆測試支出']);
+const beforeNewExpense=await admin('spa_reset_backup_prepare',expenseArgs);
+const secondExpenseRequest=randomUUID();
+await admin('spa_expense',[secondExpenseRequest,2200,'transfer','備份後新增支出']);
+await rejected(()=>admin('spa_reset_business_data_guarded',[...expenseArgs,'RESET',beforeNewExpense.fingerprint]),/BACKUP_STALE/);
+check((await db.query("select count(*)::int n from spa_cash_entries where category='expense' and request_id=any($1::uuid[])",[[firstExpenseRequest,secondExpenseRequest]])).rows[0].n===2,'stale expense backup preserves both original and newly eligible records');
+const currentExpenseBackup=await admin('spa_reset_backup_prepare',expenseArgs);
+const unchangedExpenseBackup=await admin('spa_reset_backup_prepare',expenseArgs);
+check(currentExpenseBackup.fingerprint===unchangedExpenseBackup.fingerprint,'unchanged expense selection retains one content fingerprint');
+await admin('spa_reset_business_data_guarded',[...expenseArgs,'RESET',unchangedExpenseBackup.fingerprint]);
+check((await db.query("select count(*)::int n from spa_cash_entries where category='expense' and request_id=any($1::uuid[])",[[firstExpenseRequest,secondExpenseRequest]])).rows[0].n===0,'unchanged guarded expense reset succeeds');
 console.log(`Reset consistency checks passed: ${checks}`);await db.close();

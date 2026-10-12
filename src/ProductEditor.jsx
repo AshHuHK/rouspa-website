@@ -66,7 +66,7 @@ export default function ProductEditor({ row, categories, saved }) {
       // through both steps, keeping the final image and product draft together.
       const published = fields.status === 'active' && Boolean(fields.public_visible);
       const payload = { ...fields, id: row?.id || '', public_visible: published, website_visible: published, store_visible: published, price_cents: cents(fields.price), cost_cents: fields.cost === '' ? '' : cents(fields.cost), low_stock_threshold: Number(fields.low_stock_threshold), display_order: Number(fields.display_order) };
-      let photoUrl = file ? '' : validateProductPhotoUrl(fields.image_url);
+      let photoUrl = file ? '' : validateProductPhotoUrl(fields.image_url, { legacyUrl: row?.image_url });
       if (file) {
         setStage('正在上傳照片…');
         if (!upload.current || upload.current.file !== file) {

@@ -11,9 +11,9 @@ const PUBLIC_RPCS = new Set([
 ]);
 const SAFE_ERRORS = new Set([
   'INVALID_SERVICE', 'INVALID_INPUT', 'INVALID_DATE', 'SLOT_TAKEN', 'RATE_LIMIT',
-  'CUSTOMER_NAME_MISMATCH', 'CUSTOMER_UNAVAILABLE', 'REQUEST_CONFLICT',
+  'CUSTOMER_NAME_MISMATCH', 'CUSTOMER_UNAVAILABLE', 'CUSTOMER_IDENTITY_INVALID', 'REQUEST_CONFLICT',
   'BOOKING_ACCESS_EXPIRED', 'FORBIDDEN', 'NOT_FOUND', 'REASON_REQUIRED',
-  'RESCHEDULE_CUTOFF', 'CANCELLATION_CUTOFF', 'INVALID_TRANSITION', 'REVIEW_NOT_ELIGIBLE'
+  'RESCHEDULE_CUTOFF', 'CANCELLATION_CUTOFF', 'INVALID_TRANSITION', 'REVIEW_NOT_ELIGIBLE', 'PAYROLL_LOCKED'
 ]);
 const ORIGINS = new Set(['https://www.rouspa.tw', 'https://rouspa.tw']);
 const MAX_BODY = 16 * 1024;
@@ -79,6 +79,12 @@ export function createPublicRpcHandler({ fetchImpl = globalThis.fetch, env = pro
           const message = typeof data?.message === 'string' ? data.message.trim() : '';
           if (SAFE_ERRORS.has(message)) return { status: response.status, data: { message } };
           throw new PublicRpcError(503, 'PUBLIC_SERVICE_UNAVAILABLE');
+        }
+        // Identity-limit failures deliberately commit in PostgreSQL. Preserve
+        // their failure meaning without exposing arbitrary upstream JSON.
+        if (typeof data?.error === 'string') {
+          if (!SAFE_ERRORS.has(data.error)) throw new PublicRpcError(503, 'PUBLIC_SERVICE_UNAVAILABLE');
+          return { status: data.error === 'RATE_LIMIT' ? 429 : 409, data: { message: data.error } };
         }
         return { status: response.status === 204 ? 200 : response.status, data };
       })();

@@ -8,7 +8,7 @@ const mediaMessages = {
   PRODUCT_PHOTO_TYPE: '請選擇 JPG、PNG 或 WebP 產品照片。',
   PRODUCT_PHOTO_SIZE: '產品照片不得超過 5 MB，且不能是空白檔案。',
   PRODUCT_PHOTO_INVALID: '照片內容與圖片格式不符，請重新選擇有效照片。',
-  PRODUCT_PHOTO_URL: '照片網址請使用完整的 https:// 或 http:// 圖片網址。',
+  PRODUCT_PHOTO_URL: '照片網址請使用完整的 HTTPS 圖片網址，且不能包含帳號或密碼。',
   PRODUCT_PHOTO_UPLOAD_FAILED: '照片上傳失敗，商品尚未儲存。請檢查網路與目錄權限後重試。',
   PRODUCT_PHOTO_UPLOAD_TIMEOUT: '照片上傳仍未完成，商品尚未儲存。請稍後按儲存重試；會沿用同一次上傳。',
   PRODUCT_PHOTO_PUBLIC_URL: '無法取得產品照片網址，商品尚未儲存。請重試。',
@@ -18,13 +18,14 @@ export function productMediaError(error, fallback) {
   return mediaMessages[error?.message] || fallback(error);
 }
 
-export function validateProductPhotoUrl(value) {
+export function validateProductPhotoUrl(value, { legacyUrl = '' } = {}) {
   const text = String(value || '').trim();
   if (!text) return '';
   try {
     const url = new URL(text);
-    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error();
-    return url.href;
+    const legacy = text === legacyUrl && url.protocol === 'http:';
+    if ((!legacy && url.protocol !== 'https:') || url.username || url.password) throw new Error();
+    return legacy ? text : url.href;
   } catch {
     throw new Error('PRODUCT_PHOTO_URL');
   }

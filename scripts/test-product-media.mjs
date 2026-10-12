@@ -20,10 +20,11 @@ await rejected(() => validateProductPhoto({ type: 'image/jpeg', size: PRODUCT_PH
 await rejected(() => validateProductPhoto({ type: 'image/jpeg', size: 12, slice: () => ({ arrayBuffer: async () => { throw new Error('file unreadable'); } }) }), 'PRODUCT_PHOTO_INVALID');
 check(validateProductPhotoUrl('  https://cdn.example.test/photo.jpg  '), 'https://cdn.example.test/photo.jpg');
 check(validateProductPhotoUrl(''), '');
-check(validateProductPhotoUrl('http://cdn.example.test/photo.png'), 'http://cdn.example.test/photo.png');
-for (const url of ['javascript:alert(1)', 'data:image/svg+xml,<svg/>', 'ftp://example.test/photo.jpg', 'https://user:password@example.test/a.jpg', '//example.test/a.jpg', 'broken']) {
+check(validateProductPhotoUrl('http://cdn.example.test/photo.png', { legacyUrl: 'http://cdn.example.test/photo.png' }), 'http://cdn.example.test/photo.png');
+for (const url of ['http://cdn.example.test/photo.png', 'javascript:alert(1)', 'data:image/svg+xml,<svg/>', 'ftp://example.test/photo.jpg', 'https://user:password@example.test/a.jpg', '//example.test/a.jpg', 'broken']) {
   assert.throws(() => validateProductPhotoUrl(url), /PRODUCT_PHOTO_URL/); checks += 1;
 }
+assert.throws(() => validateProductPhotoUrl('http://cdn.example.test/new.png', { legacyUrl: 'http://cdn.example.test/photo.png' }), /PRODUCT_PHOTO_URL/); checks += 1;
 
 let calls = [], uploadCount = 0;
 const random = { randomUUID: () => '12345678-1234-4123-8123-123456789012' };

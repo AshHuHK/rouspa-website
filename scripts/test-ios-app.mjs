@@ -86,8 +86,8 @@ for (const source of [stewardServer, staffLogin, staffAccounts]) {
 }
 check(/access-control-allow-origin/i.test(stewardServer) && /OPTIONS/.test(stewardServer), 'Ask Steward supports exact-origin CORS preflight');
 check(/saveDownload/.test(spa) && /saveDownload/.test(payrollXlsx) && /saveDownload/.test(businessOs), 'CSV, XLSX and backup exports share the native export adapter');
-check(/await downloadJson/.test(businessOs) && /confirm\?\.\(['"]備份分享視窗已關閉/.test(businessOs), 'backup reset waits for export and explicit saved-file confirmation');
-check(businessOs.indexOf('await downloadJson') < businessOs.indexOf("await rpc('spa_reset_business_data'"), 'reset cannot execute before the awaited backup flow');
+check(/spa_reset_backup_prepare/.test(businessOs) && /await downloadJson/.test(businessOs) && /confirm\?\.\(['"]備份分享視窗已關閉/.test(businessOs), 'backup reset waits for a guarded export and explicit saved-file confirmation');
+check(businessOs.indexOf('await downloadJson') < businessOs.indexOf("await rpc('spa_reset_business_data_guarded'"), 'guarded reset cannot execute before the awaited backup flow');
 check(/publicWebsiteUrl\(['"]\/privacy\//.test(admin) && /publicWebsiteUrl\(['"]\/support\//.test(admin), 'native admin exposes production privacy and support links');
 for (const [page, label] of [[privacyPage, 'privacy'], [supportPage, 'support']]) {
   check(/noindex,\s*follow/.test(page) && /rosa1232425@gmail\.com/.test(page), `public ${label} page is available with support contact and no indexing`);

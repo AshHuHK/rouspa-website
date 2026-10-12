@@ -1,4 +1,6 @@
-export const PUBLIC_BOOKING_RELEASE = '20261010-02';
+import { unwrapRpcResult } from './rpc-result.js';
+
+export const PUBLIC_BOOKING_RELEASE = '20261012-01';
 
 export function createPublicRpc({ url, key, proxyUrl = null, fetchImpl = globalThis.fetch, timeoutMs = 25000 }) {
   return async function publicRpc(name, args = {}) {
@@ -24,7 +26,7 @@ export function createPublicRpc({ url, key, proxyUrl = null, fetchImpl = globalT
           if (data && typeof data === 'object') Object.assign(error, data);
           throw error;
         }
-        return data;
+        return unwrapRpcResult(data);
       })();
       return await Promise.race([operation, deadline]);
     } catch (error) {

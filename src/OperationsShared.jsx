@@ -1,17 +1,21 @@
-import { useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
+import { useEffect, useId, useRef, useState, cloneElement, isValidElement } from 'react';
 import { supabase, rpc, errorText } from './lib/spa.js';
 import { createRequestId } from './lib/request-id.js';
 import { publicWebsiteUrl } from './lib/native-platform.js';
+import { readSessionWithDeadline } from './lib/operations-rpc.js';
 import './operations.css';
 export function useSession() {
-  const [session, setSession] = useState(undefined);
+  const [state, setState] = useState({session:undefined,error:null});
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
-    let live = true;
-    supabase.auth.getSession().then(({ data }) => { if (live) setSession(data.session); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => { if (live) setSession(next); });
+    let live = true, generation = 0;
+    setState({session:undefined,error:null});
+    const expected = generation;
+    readSessionWithDeadline(supabase.auth).then(session => { if (live && generation===expected) setState({session,error:null}); }).catch(error => { if (live && generation===expected) setState({session:undefined,error}); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => { generation++;if (live) setState({session:next,error:null}); });
     return () => { live = false; subscription.unsubscribe(); };
-  }, []);
-  return session;
+  }, [attempt]);
+  return {...state,retry:()=>setAttempt(value=>value+1)};
 }
 export function Login({ title = '管理後台' }) {
   const [loginName, setLoginName] = useState(''); const [password, setPassword] = useState('');
@@ -39,8 +43,9 @@ export function Field({ label, children, wide = false }) {
 }
 export function Modal({ title, children, onClose }) {
   const ref = useRef(null);
+  const headingId = useId();
   useEffect(()=>{ref.current.showModal();},[]);
-  return <dialog ref={ref} onCancel={e=>{e.preventDefault();onClose();}}><div className="row" style={{justifyContent:'space-between'}}><h2>{title}</h2><button type="button" onClick={onClose} aria-label="關閉">✕</button></div>{children}</dialog>;
+  return <dialog ref={ref} aria-labelledby={headingId} onCancel={e=>{e.preventDefault();onClose();}}><div className="row" style={{justifyContent:'space-between'}}><h2 id={headingId}>{title}</h2><button type="button" onClick={onClose} aria-label="關閉">✕</button></div>{children}</dialog>;
 }
 export function Empty({ children = '目前沒有記錄。' }) { return <p className="empty">{children}</p>; }
 export function Method({ value, onChange }) { return <select value={value} onChange={e=>onChange(e.target.value)}><option value="cash">現金</option><option value="card">刷卡（已在店內收款）</option><option value="transfer">轉帳（已核對入帳）</option></select>; }
