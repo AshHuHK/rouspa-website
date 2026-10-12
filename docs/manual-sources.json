@@ -1,5 +1,5 @@
 {
-  "reviewed_at": "2026-10-12T07:29:22.953Z",
+  "reviewed_at": "2026-10-12T07:49:19.178Z",
   "manual_sha256": "30ff87c25043e035324af9a0cf3254ebcb649ba4c42ae5b332391c2e204b7edc",
   "sources": {
     ".github/workflows/validate.yml": "31de911ec4585c39629e1d36cac41000f4bef723bc4b1c549478f9371d8e1395",
@@ -32,7 +32,7 @@
     "src/Member.jsx": "3910ad332c20bda31e82eebeb2c725a348a030847727d349d0197dab5afc8740",
     "src/OperationsConvenience.jsx": "e8e237d50eaa44449bcc5b5287014fb2fdb5067e1dec0bbd8eb43755fc9d11cb",
     "src/OperationsNotifications.jsx": "db929170047b7012997e763f3562cfdac90359bd30ea8a1a965b854dbd3b7671",
-    "src/OperationsShared.jsx": "2428b53572c2bc8e808482bac843394b2042d4a59a6bc5e58bc3cb8da08d5ada",
+    "src/OperationsShared.jsx": "2326509dacdadbd8a4857a3496e6b2acc42ff4652754038090fcd95beb7c7bcc",
     "src/PayrollPolicyEditor.jsx": "f0ad96793a14a90e143d8b755eb663c26de9c6894e059f215b9fb640a6a63dfc",
     "src/PayrollSources.jsx": "4798fd6b5adaad6094f7289d6f5661d2a28ecad8b557e050012985abeadb7c23",
     "src/PosWorkspace.jsx": "4b0267c27350d7bc98d2b288030282f52bc0a478ef1ee836a7fd09b335d07cf3",

@@ -1,0 +1,138 @@
+/* Coffee and copper remain the base; teal is a restrained interface accent. */
+.ops {
+  --cyber-copper: #bc8355;
+  --cyber-teal: #42786f;
+  --cyber-glow: rgba(83, 145, 130, .2);
+  background-image:
+    linear-gradient(rgba(72, 115, 104, .055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(105, 66, 44, .075) 1px, transparent 1px),
+    radial-gradient(ellipse at 0 0, rgba(167, 109, 64, .3), transparent 40%),
+    radial-gradient(ellipse at 100% 15%, rgba(79, 123, 111, .13), transparent 34%),
+    linear-gradient(145deg, #cbb39c, #bea086);
+  background-size: 48px 48px, 48px 48px, 100% 100%, 100% 100%, 100% 100%;
+}
+
+/* Keep the texture still while people read figures or edit a form. */
+.ops::before {
+  animation: none;
+  background: linear-gradient(115deg, rgba(239, 216, 181, .1), transparent 35%, rgba(66, 120, 111, .045));
+  background-size: 100% 100%;
+  opacity: .8;
+}
+
+.ops .ops-admin-header {
+  position: relative;
+  border-color: rgba(101, 69, 50, .48);
+  background: linear-gradient(115deg, rgba(238, 219, 199, .95), rgba(196, 166, 140, .9));
+  box-shadow: 0 10px 28px rgba(67, 42, 29, .12), inset 0 1px rgba(255, 242, 222, .65), inset 3px 0 var(--cyber-teal);
+}
+.ops .ops-admin-header::after {
+  content: "";
+  position: absolute;
+  inset: auto 18px -1px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--cyber-copper), #92b1a0, transparent);
+  background-size: 220% 100%;
+  animation: ops-cyber-trace 12s ease-in-out infinite;
+}
+.ops .ops-admin-brand > .eyebrow { color: #496a60; font-weight: 700; }
+.ops .ops-admin-brand h1 { text-shadow: 0 1px rgba(255, 244, 229, .65); }
+
+.ops .os-main-nav {
+  border-color: rgba(101, 69, 50, .4);
+  background: linear-gradient(110deg, rgba(191, 160, 132, .98), rgba(210, 183, 156, .98));
+  box-shadow: 0 8px 22px rgba(67, 42, 29, .13), inset 0 1px rgba(255, 241, 223, .45);
+  scrollbar-color: #8b6a51 transparent;
+}
+.ops .os-main-nav button { border-radius: 6px; transition: background .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.ops .os-main-nav button.active {
+  color: #fff5e8;
+  border-color: #72513c;
+  background: linear-gradient(120deg, #78553d, #594333);
+  box-shadow: inset 0 -2px #89ad99, inset 0 1px rgba(248, 223, 185, .3), 0 3px 13px rgba(61, 44, 32, .18);
+}
+.ops .sync-toolbar { border-left: 2px solid rgba(66, 120, 111, .65); }
+.ops .ops-live-status.connected::before {
+  background: var(--cyber-teal);
+  box-shadow: 0 0 0 3px rgba(66, 120, 111, .12), 0 0 9px var(--cyber-glow);
+}
+
+.ops .card {
+  box-shadow: 0 10px 25px rgba(67, 42, 29, .12), inset 0 1px rgba(255, 240, 218, .55);
+}
+.ops .card::before {
+  top: 8px; right: 8px; width: 12px; height: 12px;
+  border-top: 1px solid rgba(66, 120, 111, .55);
+  border-right: 1px solid rgba(66, 120, 111, .55);
+  pointer-events: none;
+}
+.ops .card::after {
+  top: 0; left: 14px; width: calc(100% - 28px); height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(188, 131, 85, .65), rgba(91, 151, 132, .6), transparent);
+  animation: none;
+  pointer-events: none;
+}
+.ops .os-hero {
+  border-color: rgba(101, 69, 50, .4);
+  background: linear-gradient(120deg, rgba(172, 120, 78, .26), rgba(231, 209, 186, .75));
+  box-shadow: inset 3px 0 rgba(66, 120, 111, .6), inset 0 1px rgba(255, 241, 220, .45);
+}
+.ops .os-hero .eyebrow { color: #70503a; }
+.ops .metric, .ops .dashboard-attendance-metrics strong { font-variant-numeric: tabular-nums; }
+.ops .os-metrics > .card { border-bottom: 2px solid rgba(66, 120, 111, .45); }
+.ops .os-launcher .os-icon {
+  border-color: rgba(66, 120, 111, .6);
+  color: #496f63;
+  background: linear-gradient(145deg, rgba(249, 228, 198, .6), rgba(66, 120, 111, .08));
+  box-shadow: inset 0 0 0 3px rgba(255, 239, 216, .26);
+  border-radius: 8px 3px 8px 3px;
+}
+.ops button.primary {
+  background: linear-gradient(120deg, #936344, #624632);
+  border-color: #704b34;
+  box-shadow: inset 0 1px rgba(255, 227, 185, .32), inset 0 -2px rgba(136, 174, 151, .45), 0 5px 16px rgba(76, 48, 31, .18);
+}
+.ops button:disabled { box-shadow: none; }
+.ops :is(button, input, select, textarea, a):focus-visible {
+  outline: 2px solid var(--cyber-teal);
+  outline-offset: 3px;
+}
+.ops :is(input, select, textarea):focus {
+  border-color: var(--cyber-teal);
+  box-shadow: 0 0 0 3px rgba(66, 120, 111, .13);
+}
+.ops dialog {
+  border-color: rgba(66, 120, 111, .8);
+  box-shadow: 0 24px 70px rgba(52, 36, 25, .3), inset 0 1px rgba(255, 238, 211, .6);
+}
+.ops dialog::backdrop { background: rgba(52, 38, 29, .48); }
+
+@media (hover: hover) and (pointer: fine) {
+  .ops .os-main-nav button:not(.active):not(:disabled):hover {
+    border-color: rgba(66, 120, 111, .5);
+    background: rgba(238, 219, 196, .55);
+    box-shadow: inset 0 -2px rgba(66, 120, 111, .35);
+  }
+  .ops .card:not(.os-danger-zone):not(.booking-inactive):not(.is-closed):hover {
+    border-color: rgba(66, 120, 111, .46);
+    box-shadow: 0 12px 28px rgba(67, 42, 29, .14), 0 0 14px rgba(66, 120, 111, .07), inset 0 1px rgba(255, 240, 218, .65);
+  }
+  .ops button.primary:not(:disabled):hover {
+    border-color: #92aa88;
+    box-shadow: inset 0 1px rgba(255, 227, 185, .4), inset 0 -2px #89ad99, 0 5px 18px rgba(76, 48, 31, .2), 0 0 12px var(--cyber-glow);
+  }
+  .ops .os-launcher button:not(:disabled):hover .os-icon {
+    border-color: var(--cyber-teal);
+    box-shadow: 0 0 12px var(--cyber-glow), inset 0 0 0 3px rgba(255, 239, 216, .3);
+  }
+}
+@keyframes ops-cyber-trace { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0 0; } }
+@media (max-width: 760px) {
+  .ops { background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%, 100% 100%; }
+  .ops .ops-admin-header::after { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ops .ops-admin-header::after, .ops .ops-live-status.connecting::before { animation: none; }
+  .ops .os-main-nav button { transition: none; }
+}
