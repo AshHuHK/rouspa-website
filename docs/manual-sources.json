@@ -1,5 +1,5 @@
 {
-  "reviewed_at": "2026-10-11T23:11:27.985Z",
+  "reviewed_at": "2026-10-12T00:43:46.535Z",
   "manual_sha256": "12af72144ac65bc100319471043b5a69ca737022569a15647f5e6c9c557ccad2",
   "sources": {
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
@@ -8,7 +8,7 @@
     "server/public-rpc.mjs": "742a7cc949816c3dbb56a56b28da0e9bea4d809aded93d1548d8f2c07c902da8",
     "server/steward-context.mjs": "6dd61345c285624b41f6a9704c53a636a8d069d87a27d1a8db5eee84dd54beb3",
     "server/steward-period.mjs": "77f60bd099b89aa335101c3b27bca392d1a3502067919dfffa64ae7966dd2f87",
-    "src/Admin.jsx": "cd46cf1a0461b3785259fde77280306880514bcbb583f661307a5e2d02f18290",
+    "src/Admin.jsx": "f27f2d63336f90792285fad8f55bf8c61f18f4c37b1baf830fee0107493b40ff",
     "src/App.jsx": "efe4c3a02a540cb47407a38507a285294c825caf5b416f56bf0e6945c1d3e223",
     "src/AskSteward.jsx": "7bf0e399700ede69be136f99abf5df2ccb01d39b94ecbbb42e0bd42a86dfca66",
     "src/Attendance.jsx": "8d868dcc806ce01a7d72b74b598f74e31fc42c6466b66f8758d4023abf7ce775",
