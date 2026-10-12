@@ -103,6 +103,8 @@
 
 店主首頁的「今日營業收入」與經營報表採同一交易日口徑：今日建立的預約結帳減今日退款，再加今日已付款 POS；它不是含儲值／套票預收與小費的「實收款」。另顯示今日已完成但尚無結帳紀錄的筆數，避免完成數和應收工作混在一起。
 
+店主首頁的「今日出勤」把**今日有效人員班表、休假及打卡事實**放在同一張表：今日應到、已到崗、目前上班中，以及遲到／整班未到的人數，並列出姓名、職稱、班表時間和到離狀態。已到崗包含目前上班中及今日已有有效下班紀錄；班表開始加目前寬限後仍無有效打卡為遲到，跨過班表結束仍無打卡為整班未到；目前落在休假時段者標為休假中，尚未到班者不算遲到。畫面在班表開始＋寬限、班表結束和休假邊界自行更新，另於打卡或班表資料變動時即時重讀。此總覽只提供店主，且不包含經緯度、定位誤差或距離；位置證據仍只在專用出勤審核查看。
+
 服務後確認實際技師，再標記完成及使用該筆預約結帳；未結帳不先計薪資提成。預約列表的「已結帳／已退款」狀態由伺服器獨立回傳，不以目前帳號能否查看金額判斷，因此沒有財務明細權限的排程角色也不會把已收款項目誤認為待結帳。商品或不需預約排程的當次服務由店主 POS 記錄，避免把同一筆現實服務在預約結帳及 POS 各登一次。付款方式只是記錄已收款／已核對入帳，不會替門店執行刷卡或銀行付款。
 
 ### 收班與例行核對
@@ -127,7 +129,7 @@
 
 一般待辦範圍是今日往前 90 天至下月月底，近期到店／服務另有時間條件，超出窗口的歷史事項請到原模組用日期查詢；提醒為工作入口，不是全部歷史對帳清單。
 
-來源：[首頁及模組](src/BusinessOS.jsx)、[容量／待辦畫面](src/OperationsConvenience.jsx)、[通知畫面](src/OperationsNotifications.jsx)、[軟性容量與容量待辦](supabase/migrations/202610110001_soft_capacity_and_title_retirement.sql)、[共同更新](src/lib/useOperationsSnapshot.js)、[通知規則](src/lib/operations-notifications.js)。
+來源：[首頁及模組](src/BusinessOS.jsx)、[首頁出勤狀態](src/lib/dashboard-attendance.js)、[首頁出勤資料界線](supabase/migrations/202610110003_dashboard_attendance_status.sql)、[容量／待辦畫面](src/OperationsConvenience.jsx)、[通知畫面](src/OperationsNotifications.jsx)、[軟性容量與容量待辦](supabase/migrations/202610110001_soft_capacity_and_title_retirement.sql)、[共同更新](src/lib/useOperationsSnapshot.js)、[通知規則](src/lib/operations-notifications.js)。
 
 <a id="booking"></a>
 

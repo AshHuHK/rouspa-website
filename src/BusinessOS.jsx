@@ -16,6 +16,7 @@ import PayrollPolicyEditor from './PayrollPolicyEditor.jsx';
 import PosWorkspace from './PosWorkspace.jsx';
 import { tenureLabel } from './lib/staff-tenure.js';
 import RosterDatePicker from './RosterDatePicker.jsx';
+import { attendanceStatusLabels, dashboardAttendanceBoundaries, summarizeDashboardAttendance } from './lib/dashboard-attendance.js';
 
 const moduleLabels={dashboard:'營運首頁',bookings:'預約與日程',customers:'會員與儲值金',pos:'門店 POS',team:'人員與排班',payroll:'薪資與提成',catalog:'服務・商品・庫存',reviews:'評價',reports:'經營報表',access:'角色與權限',settings:'系統設定',self:'我的薪資與績效'};
 const overtimeNames={weekday:'平日延長工時',rest_day:'休息日出勤',national_holiday:'國定／特別休假',regular_holiday:'例假日出勤'};
@@ -38,7 +39,7 @@ export function DashboardOS({data,onNavigate,allowed,onReload,userKey}){
   ['settings','系統設定','門店、時段容量與預約規則','⚙'],
   ['self','我的薪資與績效','堂數、評價、提成與薪資','◈']
  ].filter(([id])=>allowed(id));
- const metrics=[['今日預約',data.appointments],['已完成',data.completed],['今日在班',data.staff_working],['建議同時接客',`${data.simultaneous_capacity??4} 位`]];
+ const metrics=[['今日預約',data.appointments],['已完成',data.completed],['今日排班',data.staff_working],['建議同時接客',`${data.simultaneous_capacity??4} 位`]];
  if(data.revenue_cents!=null)metrics.splice(2,0,['今日營業收入',money(data.revenue_cents)]);
  if(data.unsettled_completed!=null)metrics.push(['今日待結帳',data.unsettled_completed]);
  if(data.low_stock!=null)metrics.push(['低庫存商品',data.low_stock]);
@@ -48,12 +49,26 @@ export function DashboardOS({data,onNavigate,allowed,onReload,userKey}){
   <section className="os-hero"><div><p className="eyebrow">BUSINESS OPERATING SYSTEM</p><h2>今天的門店，一頁掌握</h2><p className="muted">{data.date} · Asia/Taipei · 所有數字直接來自正式營運資料</p></div><button className="primary" onClick={()=>onNavigate('bookings')}>開啟今日工作台</button></section>
   <div className="grid os-metrics">{metrics.map(([label,value])=><article className="card" key={label}><p className="muted">{label}</p><div className="metric">{value}</div></article>)}</div>
   <section className={`card os-today-hours ${today.is_open?'is-open':'is-closed'}`}><div><p className="eyebrow">TODAY · LIVE</p><h2>{today.is_open?'今日營業':'今日休假'}</h2><p>{today.is_open?`${minuteLabel(today.opening_minute)}–${minuteLabel(today.closing_minute)}`:'官網今日不提供新預約時段'}{today.note?` · ${today.note}`:''}</p><p className="muted">{today.source==='override'?'今日特殊設定，已即時同步官網與預約空檔。':'目前使用每週營業時間。'}</p></div>{allowed('settings')&&<button className="primary" onClick={()=>setHoursModal(true)}>設定今日營業／休假</button>}</section>
+  {data.attendance_today&&<TodayAttendance data={data.attendance_today} canOpenTeam={allowed('team')} onOpen={()=>onNavigate('team',{from:data.date,to:data.date,section:'attendance-review'})}/>}
   <OperationsConvenience userKey={userKey} refreshToken={data} onNavigate={onNavigate} allowed={allowed}/>
   <MonthlyOperationsCalendar today={data.date} refreshToken={data} onNavigate={onNavigate}/>
   <h2>系統直通車</h2><div className="os-launcher">{cards.map(([id,title,desc,icon])=><button key={id} onClick={()=>onNavigate(id)}><span className="os-icon">{icon}</span><span><strong>{title}</strong><small>{desc}</small></span></button>)}</div>
   <div className="split os-dashboard-lower"><section className="card"><h2>接下來的預約</h2>{!data.next_appointments.length&&<Empty>今天目前沒有有效預約。</Empty>}{data.next_appointments.map(row=><button className="os-list-button" key={row.id} onClick={()=>onNavigate('bookings')}><span><strong>{dateTime(row.starts_at)}</strong><small>{row.customer_name} · {row.service_name}</small></span><span>{row.staff_name}{row.capacity_exceeded&&<><br/><small className="alert">超出建議容量</small></>}</span></button>)}</section><section className="card"><h2>今日提醒</h2><p>{data.pending?`還有 ${data.pending} 筆預約等待確認。`:'待確認預約已清空。'}</p><p>{data.cancelled?`今日取消或未到 ${data.cancelled} 筆。`:'今日沒有取消或未到。'}</p>{data.low_stock!=null&&<p>{data.low_stock?`${data.low_stock} 項商品已達低庫存門檻。`:'目前沒有低庫存提醒。'}</p>}<p>{data.capacity_attention_count?`今日有 ${data.capacity_attention_count} 筆超出建議容量的預約，請核對並聯絡顧客。`:`今日沒有超出 ${data.simultaneous_capacity??4} 位建議容量的待處理預約。`}</p></section></div>
   {hoursModal&&<Modal title="今日營業狀態" onClose={()=>setHoursModal(false)}><DayOverrideForm date={data.date} value={today} saved={saved}/></Modal>}
  </>;
+}
+
+function TodayAttendance({data,canOpenTeam,onOpen}){
+ const now=useBookingClock(dashboardAttendanceBoundaries(data)),summary=summarizeDashboardAttendance(data,now);
+ return <section className="card dashboard-attendance" aria-labelledby="dashboard-attendance-title"><div className="ops-convenience-heading"><div><p className="eyebrow">ATTENDANCE · LIVE</p><h2 id="dashboard-attendance-title">今日出勤</h2><p className="muted">按正式班表、休假與打卡記錄即時計算；遲到以班表開始加寬限時間判斷。</p></div>{canOpenTeam&&<button onClick={onOpen}>開啟出勤審核</button>}</div><div className="dashboard-attendance-metrics"><article><span>今日應到</span><strong>{summary.scheduled}</strong><small>人</small></article><article><span>已到崗</span><strong>{summary.arrived}</strong><small>人</small></article><article><span>正在上班</span><strong>{summary.working}</strong><small>人</small></article><article className={summary.lateMissing?'is-warning':''}><span>遲到／未到</span><strong>{summary.lateMissing}</strong><small>人</small></article></div>{summary.staff.length?<div className="dashboard-attendance-list">{summary.staff.map(row=><article className={`attendance-${row.display_status}`} key={row.staff_id}><span className="dashboard-attendance-person"><strong>{row.staff_name}</strong><small>{row.staff_title}</small></span><span className="dashboard-attendance-shift"><strong>{clockTime(row.shift_start)}–{clockTime(row.shift_end)}</strong><small>{attendanceDetail(row,now)}</small></span><span className="dashboard-attendance-state">{attendanceStatusLabels[row.display_status]}</span></article>)}</div>:<Empty>今天沒有安排人員上班。</Empty>}<p className="ops-convenience-footnote">「已到崗」包含目前上班中及今天已打下班卡的人員；休假中與尚未到班不列為遲到。打卡審核結果仍以「人員與排班 → 出勤與打卡審核」為準。</p></section>;
+}
+
+function attendanceDetail(row,now){
+ if(row.display_status==='working')return `上班卡 ${clockTime(row.open_clock_in)}`;
+ if(row.display_status==='completed')return `已到 ${clockTime(row.first_clock_in)} · 已離 ${clockTime(row.last_clock_out)}`;
+ if(row.display_status==='on_leave'){const leave=(row.time_off||[]).find(item=>Date.parse(item.starts_at)<=now&&now<Date.parse(item.ends_at));return leave?.reason||'核准休假時段';}
+ if(row.display_status==='upcoming')return `預定 ${clockTime(row.shift_start)} 到班`;
+ return `應於 ${clockTime(row.shift_start)} 到班，尚無有效打卡`;
 }
 
 export function MonthlyOperationsCalendar({today,refreshToken,onNavigate}){

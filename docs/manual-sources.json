@@ -1,6 +1,6 @@
 {
-  "reviewed_at": "2026-10-12T00:43:46.535Z",
-  "manual_sha256": "12af72144ac65bc100319471043b5a69ca737022569a15647f5e6c9c557ccad2",
+  "reviewed_at": "2026-10-12T00:53:01.953Z",
+  "manual_sha256": "3ddc50e7e1f0bd71baba29fecfa768bbc6d326ff64d0c9f18d92222b8b1f7b1f",
   "sources": {
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
     "api/public-rpc.js": "d31da9ce11923cdd5e7ca122c6ae20799572679fe240d96cada8730fc7ab56f9",
@@ -14,7 +14,7 @@
     "src/Attendance.jsx": "8d868dcc806ce01a7d72b74b598f74e31fc42c6466b66f8758d4023abf7ce775",
     "src/BookingLookup.jsx": "519eb220a15ad8f58be321dde0790100a397138bd8e44bbfb913e5fa2d923d0b",
     "src/BookingPortal.jsx": "017806ac23607fc953da7ec1b50625041f68839c9b1d1d75c1545fad7dcdd60d",
-    "src/BusinessOS.jsx": "b74ee82b9dfe7a0599dce2371e107755d9631b84ab6fa78cfe4b2f951d2254d0",
+    "src/BusinessOS.jsx": "52ceb2320901fff13d3c3d4f850857e7899243bacfa583f6efe0c54225ea5f28",
     "src/Contact.jsx": "dc205ac9bf8a94a0f049da2adccb8162c453e49c69de24b1c244c6579dc8aa2f",
     "src/Member.jsx": "3910ad332c20bda31e82eebeb2c725a348a030847727d349d0197dab5afc8740",
     "src/OperationsConvenience.jsx": "e8e237d50eaa44449bcc5b5287014fb2fdb5067e1dec0bbd8eb43755fc9d11cb",
@@ -35,6 +35,7 @@
     "src/lib/attendance.js": "56a277f2ffb0e3f5bbd2cebd61149d9f64de25b63abb4fa7ad553bf8c197ab82",
     "src/lib/booking-state.js": "9816632232ffee00a76ac2ad6568743ad4d8e423c203f7c4e64206a6c55d9ac8",
     "src/lib/catalog-presentation.js": "e151f8b8f266fc15f69921f7662983a97107eb61fe8c980cbeb1a8ad1b95851a",
+    "src/lib/dashboard-attendance.js": "df8e1d7d08f0ee3dfe401aff2a147e3f533372d64a5b9c91eb2189dcbe864a46",
     "src/lib/date-range.js": "a00105dd7ba4cf0367ed2f2c939ab68eb5f4be9a86219275f96bd7ad3ebc5272",
     "src/lib/live-updates.js": "a4602903bdd899bdf423fc091d320a4e138a8002cb0e9e1d01614e84c26b1987",
     "src/lib/operations-drafts.js": "5690f4621eaa807932f4406658401790aa53406c006d7a7d9686130fea83621e",
@@ -104,6 +105,7 @@
     "supabase/migrations/202610100006_product_media.sql": "da0690a098b8c97140c21c593307219d8aafc0c050bd26445eb625f0fe74cab3",
     "supabase/migrations/202610100007_home_catalog_labels.sql": "949da919f8473a32e6f1015ced3837c7b0b238394b017513754ce83a03b6f9a2",
     "supabase/migrations/202610110001_soft_capacity_and_title_retirement.sql": "211ecb11da675ce68f2c370828300351c6f1dac0c2a611249b31d686bf6655ec",
-    "supabase/migrations/202610110002_product_sales_consistency.sql": "937e9b6cb4e32a7ee4aa2c1bef0315d46e1e592fd1de8fc01a02968bcaf64ad0"
+    "supabase/migrations/202610110002_product_sales_consistency.sql": "937e9b6cb4e32a7ee4aa2c1bef0315d46e1e592fd1de8fc01a02968bcaf64ad0",
+    "supabase/migrations/202610110003_dashboard_attendance_status.sql": "40207b6d3214b517dd3098e4b4a75ec861d87679144a10eb323c1551b9abbff6"
   }
 }

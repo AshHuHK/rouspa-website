@@ -1,8 +1,8 @@
 {
   "rou-serif-tc-v1.woff2": {
-    "sha256": "d04addc759c34a589a65717fbb28bb0ebb3151249ecf3b14aa97023c3f8fb0b1",
+    "sha256": "5567ed569456d899bc8ec6b24db5e6d41e3dab1ea4197f03e278a5c0d4680834",
     "source_sha256": "0077e18f57c6908f4a000969880940bdb0dad057c0e8d98b49dc364c3d1b09c6",
-    "bytes": 422536,
+    "bytes": 423172,
     "codepoints": [
       32,
       33,
@@ -547,6 +547,7 @@
       23652,
       23660,
       23792,
+      23831,
       24037,
       24038,
       24046,
@@ -1175,9 +1176,9 @@
     ]
   },
   "cormorant-garamond-v1.woff2": {
-    "sha256": "8f866088c7d862513c59587b56462bf1b4154e32f5246b6e4ec9dc4a89d28aa1",
+    "sha256": "7ed9f5ce28405b8f651ff1e75af646e8db20eeb3c9211632dbe36beaa45b91ab",
     "source_sha256": "b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0",
-    "bytes": 88336,
+    "bytes": 88300,
     "codepoints": [
       32,
       33,
