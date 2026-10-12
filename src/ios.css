@@ -1,0 +1,93 @@
+html.rou-ios-app,
+html.rou-ios-app body,
+html.rou-ios-app #root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  background: #c3a68c;
+  overscroll-behavior-y: none;
+}
+
+.rou-ios-body {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.rou-ios-body :where(input, textarea, [contenteditable='true']) {
+  -webkit-user-select: text;
+}
+
+.rou-ios-privacy-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  color: #fffaf2;
+  background: #8b6b52;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: none;
+}
+
+html.rou-ios-private .rou-ios-privacy-screen {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.rou-ios-privacy-screen .rou-ios-privacy-mark {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border: 1px solid rgba(255, 250, 242, .68);
+  border-radius: 50%;
+  font: 600 38px/1 serif;
+}
+
+.rou-ios-privacy-screen strong {
+  font-size: 22px;
+  letter-spacing: .16em;
+}
+
+.rou-ios-privacy-screen small {
+  color: rgba(255, 250, 242, .78);
+  letter-spacing: .08em;
+}
+
+.rou-ios-body .ops {
+  min-height: 100dvh;
+  padding-top: calc(18px + env(safe-area-inset-top, 0px));
+  padding-right: calc(18px + env(safe-area-inset-right, 0px));
+  padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(18px + env(safe-area-inset-left, 0px));
+}
+
+.rou-ios-body .ops .os-main-nav {
+  top: env(safe-area-inset-top, 0px);
+}
+
+.rou-ios-body .ops button,
+.rou-ios-body .ops .button,
+.rou-ios-body .ops a {
+  min-height: 44px;
+}
+
+.rou-ios-body .ops input,
+.rou-ios-body .ops select,
+.rou-ios-body .ops textarea {
+  font-size: 16px;
+}
+
+@media (max-width: 700px) {
+  .rou-ios-body .ops {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    padding-right: calc(12px + env(safe-area-inset-right, 0px));
+    padding-left: calc(12px + env(safe-area-inset-left, 0px));
+  }
+}

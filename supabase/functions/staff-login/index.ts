@@ -2,7 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 export function createLoginHandler({clientFactory,environment}) {
  return async req => {
   const origin=req.headers.get('origin');
-  const allowed=['https://www.rouspa.tw','https://rouspa.tw','http://localhost:5173','http://127.0.0.1:4178'];
+  const allowed=['https://www.rouspa.tw','https://rouspa.tw','capacitor://localhost','http://localhost:5173','http://127.0.0.1:4178'];
   const headers={'Content-Type':'application/json','Cache-Control':'no-store','Vary':'Origin',
    'Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS',
    ...(allowed.includes(origin)?{'Access-Control-Allow-Origin':origin}:{})};

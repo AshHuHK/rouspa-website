@@ -1,13 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from './public-config.js';
 import { createPublicRpc } from './public-rpc.js';
+import { isNativeOperationsApp, saveDownload } from './native-platform.js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
 export const supabase = createClient(
   supabaseUrl,
   supabaseKey,
-  { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } }
+  { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: !isNativeOperationsApp(), flowType: 'pkce' } }
 );
 const errors = {
   FUTURE_PAYROLL_ACTIVATION_NOT_SUPPORTED: '新版本建立後立即啟用，生效日不能晚於台灣今日；未支援未來自動切換。',
@@ -184,7 +185,7 @@ export function dateTime(iso, lang = 'zh') {
   return new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'zh-TW', { timeZone: 'Asia/Taipei', dateStyle: 'short', timeStyle: 'short', hour12: false }).format(new Date(iso));
 }
 export const statusNames = { pending: '待確認', confirmed: '已確認', checked_in: '已到店', completed: '已完成', cancelled: '已取消', no_show: '未到店' };
-export function exportCSV(name, rows) {
+export async function exportCSV(name, rows) {
   if (!rows.length) return;
   const columns = Object.keys(rows[0]);
   const quote = value => {
@@ -193,6 +194,10 @@ export function exportCSV(name, rows) {
     return `"${s.replace(/"/g, '""')}"`;
   };
   const csv = '\ufeff' + [columns, ...rows.map(r => columns.map(c => r[c]))].map(r => r.map(quote).join(',')).join('\r\n');
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  const a = document.createElement('a'); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
+  try {
+    return await saveDownload(name, csv, 'text/csv;charset=utf-8');
+  } catch (error) {
+    globalThis.alert?.(error?.message || '檔案匯出失敗，請稍後再試。');
+    return { error };
+  }
 }

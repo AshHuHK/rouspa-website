@@ -66,6 +66,17 @@ npm run dev
 
 資料庫測試在 PGlite 的 PostgreSQL 引擎執行，不連線或改動正式資料。涵蓋權限拒絕、4 床容量、完整重疊與緩衝、失敗交易回滾、重複提交、會員餘額、套票餘額與分攤尾差、結帳／退款、已完成評價、跨午夜和舊資料保存。GitHub Actions 執行同一套檢查。
 
+## iOS 營運 App
+
+「柔療營運」是只提供店主與員工使用的 iPhone／iPad 後台 App；顧客首頁、預約、查詢與會員中心仍使用 `https://www.rouspa.tw`。App 與網站讀寫同一個 Supabase、相同角色權限及同一份營運資料，沒有第二套資料庫。
+
+```sh
+npm run ios:verify
+npm run ios:open
+```
+
+第一個指令會檢查 iOS 契約、建立獨立 `dist-ios` 並同步 Xcode；第二個指令同步後開啟 Xcode。發布前仍須由 Apple Developer 帳號完成 Team、簽名、真機驗收、TestFlight 及 App Store Connect 資料。本專案未表示已上架或已通過 Apple 審核。完整建置、隱私、測試與發布清單見 [iOS 營運 App 指南](docs/IOS-OPERATIONS-APP.md)。
+
 ## 後端維護
 
 所有新表以 `spa_` 開頭並啟用 RLS，不給瀏覽器直接表權限。公開 RPC 僅開放目錄、可用時段、預約、持有私人 token 的單次預約／評價、匿名反饋和已公開評價；營運 RPC 在資料庫檢查 `spa_roles`。`spa_private` helper 不對 anon 開放。

@@ -5,7 +5,7 @@ import { gatherStewardContext, validatePageAccess } from './steward-context.mjs'
 import { resolveStewardPeriod, PeriodError } from './steward-period.mjs';
 
 const MAX_BODY = 64 * 1024;
-const ORIGINS = new Set(['https://www.rouspa.tw', 'https://rouspa.tw']);
+const ORIGINS = new Set(['https://www.rouspa.tw', 'https://rouspa.tw', 'capacitor://localhost']);
 const BASE_URL = 'https://api.kimi.com/coding/v1';
 // Keep the production assistant on one reviewed provider profile. In particular,
 // a stale deployment environment variable must not silently roll K2.8 back to K3.
@@ -71,13 +71,16 @@ export function createStewardHandler({fetcher=fetch, env=process.env, now=()=>ne
  return async (req,res) => {
   const deadline=AbortSignal.timeout(105000);
   res.setHeader('Cache-Control','no-store, private'); res.setHeader('X-Robots-Tag','noindex, nofollow, noarchive'); res.setHeader('Content-Type','application/json; charset=utf-8'); res.setHeader('Vary','Origin');
+  res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type'); res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
   function reply(status,body) { res.statusCode=status; res.end(JSON.stringify(body)); }
   try {
-   if (req.method !== 'POST') {res.setHeader('Allow','POST'); throw new StewardError(405,'METHOD_NOT_ALLOWED','請使用問管家面板提問。');}
    const origin=req.headers?.origin;
    const developmentOrigin=env.NODE_ENV!=='production' && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin || '');
    const previewOrigin=env.VERCEL_URL && origin===`https://${env.VERCEL_URL}`;
    if (origin && !ORIGINS.has(origin) && !developmentOrigin && !previewOrigin) throw new StewardError(403,'ORIGIN_FORBIDDEN','請從 ROU SPA 官網使用問管家。');
+   if (origin) res.setHeader('Access-Control-Allow-Origin',origin);
+   if (req.method === 'OPTIONS') {res.statusCode=204;return res.end();}
+   if (req.method !== 'POST') {res.setHeader('Allow','POST, OPTIONS'); throw new StewardError(405,'METHOD_NOT_ALLOWED','請使用問管家面板提問。');}
    if (!String(req.headers?.['content-type']||'').toLowerCase().startsWith('application/json')) throw new StewardError(415,'CONTENT_TYPE','問題格式不正確。');
    const authorization=req.headers?.authorization;
    const match=typeof authorization==='string' && authorization.match(/^Bearer ([A-Za-z0-9._-]{20,8192})$/);

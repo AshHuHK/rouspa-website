@@ -33,6 +33,7 @@ for(const body of [{...payload,role:'owner'},{...payload,role:'Bad Role'},{...pa
 f=fixture({account:false});r=await f.handler(request({...payload,role:'spa_lead'}));check(r.status===200&&f.events.find(e=>e.name==='spa_staff_account_link').args.p_role==='spa_lead','custom configured role reaches database authorization');
 f=fixture();r=await f.handler(request(payload));check(r.status===409&&!f.events.some(e=>e.name==='auth.create'),'duplicate create is not replayed');
 f=fixture({account:false});r=await f.handler(request(payload));const created=await r.json();check(r.status===200&&created.username==='rou_staff'&&!('password' in created)&&!('email' in created),'create response contains username only');
+f=fixture({account:false});r=await f.handler(request(payload,{headers:{origin:'capacitor://localhost'}}));check(r.status===200&&r.headers.get('access-control-allow-origin')==='capacitor://localhost','trusted iOS app origin can administer staff accounts with owner authorization');
 check(f.events.find(e=>e.name==='auth.create').args.email===`${person}@staff.rouspa.invalid`,'internal Auth alias requires no real staff mailbox');
 check(f.events.find(e=>e.name==='auth.create').args.email_confirm===true,'no verification email needed');
 check(f.events.find(e=>e.name==='spa_staff_account_link').args.p_username==='rou_staff','username and staff account bind atomically');
@@ -56,6 +57,7 @@ function loginFixture(opts={}){
  return {handler:createLoginHandler({clientFactory,environment}),events};
 }
 let l=loginFixture();r=await l.handler(request({username:' ROU_STAFF ',password:'test-password-only'}));check(r.status===200&&(await r.json()).access_token==='test-access','username/password login returns standard session');
+l=loginFixture();r=await l.handler(request({username:'rou_staff',password:'test-password-only'},{headers:{origin:'capacitor://localhost'}}));check(r.status===200&&r.headers.get('access-control-allow-origin')==='capacitor://localhost','trusted iOS app origin can use username login');
 check(l.events[0].args.p_username==='rou_staff','username normalization');
 check(l.events[1].args.email==='synthetic@staff.rouspa.invalid','password verified by Supabase Auth');
 for(const opts of [{wrong:true},{unknown:true},{wrongIdentity:true}]){l=loginFixture(opts);r=await l.handler(request({username:'rou_staff',password:'wrong'}));check(r.status===401&&(await r.json()).error==='INVALID_LOGIN','unknown, disabled and wrong passwords do not reveal identity');}

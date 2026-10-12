@@ -1,3 +1,5 @@
+import { isNativeOperationsApp } from './native-platform.js';
+
 export const attendanceStatuses={open:'上班中',pending:'待審核',approved:'已核准工時',rejected:'未核准'};
 export const attendanceFlags={location_unavailable:'無法取得定位',low_accuracy:'定位誤差過大',outside_store:'超出門店範圍',boundary_uncertain:'定位靠近範圍邊界',no_roster:'當日未排班',time_off:'休假期間',early_arrival:'提早超過一小時',late:'遲到',early_departure:'早退',long_shift:'跨日未下班／工時過長',manual_request:'補打卡'};
 export function attendanceMinutes(row){if(!row.effective_start||!row.effective_end)return 0;return Math.max(0,Math.floor((Date.parse(row.effective_end)-Date.parse(row.effective_start))/60000)-Number(row.break_minutes||0));}
@@ -5,7 +7,26 @@ export function taipeiInput(value){if(!value)return '';return new Intl.DateTimeF
 export function attendanceStamp(value,original){if(original&&value===taipeiInput(original))return original;return value?`${value}${value.length===16?':00':''}+08:00`:null;}
 export function canPunch(kind,{open,loading=false,busy=false,error=''}={}){return !loading&&!busy&&!error&&(kind==='in'?!open:kind==='out'&&Boolean(open));}
 export function validPunchLocation(location){return Number.isFinite(location?.latitude)&&location.latitude>=-90&&location.latitude<=90&&Number.isFinite(location?.longitude)&&location.longitude>=-180&&location.longitude<=180&&Number.isFinite(location?.accuracy)&&location.accuracy>0&&location.accuracy<=100000;}
-export function getPunchLocation(){return new Promise(resolve=>{
+async function getNativePunchLocation(){
+ try{
+  const {Geolocation}=await import('@capacitor/geolocation');
+  let permission=await Geolocation.checkPermissions();
+  if(permission.location!=='granted')permission=await Geolocation.requestPermissions({permissions:['location']});
+  if(permission.location!=='granted')return {error:'permission_denied',message:'定位權限未開啟。請在 iPhone 設定允許「使用 App 期間」定位後重試，或申請補打卡。'};
+  const position=await Geolocation.getCurrentPosition({enableHighAccuracy:true,timeout:15000,maximumAge:0});
+  const location={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy};
+  return validPunchLocation(location)?location:{error:'invalid_location',message:'定位資料無效。請重新定位或申請補打卡。'};
+ }catch(error){
+  const detail=String(error?.message||error||'').toLowerCase();
+  if(detail.includes('denied')||detail.includes('permission'))return {error:'permission_denied',message:'定位權限未開啟。請在 iPhone 設定允許「使用 App 期間」定位後重試，或申請補打卡。'};
+  if(detail.includes('timeout'))return {error:'timeout',message:'定位逾時。請重試，或申請補打卡。'};
+  return {error:'position_unavailable',message:'目前無法取得位置。請確認已開啟定位服務並靠近窗邊重試，或申請補打卡。'};
+ }
+}
+export function getPunchLocation(){
+ if(isNativeOperationsApp())return getNativePunchLocation();
+ return new Promise(resolve=>{
  if(!globalThis.isSecureContext||!globalThis.navigator?.geolocation){resolve({error:'unsupported',message:'此裝置無法定位，請使用 HTTPS 或申請補打卡。'});return;}
  try{navigator.geolocation.getCurrentPosition(position=>{const location={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy};resolve(validPunchLocation(location)?location:{error:'invalid_location',message:'定位資料無效。請重新定位或申請補打卡。'});},error=>resolve({error:({1:'permission_denied',2:'position_unavailable',3:'timeout'})[error.code]||'unavailable',message:({1:'定位權限未開啟。請在瀏覽器允許定位後重試，或申請補打卡。',2:'目前無法取得位置。請靠近窗邊重試，或申請補打卡。',3:'定位逾時。請重試，或申請補打卡。'})[error.code]||'目前無法取得位置。請重試或申請補打卡。'}),{enableHighAccuracy:true,timeout:15000,maximumAge:0});}catch{resolve({error:'unavailable',message:'目前無法取得位置。請重試或申請補打卡。'});}
-});}
+ });
+}

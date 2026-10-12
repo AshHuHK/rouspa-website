@@ -16,3 +16,34 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+  ios:
+    name: Validate iOS operations app
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Verify iOS application contract
+        run: node scripts/test-ios-app.mjs
+      - name: Build bundled iOS web application
+        run: npm run build:ios
+      - name: Synchronize Capacitor iOS project
+        run: npx cap sync ios
+      - name: Compile iOS project without signing
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/rouspa-ios-derived-data" \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            build

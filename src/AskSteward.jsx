@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { supabase } from './lib/spa.js';
+import { operationsApiUrl } from './lib/native-platform.js';
 import './steward.css';
 
 const manualUrl = 'https://github.com/AshHuHK/rouspa-website/blob/main/ROU_SPA_OPERATING_MANUAL.md';
@@ -85,7 +86,7 @@ function AccountSteward({ userKey, page, pageLabel, range, disabled, onAccessDen
    if (sessionError || !data.session?.access_token || data.session.user.id !== userKey) {
     setMessages([]); setQuestion(''); throw new Error('登入狀態已變更，請重新登入後再詢問。');
    }
-   const response = await fetch('/api/ask-steward', {
+   const response = await fetch(operationsApiUrl('/api/ask-steward'), {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` }, signal: controller.signal,
     body: JSON.stringify({ question: content, page, scope: 'business', period, ...(period === 'page' ? { range: { from: range.from, to: range.to } } : {}), history: messages.slice(-12).map(({ role, content: text }) => ({ role, content: text })) }),
    });

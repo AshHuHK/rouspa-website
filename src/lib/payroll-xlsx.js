@@ -1,3 +1,5 @@
+import { saveDownload } from './native-platform.js';
+
 export async function exportPayrollXlsx({rows,from,to,rule,rates=[],tiers=[],profiles=[]}){
  const module=await import('exceljs');
  const ExcelJS=module.default||module;
@@ -24,6 +26,6 @@ export async function exportPayrollXlsx({rows,from,to,rule,rates=[],tiers=[],pro
  const settings=workbook.addWorksheet('版本職稱設定');settings.addRow(['職稱','聘僱類型','計薪方式','本薪 NT$','商品比例 %','指定加成 %','出勤門檻 小時','服務門檻 小時','普通服務方式','自帶客 %','承攬累計範圍','啟用']);
  for(const profile of profiles.filter(item=>!rule||item.rule_version_id===rule.id))settings.addRow([profile.job_title_name||profile.job_title_id,profile.employment_type_name||profile.employment_type_code,profile.pay_basis,Number(profile.base_pay_cents)/100,Number(profile.product_commission_bps)/100,Number(profile.designated_client_bonus_bps)/100,Number(profile.minimum_attendance_minutes)/60,Number(profile.minimum_service_minutes)/60,profile.service_commission_mode,Number(profile.self_sourced_commission_bps)/100,profile.contractor_count_scope||'不適用',profile.active?'是':'否']);
  settings.getRow(1).font={bold:true};settings.columns.forEach(column=>column.width=24);
- const buffer=await workbook.xlsx.writeBuffer();const url=URL.createObjectURL(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
- const link=document.createElement('a');link.href=url;link.download=`柔療髮浴_薪資_${from}_${to}.xlsx`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const buffer=await workbook.xlsx.writeBuffer();
+ await saveDownload(`柔療髮浴_薪資_${from}_${to}.xlsx`,buffer,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 }

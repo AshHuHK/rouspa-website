@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, cloneElement, isValidElement } from 'react';
 import { supabase, rpc, errorText } from './lib/spa.js';
 import { createRequestId } from './lib/request-id.js';
+import { publicWebsiteUrl } from './lib/native-platform.js';
 import './operations.css';
 export function useSession() {
   const [session, setSession] = useState(undefined);
@@ -29,7 +30,7 @@ export function Login({ title = '管理後台' }) {
     }
     catch (err) { setError(errorText(err)); } finally { setBusy(false); }
   }
-  return <div className="ops"><div className="login card"><h1>柔療髮浴</h1><p>{title}</p><p className="muted">請使用門店為您建立的帳號登入。</p><form onSubmit={login}><label>使用者名稱或電子郵件<input autoComplete="username" required maxLength={254} value={loginName} onChange={e=>setLoginName(e.target.value)}/></label><label>密碼<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<p role="alert" className="alert">{error}</p>}<button className="primary" disabled={busy}>{busy?'登入中…':'登入'}</button></form><p><a href="#">返回首頁</a></p></div></div>;
+  return <div className="ops"><div className="login card"><h1>柔療髮浴</h1><p>{title}</p><p className="muted">請使用門店為您建立的帳號登入。</p><form onSubmit={login}><label>使用者名稱或電子郵件<input autoComplete="username" required maxLength={254} value={loginName} onChange={e=>setLoginName(e.target.value)}/></label><label>密碼<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<p role="alert" className="alert">{error}</p>}<button className="primary" disabled={busy}>{busy?'登入中…':'登入'}</button></form><p><a href={publicWebsiteUrl('/')}>查看官網</a></p></div></div>;
 }
 export function Field({ label, children, wide = false }) {
  const control=isValidElement(children)&&['input','select','textarea'].includes(children.type)
@@ -50,7 +51,7 @@ export function MutationForm({ action, onSaved, children, submit = '儲存', lan
 }
 export function PrivateLink({ path, label }) {
   const [copied,setCopied]=useState(false),[error,setError]=useState('');
-  const url=`${location.origin}${location.pathname}#${path}`;
+  const url=publicWebsiteUrl(`/#${path}`);
   return <div className="actions"><a className="button" href={url} target="_blank" rel="noreferrer">{label}</a><button type="button" onClick={async()=>{try{await navigator.clipboard.writeText(url);setCopied(true);}catch{setError('複製失敗，請開啟連結後複製網址。');}}}>{copied?'已複製':'複製私人連結'}</button>{error&&<span role="alert">{error}</span>}</div>;
 }
 export { rpc };

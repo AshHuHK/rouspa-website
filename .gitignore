@@ -4,6 +4,8 @@ node_modules/
 *.local
 .vite/
 dist/
+dist-ios/
+supabase/.temp/
 .env
 .env.*
 !.env.example
@@ -11,6 +13,12 @@ work/
 
 qa-mobile/
 verification/
+ios/**/xcuserdata/
+ios/**/DerivedData/
+ios/**/build/
+*.ipa
+*.xcarchive/
+supabase/.temp/
 /shop/
 /contact/
 
