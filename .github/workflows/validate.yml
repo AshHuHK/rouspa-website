@@ -18,7 +18,7 @@ jobs:
       - run: npm run build
   ios:
     name: Validate iOS operations app
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +27,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Confirm Xcode required by Capacitor 8
+        run: xcodebuild -version
       - name: Verify iOS application contract
         run: node scripts/test-ios-app.mjs
       - name: Build bundled iOS web application

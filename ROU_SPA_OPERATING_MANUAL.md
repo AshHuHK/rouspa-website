@@ -913,7 +913,7 @@ App 沒有離線寫入佇列。斷線時可能保留最後一次成功畫面，�
 
 Supabase 中的營運資料、可編輯門店設定及已部署的後端規則由 App 即時讀取；App 入口、樣式、原生 plugin 或打包 JavaScript 的更新須建立新版本，經 TestFlight／App Store 安裝，不能靠遠端 `server.url` 熱換整個 App。正式 App 目前不承諾 APNs 推播、背景同步、離線處理、Face ID／Keychain 或 App 內自動更新。
 
-門店上線前須以店主與員工測試帳號驗收登入／停用、角色裁剪、預約與排班雙向更新、前景恢復、上／下班按鈕、定位允許／拒絕／門店外、CSV／XLSX／JSON 分享、商品照片及問管家；精確定位的門店內外結果須用實機核對。完整建置、隱私、TestFlight、App Store Connect 及回復清單見 [iOS 營運 App 發布指南](docs/IOS-OPERATIONS-APP.md)。本文只說明已實作規則，不表示 App 已經 Apple 簽名、通過審核或上架。
+門店上線前須以店主與員工測試帳號驗收登入／停用、角色裁剪、預約與排班雙向更新、前景恢復、上／下班按鈕、定位允許／拒絕／門店外、CSV／XLSX／JSON 分享、商品照片及問管家；精確定位的門店內外結果須用實機核對。Capacitor 8 的建置環境使用 Xcode 26.0 以上，GitHub iOS 驗證亦固定使用具 Xcode 26 的 macOS runner。完整建置、隱私、TestFlight、App Store Connect 及回復清單見 [iOS 營運 App 發布指南](docs/IOS-OPERATIONS-APP.md)。本文只說明已實作規則，不表示 App 已經 Apple 簽名、通過審核或上架。
 
 來源：[原生入口](src/ios-main.jsx)、[原生平台介面](src/lib/native-platform.js)、[定位打卡](src/lib/attendance.js)、[登入及私人連結](src/OperationsShared.jsx)、[原生設定](capacitor.config.ts)、[原生 HTML](mobile/index.html)、[iOS 隱私聲明](ios/App/App/PrivacyInfo.xcprivacy)、[發布與驗收指南](docs/IOS-OPERATIONS-APP.md)。
 

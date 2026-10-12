@@ -27,7 +27,7 @@
 
 ## 2. 開發環境與常用指令
 
-需求：Node.js 22.12 以上、npm、可建置目前 iOS SDK 的 Xcode。提交 App Store 或安裝真機另需 Apple Developer 帳號、簽名憑證與 provisioning profile。本專案使用 Capacitor Swift Package Manager，不以 CocoaPods 作為必要步驟。
+需求：Node.js 22.12 以上、npm、Xcode 26.0 以上（Capacitor 8 的最低要求）。提交 App Store 或安裝真機另需 Apple Developer 帳號、簽名憑證與 provisioning profile。本專案使用 Capacitor Swift Package Manager，不以 CocoaPods 作為必要步驟。
 
 ```sh
 npm ci

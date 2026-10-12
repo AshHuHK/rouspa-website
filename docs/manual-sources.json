@@ -1,8 +1,8 @@
 {
-  "reviewed_at": "2026-10-12T02:20:04.082Z",
-  "manual_sha256": "afe3065151b90210f7dad2fdc2cd038bbcabf93841165b67bc8db5293a8d12be",
+  "reviewed_at": "2026-10-12T02:22:10.682Z",
+  "manual_sha256": "65bd90c6caa4976e97cab7748c35b65b307ea37f0766d8cecafdad4bafd8e22e",
   "sources": {
-    ".github/workflows/validate.yml": "18069277b2256194398e9c48b651cdebe0681ac24e86eb911505c590b5240b6d",
+    ".github/workflows/validate.yml": "57e79a78b84d61920b11d2b8bf58c9397608601f6f306d2a31d1314cf0dd5203",
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
     "api/public-rpc.js": "d31da9ce11923cdd5e7ca122c6ae20799572679fe240d96cada8730fc7ab56f9",
     "capacitor.config.ts": "004064ff843f7951c2753ae92d65fdd8c949b3a47a69ca2c1a8d1d1a5afaaa81",

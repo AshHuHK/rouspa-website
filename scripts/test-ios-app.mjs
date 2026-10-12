@@ -122,7 +122,7 @@ check(icon[25] === 2, 'app icon is opaque RGB without an alpha channel');
 
 check(/^dist-ios\/$/m.test(rootGitignore), 'generated iOS web build is ignored');
 check(/^App\/App\/public$/m.test(iosGitignore), 'Capacitor-copied web assets are ignored');
-check(/runs-on:\s*macos-15/.test(workflow), 'CI verifies the native project on macOS');
+check(/runs-on:\s*macos-26/.test(workflow) && /xcodebuild -version/.test(workflow), 'CI uses an Xcode 26 capable macOS runner required by Capacitor 8');
 check(/node scripts\/test-ios-app\.mjs/.test(workflow) && /npm run build:ios/.test(workflow) && /npx cap sync ios/.test(workflow), 'CI verifies the contract, web bundle and Capacitor synchronization');
 check(/xcodebuild[\s\S]*-configuration Release[\s\S]*CODE_SIGNING_ALLOWED=NO/.test(workflow), 'CI compiles a release configuration without requiring signing credentials');
 const sensitiveSurface = [capacitor, viteIos, mobileHtml, iosMain, nativePlatform, infoPlist, privacyManifest].join('\n');
