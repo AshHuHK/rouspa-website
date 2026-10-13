@@ -1,4 +1,4 @@
-:root { --public-font: 'ROU Serif TC', 'Songti TC', 'PMingLiU', Georgia, serif; }
+:root { --public-font: 'ROU Songti TC', 'Songti TC', 'PMingLiU', Georgia, serif; }
 *, *::before, *::after { box-sizing: border-box; }
 :where(.public-home, .contact-page, .shop-page) :where(*) { margin: 0; padding: 0; }
 button, input, select, textarea { font-family: inherit; }
@@ -24,20 +24,6 @@ button, [role=button], a { -webkit-tap-highlight-color: transparent; }
 .public-page-nav .public-brand-link { border: 0; background: transparent; font-family: inherit; min-height: 44px; text-align: left; }
 .public-page-nav .back-btn { min-height: 44px; }
 
-@font-face {
-  font-family: 'ROU Serif TC';
-  src: url('/fonts/rou-serif-tc-v1.woff2') format('woff2');
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Cormorant Garamond';
-  src: url('/fonts/cormorant-garamond-v1.woff2') format('woff2');
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: swap;
-}
 .public-home, .contact-page, .shop-page { font-synthesis: none; }
 .public-home .service-heading { max-width: 520px; margin: 0 auto 24px; gap: 8px 24px; }
 .service-name { font-size: 20px; font-weight: 500; line-height: 1.5; letter-spacing: 1.5px; }

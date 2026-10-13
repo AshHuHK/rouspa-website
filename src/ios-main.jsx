@@ -10,6 +10,7 @@ import { isNativeOperationsApp, NATIVE_CATCHUP_EVENT } from './lib/native-platfo
 import { ApplicationBoundary } from './ApplicationBoundary.jsx';
 import './responsive.css';
 import './ios.css';
+import './typography.css';
 
 function OperationsApp() {
   const [privacyVisible, setPrivacyVisible] = useState(false);

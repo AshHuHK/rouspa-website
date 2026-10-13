@@ -1,0 +1,62 @@
+@import './source-han-fonts.css';
+
+:root {
+  --public-font: 'ROU Songti TC', 'Source Han Serif TW', 'Songti TC', 'PMingLiU', Georgia, serif;
+}
+body { font-family: var(--public-font); font-weight: 400; }
+:is(.public-home,.care-page,.shop-page,.contact-page,.lookup-page,.ops,.application-recovery) {
+  font-family: var(--public-font);
+  font-synthesis: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+.ops.ops { font-family: var(--public-font); line-height: 1.75; }
+.booking-content .booking-lookup :is(input,textarea), .lookup-page.lookup-page {
+  font-family: var(--public-font);
+}
+.public-home :is(.service-heading,.formula-head,.formula-title) { min-width: 0; }
+.public-home .service-name { font-size: 21px; font-weight: 600; line-height: 1.5; letter-spacing: 1px; }
+.public-home .service-price { font-size: 17px; font-weight: 500; line-height: 1.5; letter-spacing: .2px; font-variant-numeric: tabular-nums lining-nums; }
+.public-home .formula-head:not(:has(.seal-stamp)) { grid-template-columns: minmax(0,1fr) 18px; }
+.public-home .formula-head { display: grid; grid-template-columns: 52px minmax(0,1fr) 18px; align-items: center; column-gap: 18px; }
+.public-home .seal-stamp:is(.seal-v90,.seal-v120) { width: 52px; height: 52px; font-size: 24px; font-weight: 600; }
+.public-home .seal-char { transform: none; letter-spacing: 0; line-height: 1; }
+.public-home .formula-name { font-size: 18px; font-weight: 600; line-height: 1.55; letter-spacing: .8px; overflow-wrap: anywhere; }
+.public-home .formula-sub { font-size: 14px; font-weight: 400; line-height: 1.65; letter-spacing: .3px; overflow-wrap: anywhere; }
+.public-home .formula-step { font-size: 15px; line-height: 1.8; letter-spacing: .3px; }
+.public-home .formula-toggle { display: grid; place-items: center; height: 24px; line-height: 1; }
+:is(.public-home,.care-page,.contact-page,.shop-page) :is(h1,h2,h3) { text-wrap: balance; }
+.care-page :is(.care-current strong,.care-time strong,.care-number,.care-eyebrow),
+.care-page .care-brand span,.shop-page .product-price { font-family: var(--public-font); font-variant-numeric: tabular-nums lining-nums; }
+.care-page .care-current strong,.shop-page .product-price { font-size: 20px; font-weight: 600; }
+.shop-page .product-copy p { font-size: 14px; line-height: 1.8; }
+.shop-page .product-unit { font-size: 12px; line-height: 1.5; }
+.public-home .booking-flow-progress li { font-size: 12px; line-height: 1.5; }
+.public-home .booking-staff-grid button small { font-size: 13px; line-height: 1.65; }
+.ops.ops label { font-size: 13px; }
+.ops.ops :is(th,td,.metric,.payroll-kpis strong,.member-metrics strong) { font-variant-numeric: tabular-nums lining-nums; }
+.ops.ops :is(.eyebrow,.table-sub,.alert-inline,.os-launcher small,.operations-weekday,.roster-week-labels span) { font-size: 12px; line-height: 1.6; }
+.ops.ops .operations-calendar .operations-day-counts small { font-size: 11px; line-height: 1.4; }
+.ops.ops .operations-calendar .operations-day-counts b { font-size: 13px; }
+.ops.ops :is(.operations-person-list,.operations-appointment-list,.dashboard-attendance-list) small { font-size: 12px; line-height: 1.6; }
+.ops.ops .schedule-month-grid > button small { font-size: 11px; line-height: 1.4; }
+.ops.ops .schedule-calendar-scroll :is(.schedule-weekdays,.schedule-month-grid) { min-width: 480px; }
+.ops.ops .roster-calendar button small { font-size: 11px; line-height: 1.4; }
+.ops.ops :is(.roster-weekday-tabs small,.roster-time-range label,.schedule-submission-grid small,.schedule-submission-grid time,.staff-schedule-status span) { font-size: 12px; line-height: 1.5; }
+.ops.ops :is(.operations-section-title>span,.operations-section-title>div>span,.operations-summary span,.dashboard-attendance-metrics span,.dashboard-attendance-state) { font-size: 12px; }
+
+@media(max-width:640px) {
+  .public-home .formula-head { grid-template-columns: 46px minmax(0,1fr) 18px; column-gap: 12px; }
+  .public-home .seal-stamp:is(.seal-v90,.seal-v120) { width: 46px; height: 46px; font-size: 22px; }
+  .public-home .service-name { font-size: 19px; letter-spacing: .6px; }
+  .public-home .service-price { font-size: 16px; }
+  .public-home .formula-name { font-size: 17px; letter-spacing: .5px; }
+  .public-home .formula-sub { font-size: 14px; letter-spacing: 0; }
+  .ops.ops .operations-calendar :is(.operations-day,.operations-day.outside) { min-height: 96px; }
+  .ops.ops .operations-calendar .operations-day-counts small { font-size: 10px; line-height: 1.5; padding: 1px 0; }
+  .ops.ops .operations-calendar .operations-day-counts b { font-size: 11px; }
+  .ops.ops .operations-weekday { font-size: 11px; }
+}
+@media(max-width:960px) {
+  .ops.ops .staff-schedule-layout { grid-template-columns: minmax(0,1fr); }
+}

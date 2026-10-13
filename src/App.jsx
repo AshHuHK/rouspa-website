@@ -708,7 +708,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         .time-chip {
           background: rgba(163,130,63,0.05); border: 1px solid rgba(163,130,63,0.1);
           color: #a3823f; cursor: pointer; transition: all 0.3s;
-          font-family: 'Cormorant Garamond', serif; font-size: 15px;
+          font-family: var(--public-font); font-size: 15px;
         }
         .time-chip:hover { background: rgba(163,130,63,0.1); border-color: rgba(163,130,63,0.3); }
         .time-chip.selected { background: linear-gradient(135deg, #a3823f, #8a6d35); color: #f2ede4; border-color: #a3823f; font-weight: 600; }
@@ -778,7 +778,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
 
         .fb-count {
           position: absolute; right: 18px; bottom: 6px; font-size: 10px; letter-spacing: 1px;
-          color: rgba(163,130,63,0.4); font-family: 'Cormorant Garamond', serif;
+          color: rgba(163,130,63,0.4); font-family: var(--public-font);
         }
 
         .fb-paper-done { display: flex; align-items: center; justify-content: center; min-height: 130px; }
@@ -983,7 +983,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         .formula-head-static { cursor: default; }
         .service-duration-group { max-width: 620px; margin: 0 auto 72px; }
         .service-duration-heading { display: flex; align-items: center; gap: 18px; margin: 0 auto 28px; padding-bottom: 14px; border-bottom: 1px solid rgba(163,130,63,0.24); }
-        .service-duration-heading > span { min-width: 74px; color: #9a793e; font-family: 'Cormorant Garamond', serif; font-size: 42px; line-height: 1; text-align: right; }
+        .service-duration-heading > span { min-width: 74px; color: #9a793e; font-family: var(--public-font); font-size: 42px; line-height: 1; text-align: right; }
         .service-duration-heading h3 { margin: 0; color: #4a443a; font-size: 18px; font-weight: 550; letter-spacing: 2px; }
         .service-duration-heading small { display: block; margin-top: 4px; color: rgba(74,68,58,0.5); font-size: 10px; letter-spacing: 2px; }
         .service-category-services { display: grid; gap: 28px; }
