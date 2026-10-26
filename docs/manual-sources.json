@@ -1,6 +1,6 @@
 {
-  "reviewed_at": "2026-10-26T07:03:44.284Z",
-  "manual_sha256": "d2db9a711afdcce2efcf016a87441bcc275f0bdfd21a93628be7facabf0d3711",
+  "reviewed_at": "2026-10-26T14:59:06.236Z",
+  "manual_sha256": "602cbb3fb750c0efef6324ff9ac7dfed1eb7e99607df17f99b90818075f4c755",
   "sources": {
     ".github/workflows/validate.yml": "31de911ec4585c39629e1d36cac41000f4bef723bc4b1c549478f9371d8e1395",
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
@@ -15,7 +15,7 @@
     "ios/App/App/SceneDelegate.swift": "bce9fcdc2e668cf258f2c3f250cfc06884b55beaefb82fde26c7600815631ad0",
     "ios/App/CapApp-SPM/Package.swift": "ce5ec58445268f486efe8c66c555225fce807c9eeb81389b406e1f899bf8d8e9",
     "mobile/index.html": "b229f85c862352b799628a8969cc154ddfd21461d409d2e71648be734f1b75f6",
-    "package.json": "6f1b98be8d6f955501fcbac02768f3dc7b3578d12325eff54e4f25bf768a5cfb",
+    "package.json": "15b762bd772c551184c1199f113ff37e46b966c0836a866c814ea98fc7c874f5",
     "server/ask-steward.mjs": "9423a947348adc675b4eb7c1c0d861366b5563a324c8f1d1d173f45a9e0eef58",
     "server/public-rpc.mjs": "253b17894fc66a00d4204922e09eb2a21a9fd5fb44333a34962adc17a146ebb2",
     "server/steward-context.mjs": "6dd61345c285624b41f6a9704c53a636a8d069d87a27d1a8db5eee84dd54beb3",
@@ -81,7 +81,7 @@
     "src/lib/useOperationsSnapshot.js": "ebed751e602bfcc36abcdd6449803dfa8ba8df4807aa5ea2ac9f2dfa13fd0e3e",
     "src/lib/usePublicData.js": "2c0193bd0211b7483813a14ea937d221c88f86172748f5734afd0b088610fd96",
     "src/main.jsx": "fd2ee730ed7648c85164f062fb63337ff7fdcd3d02aeb8d90d56b519c1719e16",
-    "supabase/functions/staff-accounts/index.ts": "048410aa5699d88e08f07222ec140f8bb31ae5ebae77d21caf2baf8442754222",
+    "supabase/functions/staff-accounts/index.ts": "146ccf2b47a775d1ed09524beb8d776ac28a338d11a7767418a3886d1d641b57",
     "supabase/functions/staff-login/index.ts": "662b6ed31593c61bc4ec59cdba96567cb5f713cb80174caadbafcbe0ec9914bb",
     "supabase/migrations/202610010001_spa_operations.sql": "1b87eef4129101ddd1d150443dce709a51d105a035ecfb4d55a99435d1301390",
     "supabase/migrations/202610010002_legacy_import.sql": "4d098c49ebd392ce7cd7c4fcd8128b758abfee383c8bba4f0c6dad5b88c32284",

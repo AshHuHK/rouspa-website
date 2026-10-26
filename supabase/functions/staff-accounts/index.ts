@@ -2,11 +2,12 @@ import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 
 // Only this server function uses Auth Admin credentials. Never log request bodies/passwords.
 export function createStaffHandler({ clientFactory, environment }) {
+ const serviceVersion = '20261026-01';
  const origins = ['https://www.rouspa.tw','https://rouspa.tw','capacitor://localhost','http://localhost:5173','http://127.0.0.1:4178'];
  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  return async (req) => {
   const origin = req.headers.get('origin');
-  const headers = { 'Content-Type':'application/json', 'Cache-Control':'no-store', 'Vary':'Origin',
+  const headers = { 'Content-Type':'application/json', 'Cache-Control':'no-store', 'Vary':'Origin', 'X-Staff-Service-Version':serviceVersion,
    'Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods':'POST, OPTIONS',
    ...(origins.includes(origin) ? {'Access-Control-Allow-Origin':origin} : {}) };
   const reply = (status, error, extra = {}) => new Response(JSON.stringify(error ? {error,...extra} : {ok:true,...extra}),{status,headers});

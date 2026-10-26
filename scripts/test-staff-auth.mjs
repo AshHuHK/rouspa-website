@@ -6,12 +6,12 @@ async function load(file){const source=(await readFile(new URL('../supabase/func
 const {createStaffHandler}=await load('staff-accounts'),{createLoginHandler}=await load('staff-login');
 // Preflight runs before credentials and must work on both canonical and legacy
 // domains. A malformed deployed www entry previously blocked every staff login.
-for(const [createHandler,versioned] of [[createStaffHandler,false],[createLoginHandler,true]]) {
+for(const [createHandler,version] of [[createStaffHandler,'20261026-01'],[createLoginHandler,'20261025-01']]) {
  const handler=createHandler({clientFactory:()=>{throw new Error('Preflight must not reach Auth');},environment:()=>undefined});
  for(const origin of ['https://www.rouspa.tw','https://rouspa.tw','capacitor://localhost','http://localhost:5173','http://127.0.0.1:4178']) {
   const response=await handler(new Request('https://example.test/functions/v1/staff-login',{method:'OPTIONS',headers:{origin,'access-control-request-method':'POST','access-control-request-headers':'apikey,authorization,content-type,x-client-info'}}));
   check(response.status===204&&response.headers.get('access-control-allow-origin')===origin,'all supported staff clients pass preflight: '+origin);
-  if(versioned)check(response.headers.get('x-staff-service-version')==='20261025-01','login service version is independently verifiable');
+  check(response.headers.get('x-staff-service-version')===version,'staff service version is independently verifiable');
  }
  for(const origin of ['https://evil.test','https://www.rouspa.tw.evil.test','http://localhost:5173s://www.rouspa.tw']) {
   const response=await handler(new Request('https://example.test/functions/v1/staff-login',{method:'OPTIONS',headers:{origin}}));
