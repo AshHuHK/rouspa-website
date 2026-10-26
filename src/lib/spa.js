@@ -95,6 +95,7 @@ const errors = {
   ACCOUNT_EXISTS: '此人員已有登入帳號，請重新整理後修改登入權限或重設密碼。',
   ACCOUNT_NOT_FOUND: '此人員尚未建立登入帳號。',
   ACCOUNT_CONFLICT: '帳號與人員資料不一致，請重新整理後核對；同一帳號只能綁定一位人員。',
+  PASSWORD_MISMATCH: '兩次輸入的密碼不一致，尚未建立或重設帳號。',
   PASSWORD_TOO_SHORT: '密碼請使用 12～128 個字元。', PASSWORD_RESET_FAILED: '密碼重設未成功，請重試；舊後台會話已停用。',
   OWNER_PROTECTED: '店主帳號保持不變，不能透過人員管理修改或停用。', STAFF_ARCHIVED: '此人員已封存，請先恢復人員資料。',
   ACCOUNT_SERVICE_UNAVAILABLE: '人員帳號服務暫時無法連線，請稍後重試。',

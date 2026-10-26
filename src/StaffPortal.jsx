@@ -4,6 +4,7 @@ import { Field, MutationForm, Empty, Modal } from './OperationsShared.jsx';
 import { AttendanceEmployee } from './Attendance.jsx';
 import PayrollSources from './PayrollSources.jsx';
 import StaffAnnualReviews from './StaffAnnualReviews.jsx';
+import { confirmedStaffPassword } from './lib/staff-account.js';
 
 export const staffRoleNames = {owner:'店主',manager:'主管',receptionist:'櫃台',therapist:'技師'};
 export const payBasisNames = {monthly:'月薪',hourly:'時薪',session:'每堂薪酬'};
@@ -21,15 +22,16 @@ async function accountAction(body) {
  return data;
 }
 export function StaffAccountForm({row,account,saved,roles=[]}) {
- const [mode,setMode] = useState(account?'access':'create'), [username,setUsername] = useState(account?.username || ''), [password,setPassword] = useState('');
+ const [mode,setMode] = useState(account?'access':'create'), [username,setUsername] = useState(account?.username || ''), [password,setPassword] = useState(''), [passwordConfirm,setPasswordConfirm] = useState('');
  const [role,setRole] = useState(account?.role || 'therapist'), [active,setActive] = useState(account?.active ?? true);
  const choices=roles.filter(r=>r.code!=='owner'&&r.active).length?roles.filter(r=>r.code!=='owner'&&r.active):Object.entries(staffRoleNames).filter(([id])=>id!=='owner').map(([code,name])=>({code,name}));
  return <><p>{row.name} · {account?.username || '尚未建立登入帳號'}</p>
- {account && <nav>{[['access','角色與登入權限'],['password','重設密碼'],['username','修改登入帳號']].map(([id,label])=><button key={id} onClick={()=>{setMode(id);setPassword('');}} className={mode===id?'active':''}>{label}</button>)}</nav>}
- <MutationForm key={mode} action={()=>accountAction({action:mode,staff_id:row.id,...(mode==='create'?{username,password,role}:mode==='password'?{password}:mode==='username'?{username}:{role,active})})} onSaved={saved} submit={mode==='create'?'建立帳號':mode==='password'?'確認重設密碼':mode==='username'?'確認修改登入帳號':'儲存登入權限'}>
+ {account && <nav>{[['access','角色與登入權限'],['password','重設密碼'],['username','修改登入帳號']].map(([id,label])=><button key={id} onClick={()=>{setMode(id);setPassword('');setPasswordConfirm('');}} className={mode===id?'active':''}>{label}</button>)}</nav>}
+ <MutationForm key={mode} action={()=>accountAction({action:mode,staff_id:row.id,...(mode==='create'?{username,password:confirmedStaffPassword(password,passwordConfirm),role}:mode==='password'?{password:confirmedStaffPassword(password,passwordConfirm)}:mode==='username'?{username}:{role,active})})} onSaved={saved} submit={mode==='create'?'建立帳號':mode==='password'?'確認重設密碼':mode==='username'?'確認修改登入帳號':'儲存登入權限'}>
  <div className="form-grid">
  {['create','username'].includes(mode) && <Field wide label="登入使用者名稱"><input required autoComplete="off" minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" value={username} onChange={e=>setUsername(e.target.value)}/></Field>}
  {['create','password'].includes(mode) && <Field wide label="設定密碼（至少 12 個字元）"><input required type="password" autoComplete="new-password" minLength={12} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/></Field>}
+ {['create','password'].includes(mode) && <Field wide label="再次輸入密碼"><input required type="password" autoComplete="new-password" minLength={12} maxLength={128} value={passwordConfirm} onChange={e=>setPasswordConfirm(e.target.value)}/></Field>}
  {['create','access'].includes(mode) && <Field label="後台角色"><select value={role} onChange={e=>setRole(e.target.value)}>{choices.map(item=><option key={item.code} value={item.code}>{item.name}</option>)}</select></Field>}
  {mode==='access' && <Field label="後台登入"><select value={String(active)} onChange={e=>setActive(e.target.value==='true')}><option value="true">啟用</option><option value="false">停用</option></select></Field>}
  </div><p className="muted">角色權限由店主在「角色與權限」統一設定；職稱、薪酬與登入角色彼此獨立，店主帳號保持不變。</p>

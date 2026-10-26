@@ -1,6 +1,6 @@
 {
-  "reviewed_at": "2026-10-26T14:59:06.236Z",
-  "manual_sha256": "602cbb3fb750c0efef6324ff9ac7dfed1eb7e99607df17f99b90818075f4c755",
+  "reviewed_at": "2026-10-26T17:05:15.175Z",
+  "manual_sha256": "2f8ecacf3a2fcbaaf6f8204a212537acba5af62c42d4f70ed8bb86d7cad3a964",
   "sources": {
     ".github/workflows/validate.yml": "31de911ec4585c39629e1d36cac41000f4bef723bc4b1c549478f9371d8e1395",
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
@@ -44,7 +44,7 @@
     "src/Services.jsx": "7c51900f4476c3260f708f2c7a65f1d45131db3f88fe5b26a263a653b73e24f3",
     "src/Shop.jsx": "8111d6a349af53cfe65c8118d23c96e00a0343096e9bb2bc46c33d0898117f24",
     "src/StaffAnnualReviews.jsx": "12577c87b46bf9f453fb328de6d3872bf1151af49b48fc9834aed45354209aea",
-    "src/StaffPortal.jsx": "7aaa477d2e4757816b3dad5d0ed6f4b2d4d835fb3e2af89632a4d963f4996885",
+    "src/StaffPortal.jsx": "b95b16af686410be40b7d2dac7aa80cd3cf359ed9e70b74b323fdc0543f6e15e",
     "src/StaffProfileEditor.jsx": "2bf5fa095a5f02a7ecf689d6d051c8be9131693ee5a2df58bbaaea741da52208",
     "src/ios-main.jsx": "528bb83bc0f04641efc901ace26435ac91741d00b607a5264db71f0e7ecf3fe7",
     "src/lib/attendance.js": "6228463b5888f1866095cefb3e3ee6fd7690e223d6a7b8939b300ec313763c87",
@@ -73,7 +73,8 @@
     "src/lib/seo-content.js": "82678d485913f36e75031de5107a4b6a4337debce4e8bbf67308d90a0e3524bd",
     "src/lib/seo.js": "d24357ed0e088ef0042942827ae2d546fc80f6cb5271f2f5bbe8b80da723ce98",
     "src/lib/service-content.js": "f34f107736e77acb8d493101358f9887b7cfa5abb6d53c12e95c4db14536c50a",
-    "src/lib/spa.js": "dc00c40dc35c6b4abd342c9b1621fe5d6e42e8bb882050162ca4e69f3e85f688",
+    "src/lib/spa.js": "394c414b50a84f76c80e568ba7354cb3518c09958bbcdb86c7d6b1d1a2a563e1",
+    "src/lib/staff-account.js": "90f5a673a0b59b621fce5685d076c10956c4be8945479239c505880ac556e341",
     "src/lib/staff-tenure.js": "b873af953bc82e32ad82ebb047eb336ba59453ef27c15b18325a4897d583d304",
     "src/lib/staff-work-roles.js": "1758be22d9ecf72b812a06bf142aa6a4f00c6a7f727e48683a0dd5c7816e5cda",
     "src/lib/useBookingClock.js": "8a8320fadc03d3d245f883173d0d37f935c52957e69687614f011f5b8b1a70fb",

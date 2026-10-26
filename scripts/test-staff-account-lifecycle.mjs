@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
+import {confirmedStaffPassword} from '../src/lib/staff-account.js';
 
 async function load(name) {
   const source=(await readFile(new URL(`../supabase/functions/${name}/index.ts`,import.meta.url),'utf8')).replace(/^import .*\n/,'');
@@ -12,6 +13,8 @@ const {createLoginHandler}=await load('staff-login');
 const ownerId=randomUUID(),staffId=randomUUID(),userId=randomUUID();
 const environment=key=>({SUPABASE_URL:'https://example.test',SUPABASE_ANON_KEY:'public-key',SUPABASE_SERVICE_ROLE_KEY:'server-secret'}[key]);
 const state={account:null,password:null,banned:false,archived:false,staffActive:true};
+assert.equal(confirmedStaffPassword('same-password','same-password'),'same-password');
+assert.throws(()=>confirmedStaffPassword('first-password','mistyped-password'),/PASSWORD_MISMATCH/);
 
 const ownerClient={
   auth:{getUser:async()=>({data:{user:{id:ownerId}},error:null})},
