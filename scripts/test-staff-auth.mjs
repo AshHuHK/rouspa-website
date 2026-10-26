@@ -4,6 +4,20 @@ import {randomUUID} from 'node:crypto';
 let assertions=0;const check=(ok,label)=>{assert.ok(ok,label);assertions++;};
 async function load(file){const source=(await readFile(new URL('../supabase/functions/'+file+'/index.ts',import.meta.url),'utf8')).replace(/^import .*\n/,'');return import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));}
 const {createStaffHandler}=await load('staff-accounts'),{createLoginHandler}=await load('staff-login');
+// Preflight runs before credentials and must work on both canonical and legacy
+// domains. A malformed deployed www entry previously blocked every staff login.
+for(const [createHandler,versioned] of [[createStaffHandler,false],[createLoginHandler,true]]) {
+ const handler=createHandler({clientFactory:()=>{throw new Error('Preflight must not reach Auth');},environment:()=>undefined});
+ for(const origin of ['https://www.rouspa.tw','https://rouspa.tw','capacitor://localhost','http://localhost:5173','http://127.0.0.1:4178']) {
+  const response=await handler(new Request('https://example.test/functions/v1/staff-login',{method:'OPTIONS',headers:{origin,'access-control-request-method':'POST','access-control-request-headers':'apikey,authorization,content-type,x-client-info'}}));
+  check(response.status===204&&response.headers.get('access-control-allow-origin')===origin,'all supported staff clients pass preflight: '+origin);
+  if(versioned)check(response.headers.get('x-staff-service-version')==='20261025-01','login service version is independently verifiable');
+ }
+ for(const origin of ['https://evil.test','https://www.rouspa.tw.evil.test','http://localhost:5173s://www.rouspa.tw']) {
+  const response=await handler(new Request('https://example.test/functions/v1/staff-login',{method:'OPTIONS',headers:{origin}}));
+  check(response.status===403&&!response.headers.has('access-control-allow-origin'),'unknown or malformed origins remain denied');
+ }
+}
 const owner=randomUUID(),user=randomUUID(),person=randomUUID();
 const environment=k=>({SUPABASE_URL:'https://example.test',SUPABASE_ANON_KEY:'public-key',SUPABASE_SERVICE_ROLE_KEY:'server-secret'}[k]);
 function fixture(opts={}){

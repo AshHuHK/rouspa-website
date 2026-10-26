@@ -1,6 +1,6 @@
 {
-  "reviewed_at": "2026-10-13T08:08:58.107Z",
-  "manual_sha256": "30ff87c25043e035324af9a0cf3254ebcb649ba4c42ae5b332391c2e204b7edc",
+  "reviewed_at": "2026-10-26T07:03:44.284Z",
+  "manual_sha256": "d2db9a711afdcce2efcf016a87441bcc275f0bdfd21a93628be7facabf0d3711",
   "sources": {
     ".github/workflows/validate.yml": "31de911ec4585c39629e1d36cac41000f4bef723bc4b1c549478f9371d8e1395",
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
@@ -82,7 +82,7 @@
     "src/lib/usePublicData.js": "2c0193bd0211b7483813a14ea937d221c88f86172748f5734afd0b088610fd96",
     "src/main.jsx": "fd2ee730ed7648c85164f062fb63337ff7fdcd3d02aeb8d90d56b519c1719e16",
     "supabase/functions/staff-accounts/index.ts": "048410aa5699d88e08f07222ec140f8bb31ae5ebae77d21caf2baf8442754222",
-    "supabase/functions/staff-login/index.ts": "d0410728d3e05362df60955182942dd60bc27ae8d6a656b151468c394927a7c8",
+    "supabase/functions/staff-login/index.ts": "662b6ed31593c61bc4ec59cdba96567cb5f713cb80174caadbafcbe0ec9914bb",
     "supabase/migrations/202610010001_spa_operations.sql": "1b87eef4129101ddd1d150443dce709a51d105a035ecfb4d55a99435d1301390",
     "supabase/migrations/202610010002_legacy_import.sql": "4d098c49ebd392ce7cd7c4fcd8128b758abfee383c8bba4f0c6dad5b88c32284",
     "supabase/migrations/202610010003_customer_booking.sql": "fdb335b83df5b736db8a4c33cfb194625bac8ba0b0042b6d8c47c3ff6832af56",
