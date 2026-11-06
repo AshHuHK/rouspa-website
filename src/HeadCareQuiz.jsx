@@ -95,5 +95,5 @@ export default function HeadCareQuiz({ lang = 'zh', onBook, route }) {
     return () => document.removeEventListener('click', listener);
   }, []);
   useEffect(() => setOpen(false), [route]);
-  return <><button className="hq-floating" type="button" data-head-care-quiz aria-haspopup="dialog" aria-label={lang === 'en' ? 'Take the head-care quiz (Traditional Chinese)' : '測一測，找到適合你的頭療'}><QuizSpark/><span>{lang === 'en' ? 'Quiz' : '測一測'}</span></button>{blocked && <div className="hq-floating-note" role="status"><p>{lang === 'en' ? 'Check the previous booking result before starting a new recommendation.' : '請先確認剛才預約的結果，再開始新的課程推薦。'}</p><button onClick={() => setBlocked(false)} aria-label={lang === 'en' ? 'Dismiss message' : '關閉提示'}>×</button></div>}{open && <QuizDialog onClose={() => setOpen(false)} onBook={intent => { setOpen(false); onBook(intent); }}/>}</>;
+  return <>{blocked && <div className="hq-booking-warning" role="status"><p>{lang === 'en' ? 'Check the previous booking result before starting a new recommendation.' : '請先確認剛才預約的結果，再開始新的課程推薦。'}</p><button onClick={() => setBlocked(false)} aria-label={lang === 'en' ? 'Dismiss message' : '關閉提示'}>×</button></div>}{open && <QuizDialog onClose={() => setOpen(false)} onBook={intent => { setOpen(false); onBook(intent); }}/>}</>;
 }

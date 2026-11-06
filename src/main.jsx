@@ -6,6 +6,7 @@ import { applySeo, routeFromLocation } from './lib/seo.js';
 import { createRebookingIntent } from './lib/rebooking.js';
 import { ApplicationBoundary } from './ApplicationBoundary.jsx';
 import HeadCareQuiz from './HeadCareQuiz.jsx';
+import PublicLineButton from './PublicLineButton.jsx';
 import './responsive.css';
 import './public-theme.css';
 import './public-navigation.css';
@@ -62,7 +63,7 @@ function Router() {
     setRebookingIntent({ source: 'quiz', ...intent, id: ++rebookingSequence.current });
     navigateTo('/#booking');
   };
-  const withQuiz = content => <>{content}<HeadCareQuiz lang={lang} route={route} onBook={bookQuiz}/></>;
+  const withQuiz = content => <>{content}<PublicLineButton lang={lang}/><HeadCareQuiz lang={lang} route={route} onBook={bookQuiz}/></>;
   useEffect(() => { if (route !== 'home') setRebookingIntent(null); }, [route]);
 
   if (route === 'lookup') return <BookingLookup standalone lang={lang} onRebook={rebook} />;

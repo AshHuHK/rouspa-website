@@ -38,13 +38,16 @@ button, [role=button], a { -webkit-tap-highlight-color: transparent; }
   .public-home .service-heading { margin-bottom: 20px; gap: 8px 20px; }
   .service-name { font-size: 19px; letter-spacing: 1px; }
   .service-price { font-size: 14px; letter-spacing: 0.5px; }
-  .public-home .line-tooltip, .public-home .line-floating.over-content { display: none !important; }
-  .public-home .line-floating { right: 12px !important; bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important; }
-  .public-home .line-floating > a { animation: none !important; box-shadow: 0 3px 12px rgba(6,199,85,0.18) !important; transform: none !important; }
   .public-home .hero-main-container { padding-bottom: 24px; }
 }
 
 .hero-background{position:absolute;inset:0;display:block;pointer-events:none}.hero-background img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.public-line-floating{position:fixed;right:30px;bottom:calc(30px + env(safe-area-inset-bottom,0px));z-index:99;display:flex;align-items:center;gap:12px;font-family:var(--public-font)}
+.public-line-floating>a{display:flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:50%;background:#06c755;box-shadow:0 4px 20px #06c75540;text-decoration:none;flex-shrink:0}
+.public-line-floating>a>span{color:#fff;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1;letter-spacing:1.5px;text-indent:1.5px}
+.public-line-tooltip{display:none;padding:10px 16px;border:1px solid #06c75533;border-radius:8px;background:#fff;color:#4a443a;font-size:13px;line-height:1.6;box-shadow:0 4px 15px #00000014}
+@media(hover:hover){.public-line-floating:hover .public-line-tooltip,.public-line-floating:focus-within .public-line-tooltip{display:block}}
+@media(max-width:768px){.public-line-floating{right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px))}.public-line-floating>a{width:48px;height:48px;box-shadow:0 3px 12px #06c7552e}.public-line-tooltip{display:none!important}}
 .hero-local-heading{display:block;font-size:12px;line-height:1.8;letter-spacing:1px;color:#6d5131;font-weight:500;margin:0 0 4px}
 .service-page-intro{max-width:620px;margin:-30px auto 42px;text-align:center;font-size:14px;line-height:2;color:#766954;letter-spacing:.5px}.service-page-intro a{display:inline-flex;align-items:center;min-height:44px;color:#80622d;text-underline-offset:4px}
 .public-footer-links{display:flex;justify-content:center;gap:12px 24px;flex-wrap:wrap;margin:18px auto 0}.public-footer-links a{color:#80622d;font-size:13px;min-height:44px;display:inline-flex;align-items:center;text-underline-offset:4px}

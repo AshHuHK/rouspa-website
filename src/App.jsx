@@ -398,9 +398,6 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   const [slotError, setSlotError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [animatedSections, setAnimatedSections] = useState(new Set());
-  const [lineHover, setLineHover] = useState(false);
-  const [showLineTooltip, setShowLineTooltip] = useState(false);
-  const [lineOverContent, setLineOverContent] = useState(false);
   const [openFormula, setOpenFormula] = useState(null);
   const toggleFormula = (key) => setOpenFormula((prev) => (prev === key ? null : key));
 
@@ -419,21 +416,6 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const visible = new Set();
-    const observer = new IntersectionObserver(entries => {
-      for (const entry of entries) entry.isIntersecting ? visible.add(entry.target) : visible.delete(entry.target);
-      setLineOverContent(visible.size > 0);
-    });
-    [sectionRefs.services.current, sectionRefs.booking.current].filter(Boolean).forEach(el => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowLineTooltip(true), 3000);
-    const hide = setTimeout(() => setShowLineTooltip(false), 8000);
-    return () => { clearTimeout(timer); clearTimeout(hide); };
-  }, []);
 
   const alignBooking = (behavior = "instant") => {
     const target = bookingAnchor.current;
@@ -1115,38 +1097,6 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
         <a className="public-opening-line" href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer">{t.announcement.lineCta}<span aria-hidden="true">↗</span></a>
       </aside>
 
-      {/* ========== LINE FLOATING BUTTON ========== */}
-      <div className={`line-floating ${lineOverContent ? "over-content" : ""}`} style={{ position: "fixed", bottom: "30px", right: "30px", zIndex: 99, display: "flex", alignItems: "center", gap: "12px" }}>
-        {showLineTooltip && (
-          <div className="line-tooltip" style={{
-            background: "white", border: "1px solid rgba(6,199,85,0.2)",
-            padding: "10px 16px", borderRadius: "8px", fontSize: "13px", color: "#4a443a",
-            boxShadow: "0 4px 15px rgba(0,0,0,0.08)",
-            letterSpacing: "1px", whiteSpace: "normal", maxWidth: "min(220px, calc(100vw - 110px))", animation: "tooltipSlide 0.4s ease-out",
-            backdropFilter: "blur(10px)"
-          }}>
-            {t.line.tooltip}
-          </div>
-        )}
-        <a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer"
-          onMouseEnter={() => { setLineHover(true); setShowLineTooltip(true); }}
-          onMouseLeave={() => { setLineHover(false); setShowLineTooltip(false); }}
-          style={{
-            width: "60px", height: "60px", borderRadius: "50%", background: "#06C755",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 20px rgba(6,199,85,0.3)", animation: "linePulse 3s ease-in-out infinite",
-            transition: "transform 0.3s", transform: lineHover ? "scale(1.1)" : "scale(1)",
-            textDecoration: "none"
-          }}>
-          {/* 實心綠圓中央只放白色 LINE 字樣；textIndent 補掉字距在尾字後的空隙，文字才真正置中 */}
-          <span style={{
-            color: "#fff",
-            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-            fontSize: "15px", fontWeight: 700, lineHeight: 1,
-            letterSpacing: "1.5px", textIndent: "1.5px"
-          }}>LINE</span>
-        </a>
-      </div>
 
       {/* ========== HERO ========== */}
       <section ref={sectionRefs.home} className="hero-section" style={{
