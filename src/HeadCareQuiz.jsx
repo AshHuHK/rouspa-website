@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { QUIZ_CONTENT as content, rankQuizAnswers, quizReasonsFor, quizBookableServices } from './lib/head-care-quiz.js';
 import { usePublicCatalog } from './lib/usePublicData.js';
-import { money } from './lib/spa.js';
 import { STORE } from './lib/public-copy.js';
 import './head-care-quiz.css';
 
@@ -20,8 +19,8 @@ function BookingChoices({ courseKey, catalog, loading, error, onRetry, onBook, c
   return <div className={`hq-booking ${compact ? 'hq-booking-compact' : ''}`}>
     {loading && !catalog ? <p role="status">正在核對目前療程與價格…</p> : error ? <><p role="alert">{error}</p><button className="hq-button hq-secondary" onClick={onRetry}>重新讀取療程</button></> : choices.length ? <>
       {!compact && <p className="hq-booking-note">將帶入「{course.name}」偏好；日期、時段與技師於下一步選擇。</p>}
-      {choices.map(service => <div className="hq-booking-choice" key={service.id}><p>{service.name} · {service.duration_minutes} 分鐘 <strong>{money(service.price_cents)}</strong></p><button className={compact ? 'hq-text-button' : 'hq-button hq-primary'} onClick={() => onBook({ courseKey, serviceId: service.id })}>{compact ? `預約${course.name}` : choices.length > 1 ? `預約${service.name}` : '立即預約'}<span aria-hidden="true"> →</span></button></div>)}
-    </> : <p className="hq-booking-note">此推薦目前未開放對應的 90 分鐘線上預約，請透過 LINE 詢問門店。</p>}
+      {choices.map((service, index) => <div className="hq-booking-choice" key={service.id}><button className={compact ? 'hq-text-button' : 'hq-button hq-primary'} onClick={() => onBook({ courseKey, serviceId: service.id })}>{compact ? `預約${course.name}` : '立即預約'}{choices.length > 1 ? `（選項 ${index + 1}）` : ''}<span aria-hidden="true"> →</span></button></div>)}
+    </> : <p className="hq-booking-note">此推薦目前未開放線上預約，請透過 LINE 詢問門店。</p>}
     {(!choices.length || error) && <a className="hq-text-button" href={STORE.LINE_URL} target="_blank" rel="noopener noreferrer">LINE 療程諮詢 ↗</a>}
   </div>;
 }
