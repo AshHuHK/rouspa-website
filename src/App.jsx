@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useId } from "react";
 import BookingLookup from "./BookingLookup.jsx";
 import PublicBookingExperience from "./PublicBookingExperience.jsx";
+import { HeadCareQuizEntry } from './HeadCareQuiz.jsx';
 import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistLabel, slotLabel } from "./lib/public-copy.js";
 import { publicRpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 import { createRequestId } from './lib/request-id.js';
@@ -1313,6 +1314,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
           </div>
 
           <p className="service-page-intro">{lang === 'zh' ? '依照想放鬆的時間，選擇45、90或120分方子；完整步驟與另外項目如下。' : 'Choose a 45, 90 or 120-minute ritual. Explore the care steps and other services below.'}<br /><a href="/services/">{lang === 'zh' ? '認識頭療服務與預約常見問題' : 'About our head-care treatments and booking'} →</a></p>
+          <HeadCareQuizEntry lang={lang}/>
           {websiteServiceGroups.map((group,groupIndex)=><section key={group.code} className={`service-duration-group ${isAnimated("services")?`animate-in-delay-${Math.min(groupIndex+1,4)}`:""}`}>
             <div className="service-category-services">{group.services.map(service=>{const rituals=serviceRituals(service);return <article className="service-entry" key={service.id}>
               <div className="service-heading"><h3 className="service-name">{serviceMenuTitle(service,lang)}</h3><span className="service-price">{money(service.price_cents)}</span></div>

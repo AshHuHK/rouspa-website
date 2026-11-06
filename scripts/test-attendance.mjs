@@ -17,6 +17,9 @@ for(const file of (await readdir(directory)).sort()){
  await db.exec(sql);
 }
 const owner=randomUUID(),employee=randomUUID(),other=randomUUID(),staff=(await db.query("select id from spa_staff where active and employment_status='active' order by display_order limit 2")).rows;
+// This fixture exercises October attendance even when the suite runs in a
+// later month; personnel must already be employed during that fixed period.
+await db.query("update spa_staff set hire_date='2026-10-01' where id=any($1::uuid[])",[staff.map(row=>row.id)]);
 await db.query('insert into auth.users(id,email) values($1,$2),($3,$4),($5,$6)',[owner,'owner@example.test',employee,'staff@example.test',other,'other@example.test']);
 await db.query("insert into spa_roles(user_id,role,staff_id,active,login_name) values($1,'owner',null,true,null),($2,'therapist',$3,true,'attendance_test'),($4,'therapist',$5,true,'attendance_other')",[owner,employee,staff[0].id,other,staff[1].id]);
 async function as(role,user,sql,args=[]){await db.exec('begin');try{await db.exec(`set local role ${role}`);await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[user||'',JSON.stringify({iat:Math.floor(Date.now()/1000)})]);const result=await db.query(sql,args);await db.exec('commit');return result.rows;}catch(e){await db.exec('rollback');throw e;}}

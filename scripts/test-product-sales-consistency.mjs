@@ -21,13 +21,16 @@ await db.exec(`
  $$;
  grant usage on schema auth to anon,authenticated;
  grant execute on function auth.uid(),auth.jwt() to anon,authenticated;
+ -- Fixture sales stay outside the deliberately locked November payroll even
+ -- when this test is run in November or later.
+ create function public.product_consistency_test_now() returns timestamptz language sql stable as $$select '2026-10-25T10:00:00+08:00'::timestamptz$$;
 `);
 
 const directory = new URL('../supabase/migrations/', import.meta.url);
 const migration = '202610110002_product_sales_consistency.sql';
 const files = (await readdir(directory)).filter(file => file.endsWith('.sql')).sort();
 for (const file of files.filter(file => file < migration)) {
-  await db.exec(await readFile(new URL(file, directory), 'utf8'));
+  await db.exec((await readFile(new URL(file, directory), 'utf8')).replaceAll('now()', 'public.product_consistency_test_now()'));
 }
 
 const owner = randomUUID();

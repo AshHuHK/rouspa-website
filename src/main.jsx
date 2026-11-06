@@ -5,6 +5,7 @@ import BookingLookup from './BookingLookup.jsx';
 import { applySeo, routeFromLocation } from './lib/seo.js';
 import { createRebookingIntent } from './lib/rebooking.js';
 import { ApplicationBoundary } from './ApplicationBoundary.jsx';
+import HeadCareQuiz from './HeadCareQuiz.jsx';
 import './responsive.css';
 import './public-theme.css';
 import './public-navigation.css';
@@ -57,6 +58,11 @@ function Router() {
     navigateTo('/#booking');
   };
   const rebookingApplied = (id) => setRebookingIntent(current => current?.id === id ? null : current);
+  const bookQuiz = intent => {
+    setRebookingIntent({ source: 'quiz', ...intent, id: ++rebookingSequence.current });
+    navigateTo('/#booking');
+  };
+  const withQuiz = content => <>{content}<HeadCareQuiz lang={lang} route={route} onBook={bookQuiz}/></>;
   useEffect(() => { if (route !== 'home') setRebookingIntent(null); }, [route]);
 
   if (route === 'lookup') return <BookingLookup standalone lang={lang} onRebook={rebook} />;
@@ -66,14 +72,14 @@ function Router() {
   if (route === 'admin') {
     return <Admin />;
   }
-  if (route === 'services') return <Services lang={lang} />;
+  if (route === 'services') return withQuiz(<Services lang={lang} />);
   if (route === 'shop') {
-    return <Shop lang={lang} onNavigateHome={() => navigateTo('/')} />;
+    return withQuiz(<Shop lang={lang} onNavigateHome={() => navigateTo('/')} />);
   }
   if (route === 'contact') {
-    return <Contact lang={lang} onNavigateHome={() => navigateTo('/')} />;
+    return withQuiz(<Contact lang={lang} onNavigateHome={() => navigateTo('/')} />);
   }
-  return <App lang={lang} onNavigateShop={() => navigateTo('/shop/')} onNavigateContact={() => navigateTo('/contact/')} onLangChange={setLang} onRebook={rebook} rebookingIntent={rebookingIntent} onRebookingApplied={rebookingApplied} />;
+  return withQuiz(<App lang={lang} onNavigateShop={() => navigateTo('/shop/')} onNavigateContact={() => navigateTo('/contact/')} onLangChange={setLang} onRebook={rebook} rebookingIntent={rebookingIntent} onRebookingApplied={rebookingApplied} />);
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<ApplicationBoundary><React.Suspense fallback={<div style={{padding:40,textAlign:"center"}}>載入中…</div>}><Router /></React.Suspense></ApplicationBoundary>);
