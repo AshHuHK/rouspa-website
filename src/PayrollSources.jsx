@@ -1,13 +1,13 @@
 import {useEffect,useRef,useState} from 'react';
-import {rpc,errorText,money,dateTime} from './lib/spa.js';
-import {Empty} from './OperationsShared.jsx';
+import {rpc,cents,errorText,money,dateTime,taipeiDate} from './lib/spa.js';
+import {Empty,Field,MutationForm} from './OperationsShared.jsx';
 import './payroll-sources.css';
 import {useLiveRefresh} from './lib/useLiveRefresh.js';
 
 const tabs=[['summary','應發核對'],['sales','療程與商品'],['work','出勤與加班'],['adjustments','本期加扣'],['rules','制度引用']];
 const overtimeNames={weekday:'平日',rest_day:'休息日',national_holiday:'國定假日',regular_holiday:'例假日'};
 const adjustmentNames={bonus:'獎金',allowance:'津貼',deduction:'扣款',designated_bonus:'指定客獎金'};
-const checkNames={service_commission_cents:'服務抽成',product_commission_cents:'商品抽成',designated_bonus_cents:'指定客獎金合計',completed_count:'實際完成堂數',service_count:'計薪服務堂數',unsettled_completed_count:'待結帳堂數',refunded_service_count:'退款堂數',service_minutes:'計薪服務分鐘',service_sales_cents:'計抽服務收入',product_order_count:'商品訂單數',product_sales_cents:'商品淨收入',designated_clients:'指定客堂數',designated_service_sales_cents:'指定客服務收入',work_minutes:'核准出勤分鐘',overtime_minutes:'本期核准加班分鐘',overtime_occurrences:'本期加班紀錄數',quarter_overtime_minutes:'季度核准加班分鐘',max_month_overtime_minutes:'期間內最高月加班分鐘',manual_designated_bonus_cents:'手動指定客獎金',bonus_cents:'獎金',allowance_cents:'津貼',deduction_cents:'扣款'};
+const checkNames={package_bonus_cents:'課程券獎金淨額',service_commission_cents:'服務抽成',product_commission_cents:'商品抽成',designated_bonus_cents:'指定客獎金合計',completed_count:'實際完成堂數',service_count:'計薪服務堂數',unsettled_completed_count:'待結帳堂數',refunded_service_count:'退款堂數',service_minutes:'計薪服務分鐘',service_sales_cents:'計抽服務收入',product_order_count:'商品訂單數',product_sales_cents:'商品淨收入',designated_clients:'指定客堂數',designated_service_sales_cents:'指定客服務收入',work_minutes:'核准出勤分鐘',overtime_minutes:'本期核准加班分鐘',overtime_occurrences:'本期加班紀錄數',quarter_overtime_minutes:'季度核准加班分鐘',max_month_overtime_minutes:'期間內最高月加班分鐘',manual_designated_bonus_cents:'手動指定客獎金',bonus_cents:'獎金',allowance_cents:'津貼',deduction_cents:'扣款'};
 const componentRows=[['base_cents','本薪','rules',1],['service_commission_cents','療程提成','sales',1],['product_commission_cents','商品提成','sales',1],['designated_bonus_cents','指定客獎金','sales',1],['overtime_cents','加班費','work',1],['bonus_cents','其他獎金','adjustments',1],['allowance_cents','津貼','adjustments',1],['deduction_cents','扣款','adjustments',-1]];
 const metricNames={service_minutes:'服務小時',service_count:'服務堂數',service_sales_cents:'服務收入',product_sales_cents:'商品收入'};
 const count=value=>Number(value||0).toLocaleString('zh-TW');
@@ -28,7 +28,32 @@ function CheckTable({checks}){
  return <div className="table-wrap"><table className="payroll-source-check-table"><thead><tr><th>核對項目</th><th>來源合計</th><th>薪資採用</th><th>核對</th></tr></thead><tbody>{checks.map(item=><tr key={item.key}><td>{checkNames[item.key]||item.key}</td><td>{item.key.endsWith('_cents')?money(item.actual):count(item.actual)}</td><td>{item.expected==null?'未保存':item.key.endsWith('_cents')?money(item.expected):count(item.expected)}</td><td><span className={`badge ${item.matches===false?'source-mismatch':''}`}>{item.matches==null?'歷史未保存':item.matches?'一致':'有差異'}</span></td></tr>)}</tbody></table></div>;
 }
 
-export default function PayrollSources({staffId,from,to,ruleId,expectedRow}){
+function NoticeMinutes({row,kind,reload}){
+ const [value,setValue]=useState(String(row.notice_minutes??row.duration_minutes*row.quantity));
+ return <details className="payroll-source-reference"><summary>記錄實做分鐘</summary>
+  <MutationForm action={()=>rpc('spa_payroll_notice_minutes_save',{p_kind:kind,p_source:row.id,p_minutes:value===''?null:Number(value)})} onSaved={reload}>
+   <Field label={row.quantity>1?'整筆合計分鐘':'實做分鐘'}><input type="number" min={row.quantity} step="1" value={value} onChange={event=>setValue(event.target.value)}/></Field>
+   <p className="muted">留空可還原為結帳紀錄中的時間。</p>
+  </MutationForm>
+ </details>;
+}
+
+function NoticeReturn({reload}){
+ const [kind,setKind]=useState('package'),[source,setSource]=useState(''),[date,setDate]=useState(taipeiDate()),[amount,setAmount]=useState(''),[receipt,setReceipt]=useState('');
+ return <details className="payroll-source-checks"><summary>登錄退券／退貨抽成扣回</summary>
+  <MutationForm action={id=>rpc('spa_payroll_notice_return',{p_request:id,p_kind:kind,p_source:source.trim(),p_returned_on:date,p_amount:cents(amount),p_receipt:receipt})} onSaved={reload} submit="登錄扣回">
+   <div className="form-grid">
+    <Field label="退款類型"><select value={kind} onChange={event=>setKind(event.target.value)}><option value="package">課程券</option><option value="product">商品</option></select></Field>
+    <Field label="原銷售紀錄 ID"><input required value={source} onChange={event=>setSource(event.target.value)}/></Field>
+    <Field label="實際退款日期"><input type="date" required max={taipeiDate()} value={date} onChange={event=>setDate(event.target.value)}/></Field>
+    <Field label="實退金額（NT$）"><input type="number" required min="0.01" step="0.01" value={amount} onChange={event=>setAmount(event.target.value)}/></Field>
+    <Field label="退款憑證"><input required maxLength={200} value={receipt} onChange={event=>setReceipt(event.target.value)}/></Field>
+   </div><p className="muted">在退款完成後登錄。此處只調整薪資，課程券計入退款次月，商品計入退款當期。</p>
+  </MutationForm>
+ </details>;
+}
+
+export default function PayrollSources({staffId,from,to,ruleId,expectedRow,canManage=false,onChanged}){
  const [data,setData]=useState(null),[error,setError]=useState(''),[tab,setTab]=useState('summary'),[retry,setRetry]=useState(0);
  const tabButtons=useRef([]),sequence=useRef(0);
  async function load(){const request=++sequence.current;if(!staffId){setError('此帳號尚未綁定人員資料。');return;}try{const value=await rpc('spa_payroll_sources',{p_staff:staffId,p_from:from,p_to:to,p_rule:ruleId||null});if(sequence.current===request){setData(value);setError('');}}catch(value){if(sequence.current===request){setError(errorText(value));if(value.message?.includes('FORBIDDEN'))setData(null);}}}
@@ -37,6 +62,12 @@ export default function PayrollSources({staffId,from,to,ruleId,expectedRow}){
  if(error)return <div className="payroll-sources"><p className="alert" role="alert">{error}</p><button type="button" onClick={()=>setRetry(value=>value+1)}>重新載入薪資來源</button></div>;
  if(!data)return <div className="payroll-sources"><Empty>正在核對薪資與來源紀錄…</Empty></div>;
  const wage=data.wage,sources=data.sources,totals=data.source_totals,finalized=data.finalized_wage,reference=data.rule_reference||{},profile=reference.profile||{},version=reference.version||{};
+ const notice=reference.notice;
+ const shownComponents=notice?componentRows.flatMap(item=>item[0]==='bonus_cents'?[['package_bonus_cents','課程券獎金淨額','sales',1],['entered_bonus_cents','其他獎金','adjustments',1]]:[item]):componentRows;
+ const editNotice=canManage&&!!notice&&!finalized;
+ const refresh=async()=>{await load();await onChanged?.();};
+ const minutesControl=(row,kind)=>editNotice&&row.contributes?<NoticeMinutes row={row} kind={kind} reload={refresh}/>:null;
+ const reviewKeys={package_sale:'課程券銷售',package_return:'退券扣回',product_return:'商品退貨扣回'};
  const stale=expectedRow&&['total_cents','work_minutes','service_count','service_sales_cents','product_sales_cents',...componentRows.map(row=>row[0])].some(key=>expectedRow[key]!=null&&Number(expectedRow[key])!==Number(wage[key]));
  const difference=finalized?Number(wage.total_cents||0)-Number(finalized.total_cents||0):0;
  const checks=data.reconciliation.checks||[],mismatches=checks.filter(check=>check.matches===false);
@@ -55,21 +86,23 @@ export default function PayrollSources({staffId,from,to,ruleId,expectedRow}){
   <nav className="payroll-source-tabs" role="tablist" aria-label="薪資來源分類">{tabs.map(([id,label],index)=><button ref={element=>{tabButtons.current[index]=element;}} type="button" role="tab" id={`payroll-source-tab-${id}`} aria-controls={`payroll-source-panel-${id}`} aria-selected={tab===id} tabIndex={tab===id?0:-1} className={tab===id?'active':''} key={id} onClick={()=>setTab(id)} onKeyDown={event=>switchTab(event,index)}>{label}</button>)}</nav>
   <section role="tabpanel" id={`payroll-source-panel-${tab}`} aria-labelledby={`payroll-source-tab-${tab}`}>
    {tab==='summary'&&<>
-    <div className="table-wrap"><table className="payroll-source-components"><thead><tr><th>應發組成（點選可看來源）</th><th>採用金額</th>{finalized&&data.basis==='preview'&&<th>原結算</th>}</tr></thead><tbody>{componentRows.map(([key,label,target,sign])=><tr key={key}><td><button type="button" className="link-button" onClick={()=>setTab(target)}>{sign<0?'−':'＋'} {label} →</button></td><td>{sign<0?'−':''}{money(wage[key])}</td>{finalized&&data.basis==='preview'&&<td>{sign<0?'−':''}{money(finalized[key])}</td>}</tr>)}</tbody><tfoot><tr><td>應發合計</td><td><strong>{money(data.reconciliation.formula_total_cents)}</strong></td>{finalized&&data.basis==='preview'&&<td><strong>{money(finalized.total_cents)}</strong></td>}</tr></tfoot></table></div>
+    <div className="table-wrap"><table className="payroll-source-components"><thead><tr><th>應發組成（點選可看來源）</th><th>採用金額</th>{finalized&&data.basis==='preview'&&<th>原結算</th>}</tr></thead><tbody>{shownComponents.map(([key,label,target,sign])=><tr key={key}><td><button type="button" className="link-button" onClick={()=>setTab(target)}>{sign<0?'−':'＋'} {label} →</button></td><td>{sign<0?'−':''}{money(wage[key])}</td>{finalized&&data.basis==='preview'&&<td>{sign<0?'−':''}{money(finalized[key])}</td>}</tr>)}</tbody><tfoot><tr><td>應發合計</td><td><strong>{money(data.reconciliation.formula_total_cents)}</strong></td>{finalized&&data.basis==='preview'&&<td><strong>{money(finalized.total_cents)}</strong></td>}</tr></tfoot></table></div>
     <p className={data.reconciliation.formula_matches?'success':'alert'}>{data.reconciliation.formula_matches?'應發公式核對一致。':'應發公式與保存金額有差異，請交由店主核對。'}{Number(data.reconciliation.formula_before_floor_cents)<0?'扣款後為負數，依設定將應發最低設為 0。':''}</p>
     <details className="payroll-source-checks" open={mismatches.length>0}><summary>來源數字逐項核對（{checks.length} 項）</summary><CheckTable checks={checks}/></details>
     <p className="muted">只採用已完成、已結帳且未退款的服務、已付款商品、核准出勤及核准加班。儲值支付是付款方式，小費不會重複計入服務提成。</p>
     {data.run?.needs_recalculation&&<p className="alert">已保存草稿的來源有變更，店主需重新儲存草稿後再結算。</p>}
    </>}
    {tab==='sales'&&<>
-    <CheckTable checks={keysFor(['service_count','service_minutes','service_sales_cents','product_order_count','product_sales_cents','designated_clients','designated_service_sales_cents','service_commission_cents','product_commission_cents','designated_bonus_cents'])}/>
+    <CheckTable checks={keysFor(['service_count','service_minutes','service_sales_cents','product_order_count','product_sales_cents','designated_clients','designated_service_sales_cents','service_commission_cents','product_commission_cents','designated_bonus_cents','package_bonus_cents'])}/>
     {sources.commission_context&&<div className="payroll-source-note"><strong>承攬合作累計引用</strong><p>合作開始：{sources.commission_context.contract_started_on||'待店主補齊'}；本期之前有效服務 {count(sources.commission_context.prior_service_count)} 堂。合作前的服務不計入承攬堂數。</p><SourceTable title="本期之前合作服務" rows={(sources.commission_context.prior_service_references||[]).map(row=>({...row,id:row.source_id}))} columns={[{label:'日期／引用',render:dayReference},{label:'來源',render:row=>row.source_kind==='appointment'?'預約療程':'POS 服務'},{label:'堂數',render:row=>count(row.quantity)}]} empty="此合作期間在本期之前沒有已記錄的有效服務。"/></div>}
-    <SourceTable title="預約療程" rows={sources.services} columns={[{label:'日期／引用',render:dayReference},{label:'療程／時長',className:'source-note',render:serviceName},{label:'計薪狀態',render:row=><span className="badge">{{settled:'計入',unsettled:'待結帳・不計入',refunded:'已退款・不計入'}[row.settlement_status]}</span>},{label:'淨服務收入',render:amount},{label:'指定客',render:designation}]}/>
-    <SourceTable title="POS 服務" rows={sources.pos_services} columns={[{label:'日期／訂單',render:dayReference},{label:'項目／時長',className:'source-note',render:serviceName},{label:'淨服務收入',render:amount},{label:'指定客',render:designation}]}/>
+    <SourceTable title="預約療程" rows={sources.services} columns={[{label:'日期／引用',render:dayReference},{label:'療程／時長',className:'source-note',render:row=><>{serviceName(row)}{minutesControl(row,'appointment')}</>},{label:'計薪狀態',render:row=><span className="badge">{{settled:'計入',unsettled:'待結帳・不計入',refunded:'已退款・不計入'}[row.settlement_status]}</span>},{label:'淨服務收入',render:amount},{label:'指定客',render:designation}]}/>
+    <SourceTable title="POS 服務" rows={sources.pos_services} columns={[{label:'日期／訂單',render:dayReference},{label:'項目／時長',className:'source-note',render:row=><>{serviceName(row)}{minutesControl(row,'pos_service')}</>},{label:'淨服務收入',render:amount},{label:'指定客',render:designation}]}/>
     <SourceTable title="商品銷售" rows={sources.products} columns={[{label:'日期／訂單',render:dayReference},{label:'商品',className:'source-note',render:row=><>{row.name}<small>數量 {row.quantity}</small></>},{label:'淨商品收入',render:amount},{label:'成交抽成／比例',render:row=><><strong>{row.snapshot_commission_cents==null?'歷史未保存':money(row.snapshot_commission_cents)}</strong><small>{row.commission_bps_snapshot==null?'比例未保存':percentage(row.commission_bps_snapshot)}</small></>}]}/>
+    {notice&&<SourceTable title="課程券獎金與退回" rows={sources.notice_sales||[]} columns={[{label:'日期／引用',render:dayReference},{label:'類型',render:row=>reviewKeys[row.kind]},{label:'實收／實退',render:row=>money(row.amount_cents)},{label:'計入抽成',render:row=>money(row.commission_cents)}]}/>}
+    {editNotice&&<NoticeReturn reload={refresh}/>}
     {sources.commission_details?.length>0&&<SourceTable title="逐堂抽成與級距引用" rows={sources.commission_details.map(row=>({...row,id:`${row.source_id}:${row.unit_index}`,source_record_id:row.source_id}))} columns={[
      {label:'日期／訂單',render:row=><>{row.date}<Reference row={{...row,id:row.source_id}} label="來源引用"/><small>第 {row.unit_index} 堂</small></>},
-     {label:'計抽淨收入',render:row=><>{money(row.net_cents)}<small>{row.duration_minutes} 分鐘{row.self_sourced?' · 自帶客':row.designated?' · 指定客':''}</small></>},
+     {label:'計抽淨收入',render:row=><>{money(row.net_cents)}<small>{row.duration_minutes} 分鐘{row.actual_minutes_recorded?' · 實做':''}{row.self_sourced?' · 自帶客':row.designated?' · 指定客':''}</small></>},
      {label:'累計區間',render:row=><>{metricValue(row.metric,row.metric_from)} → {metricValue(row.metric,row.metric_to)}</>},
      {label:'服務／指定抽成',render:row=><><strong>{money(row.service_commission_cents)} / {money(row.designated_bonus_cents)}</strong><small>{row.eligible?'符合資格':'未符合門檻'}</small></>},
      {label:'分段計算',render:row=><details className="payroll-source-reference"><summary>{row.commission_segments?.length||0} 個分段</summary>{(row.commission_segments||[]).map((segment,index)=><div key={index}><strong>{segment.from==null?(segment.basis==='self_sourced'?'自帶客比例':'固定比例／門檻後淨額'):<>{metricValue(segment.metric||row.metric,segment.from)} ～ {metricValue(segment.metric||row.metric,segment.to)}</>}</strong><p>{money(segment.net_cents)} × {percentage(segment.rate_bps)} ＝ {money(segment.commission_cents)}</p><small>{segment.basis==='self_sourced'?'自帶客比例':`階梯 ${segment.tier_id||'固定比例'}`}</small></div>)}</details>}
@@ -95,7 +128,11 @@ export default function PayrollSources({staffId,from,to,ruleId,expectedRow}){
     <div className="payroll-source-rule-grid"><article><span>基本薪酬</span><strong>{wage.base_pay_rate_cents==null?'未保存':money(wage.base_pay_rate_cents)}</strong><small>{{monthly:'每月',hourly:'每小時',session:'每堂'}[wage.pay_basis]}</small></article><article><span>商品提成</span><strong>{wage.product_commission_bps==null?'未保存':percentage(wage.product_commission_bps)}</strong><small>按商品淨收入</small></article><article><span>指定客加成</span><strong>{wage.designated_bonus_bps==null?'未保存':percentage(wage.designated_bonus_bps)}</strong><small>按指定客服務淨收入</small></article><article><span>提成出勤門檻</span><strong>{wage.minimum_attendance_minutes==null?'未保存':hours(wage.minimum_attendance_minutes)}</strong><small>{wage.commission_eligibility_met==null?'當時資格未保存':wage.commission_eligibility_met?'已達門檻':'未達門檻'}</small></article></div>
     <p>本薪：{wage.pay_basis==='hourly'?`${money(wage.base_pay_rate_cents)} × ${Number(wage.work_minutes||0)} 分鐘 ÷ 60`:wage.pay_basis==='session'?`${money(wage.base_pay_rate_cents)} × ${wage.service_count} 堂`:`固定月薪 ${money(wage.base_pay_rate_cents)}`} ＝ <strong>{money(wage.base_cents)}</strong></p>
     {version.calculation_engine==='ordered_v2'&&<div className="payroll-source-note"><strong>逐堂抽成制度</strong><p>服務階梯按自然月累計；正式結算需完整月份。區間試算的資格也引用該服務所屬月份的核准工時和服務，不能把畫面期間的工時當成完整月門檻。</p><p>最低服務資格 {wage.employment_type_code==='part_time'?'超過':'至少'} {hours(profile.minimum_service_minutes)}；自帶客 {percentage(profile.self_sourced_commission_bps)}；承攬堂數 {profile.contractor_count_scope==='lifetime'?'合作期間累計':profile.contractor_count_scope==='period'?'每個自然月重新累計':'不適用'}。</p>{wage.employment_type_code==='contractor'&&<p>承攬合作開始：{wage.contract_started_on||'未保存／待補齊'}。{wage.contract_start_pending?'缺合作日期，服務抽成待確認，不能結算。':'以本頁試算或結算快照日期為準。'}</p>}{profile.service_policy_status==='needs_confirmation'&&<p className="alert">條款尚待店主確認，不能結算。</p>}</div>}
-    <h3>職稱提成階梯</h3>{reference.tiers?.length?<div className="table-wrap"><table><thead><tr><th>依據</th><th>區間</th><th>比例</th><th>方式</th><th>引用</th></tr></thead><tbody>{reference.tiers.map(tier=><tr key={tier.id}><td>{metricNames[tier.metric]}</td><td>{metricValue(tier.metric,tier.threshold_from)} ～ {metricValue(tier.metric,tier.threshold_to)}</td><td>{percentage(tier.rate_bps)}</td><td>{tier.calculation_mode==='flat'?'整段':'累進'}</td><td><details className="payroll-source-reference"><summary>階梯 ID</summary><code>{tier.id}</code></details></td></tr>)}</tbody></table></div>:<p className="muted">{profile.job_title_id?<>此職稱沒有階梯；普通服務{profile.service_commission_mode==='none'?'不計抽成':<>採基本比例 {percentage(wage.service_commission_bps)}，服務起算 {wage.commission_start_service_minutes==null?'未保存':hours(wage.commission_start_service_minutes)}</>}。商品採各成交明細快照，指定客與自帶客另依設定及資格。</>:'當時職稱引用未保存，無法確認採用的提成階梯。'}</p>}
+    {notice&&<div className="payroll-source-note"><strong>03-1 技師薪資制度</strong>{wage.notice_category==='04'
+     ?<p>合作開始 {wage.contract_started_on}，適用 40% 的日期 {notice.contract_anniversary}。自帶客另加 5%。</p>
+     :<p>普通抽成自超過 {hours(notice.threshold_minutes)} 起按堂分段。起抽 {percentage(wage.service_commission_bps)}，每 {hours(notice.step_minutes)} 增加 5 個百分點至上限。</p>}
+     <p>指定客從第一堂計 5%。可在「療程與商品」查看每筆分段與課程券獎金。</p></div>}
+    {!notice&&<><h3>職稱提成階梯</h3>{reference.tiers?.length?<div className="table-wrap"><table><thead><tr><th>依據</th><th>區間</th><th>比例</th><th>方式</th><th>引用</th></tr></thead><tbody>{reference.tiers.map(tier=><tr key={tier.id}><td>{metricNames[tier.metric]}</td><td>{metricValue(tier.metric,tier.threshold_from)} ～ {metricValue(tier.metric,tier.threshold_to)}</td><td>{percentage(tier.rate_bps)}</td><td>{tier.calculation_mode==='flat'?'整段':'累進'}</td><td><details className="payroll-source-reference"><summary>階梯 ID</summary><code>{tier.id}</code></details></td></tr>)}</tbody></table></div>:<p className="muted">{profile.job_title_id?<>此職稱沒有階梯；普通服務{profile.service_commission_mode==='none'?'不計抽成':<>採基本比例 {percentage(wage.service_commission_bps)}，服務起算 {wage.commission_start_service_minutes==null?'未保存':hours(wage.commission_start_service_minutes)}</>}。商品採各成交明細快照，指定客與自帶客另依設定及資格。</>:'當時職稱引用未保存，無法確認採用的提成階梯。'}</p>}</>}
     <h3>加班倍率</h3><p className="muted">月薪換算時薪除數 {version.hourly_divisor??'未保存'}；經常性提成及指定客獎金 {version.include_regular_commission==null?'設定未保存':version.include_regular_commission?'計入':'不計入'}時薪基數。</p>{reference.rates?.length?<div className="table-wrap"><table><thead><tr><th>類型</th><th>同日累計分鐘</th><th>倍率</th></tr></thead><tbody>{reference.rates.map(rate=><tr key={`${rate.overtime_type}-${rate.start_minute}`}><td>{overtimeNames[rate.overtime_type]}</td><td>{rate.start_minute} ～ {rate.end_minute}</td><td>{Number(rate.multiplier_bps)/10000} 倍</td></tr>)}</tbody></table></div>:<Empty>此聘僱類型未設定加班倍率。</Empty>}
     <p className="muted">每月一般上限 {version.monthly_overtime_limit_minutes==null?'未保存':hours(version.monthly_overtime_limit_minutes)}，同意上限 {version.agreed_monthly_limit_minutes==null?'未保存':hours(version.agreed_monthly_limit_minutes)}，季度上限 {version.quarterly_overtime_limit_minutes==null?'未保存':hours(version.quarterly_overtime_limit_minutes)}。</p>
    </>}
