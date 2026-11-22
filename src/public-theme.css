@@ -52,3 +52,13 @@ button, [role=button], a { -webkit-tap-highlight-color: transparent; }
 .service-page-intro{max-width:620px;margin:-30px auto 42px;text-align:center;font-size:14px;line-height:2;color:#766954;letter-spacing:.5px}.service-page-intro a{display:inline-flex;align-items:center;min-height:44px;color:#80622d;text-underline-offset:4px}
 .public-footer-links{display:flex;justify-content:center;gap:12px 24px;flex-wrap:wrap;margin:18px auto 0}.public-footer-links a{color:#80622d;font-size:13px;min-height:44px;display:inline-flex;align-items:center;text-underline-offset:4px}
 @media(max-width:768px){.service-page-intro{margin:0 auto 30px}.hero-local-heading{font-size:11px;letter-spacing:.6px}}
+
+.public-home .service-addon-group .service-duration-heading { max-width: 520px; }
+.public-home .service-addon-group .service-duration-heading > div { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+.public-home .service-addon-group .onsite-service-notice { margin: 0; padding: 4px 10px; border: 1px solid #b08c56; border-radius: 6px; color: #6d4b2c; font-size: 13px; font-weight: 650; letter-spacing: .04em; }
+.public-home .onsite-service-list { max-width: 520px; margin-inline: auto; }
+.public-home .formula-price { color: #76572e; font-weight: 650; white-space: nowrap; }
+@media (max-width: 480px) {
+  .public-home .onsite-service-list .formula-head { padding-inline: 12px; gap: 8px; }
+  .public-home .onsite-service-list .formula-name, .public-home .formula-price { font-size: clamp(12px, 3.7vw, 16px); }
+}

@@ -10,10 +10,12 @@ import '../../src/operations-cyber.css';
 
 const service={id:'fixture-service',name:'測試療程',duration_minutes:45,price_cents:110000,active:true};
 const staff={id:'fixture-staff',name:'測試技師',active:true};
-const catalog={services:[service],staff:[staff],skills:[{service_id:service.id,staff_id:staff.id,enabled:true}],settings:{booking_days:60}};
+const catalog={services:[service,{...service,id:'fixture-90',name:'90分方子',duration_minutes:90},{...service,id:'fixture-120',name:'120分方子',duration_minutes:120}],staff:[staff],skills:[{service_id:service.id,staff_id:staff.id,enabled:true}],settings:{booking_days:60}};
 const params=new URLSearchParams(location.search);
 const fixture={calendarReads:0,slotReads:0,shopReads:0,planReads:0,createRequests:[],bookings:0,adminReads:{},failShop:params.has('fail'),failPlan:params.has('fail'),failSession:params.has('fail'),signedOut:0,noSlots:false};
 const role=params.get('role');
+const openAttendance=params.has('working')?{id:'fixture-attendance',clock_in:'2026-10-06T20:00:00+08:00',break_minutes:0}:null;
+const breaks=[];
 const adminRules=[1,3,5,6,7,8].map(version=>({id:`rule-${version}`,version_no:version,
  name:version===8?'技師薪資制度告知書 03-1':`測試薪資版本 ${version}`,
  effective_from:'2026-01-01',status:version===8?'draft':version===7?'active':'archived',calculation_engine:version>=7?'notice_v1':'ordered_v2'}));
@@ -36,7 +38,10 @@ window.fetch=async(input,init={})=>{
   if(name==='spa_catalog')return response(catalog);
   if(name==='spa_dashboard')return response({date:new Date().toISOString().slice(0,10),appointments:4,pending:0,completed:2,staff_working:1,simultaneous_capacity:4,
    ...role==='owner'?{revenue_cents:100000,unsettled_completed:0,low_stock:0}:null,next_appointments:[],today_hours:{is_open:true,opening_minute:600,closing_minute:1560,source:'weekly'}});
-  if(name==='spa_monthly_operations')return response({month:args.p_month.slice(0,7),days:[]});
+  if(name==='spa_monthly_operations')return response({month:args.p_month.slice(0,7),days:[{
+   date:args.p_month,shift_count:1,off_count:2,appointment_count:0,peak_simultaneous_count:0,
+   store_hours:{is_open:true,opening_minute:600,closing_minute:1560},shifts:[],rests:[],leaves:[],appointments:[]
+  }]});
   if(name==='spa_operations_convenience')return response({is_owner:role==='owner',todos:[]});
   if(name==='spa_admin_bookings')return response([]);
   if(name==='spa_customers_list')return response(customers);
@@ -47,7 +52,13 @@ window.fetch=async(input,init={})=>{
   if(name==='spa_reviews_admin')return response({reviews:[],feedback:[]});
   if(name==='spa_payroll_admin')return response({rules:adminRules,staff:[],runs:[{id:'saved-run',rule_version_id:'rule-5',period_start:'2026-01-01',period_end:'2026-01-31',status:'finalized'}],preview:[],rates:[],tiers:[]});
   if(name==='spa_payroll_preview')return response([]);
-  if(name==='spa_attendance_self')return response({settings:{address:'測試門店',radius_m:100,max_accuracy_m:100},open:null,rows:[],events:[],requests:[]});
+  if(name==='spa_attendance_self')return response({settings:{address:'測試門店',radius_m:100,max_accuracy_m:100},open:openAttendance,rows:[],events:[],breaks,requests:[]});
+  if(name==='spa_attendance_break_add'&&openAttendance){
+   breaks.push({id:args.p_request,attendance_id:args.p_attendance,starts_at:args.p_start,ends_at:args.p_end});
+   openAttendance.break_minutes=breaks.reduce((n,row)=>n+(Date.parse(row.ends_at)-Date.parse(row.starts_at))/60000,0);
+   return response(args.p_request);
+  }
+  if(name==='spa_attendance_request_quick'&&openAttendance)return response(args.p_request);
   if(name==='spa_staff_self')return response({profile:{id:staff.id,name:staff.name,title:'技師'},metrics:{completed:0,settled_completed:0,unsettled_completed:0,minutes:0,commission_cents:0,reviews:0,total_cents:0},lifetime_completed:0,reviews:[],daily_shifts:[],shifts:[],time_off:[]});
   if(name==='spa_booking_calendar'){
     fixture.calendarReads++;await new Promise(resolve=>setTimeout(resolve,250));

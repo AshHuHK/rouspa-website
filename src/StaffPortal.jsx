@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase, rpc, errorText, money, dateTime } from './lib/spa.js';
-import { Field, MutationForm, Empty, Modal } from './OperationsShared.jsx';
+import { Field, MutationForm, Empty, Modal, MetricTiles } from './OperationsShared.jsx';
 import { AttendanceEmployee } from './Attendance.jsx';
 import PayrollSources from './PayrollSources.jsx';
 import { confirmedStaffPassword } from './lib/staff-account.js';
@@ -94,7 +94,7 @@ export function StaffSelf({data,from,to,onReload,showWorkday=true}) {
  {notice?<><p>{wage.role} · {wage.notice_category==='04'?'依合作比例計酬':payLabel(s)}</p><p className="muted">累計完成 {data.lifetime_completed} 堂。服務抽成與指定客資格請查看本期薪資明細。</p></>
  :<><p>{s.title} · {s.employment_type}{!missingMonth&&' · '+payLabel(s)}</p>{!missingMonth&&<p>基本服務提成 {(Number(s.commission_bps)/100).toFixed(2)}% · 商品銷售提成 {(Number(s.product_commission_bps)/100).toFixed(2)}% · 指定客服務加成 {(Number(s.designated_client_bonus_bps||0)/100).toFixed(2)}%</p>}<p className="muted">累計完成 {data.lifetime_completed} 堂。</p></>}
  </div>
- <div className="grid">{[['實際完成療程',m.completed],['已結帳／待結帳',`${m.settled_completed} / ${m.unsettled_completed}`],['已結帳服務分鐘',wage?.service_minutes??m.minutes],...(!missingMonth?[[m.payroll_status==='finalized'?'已結算提成':'本期試算提成',money(commission)]]:[]),['平均評分／評價數',`${m.rating??'—'} / ${m.reviews}`]].map(([label,value])=><div className="card" key={label}><p className="muted">{label}</p><div className="metric">{value}</div></div>)}</div>
+ <MetricTiles label="個人服務指標" items={[['實際完成療程',m.completed],['已結帳／待結帳',`${m.settled_completed} / ${m.unsettled_completed}`],['已結帳服務分鐘',wage?.service_minutes??m.minutes],[m.payroll_status==='finalized'?'已結算提成':'本期試算提成',missingMonth?'—':money(commission)],['平均評分／評價數',`${m.rating??'—'} / ${m.reviews}`]]}/>
  <section className="card">{missingMonth?<p>請選擇同一個月份查看薪資。</p>:<><div className="os-page-title"><div><p className="muted">{m.payroll_status==='finalized'?'本期已結算應發':'本期應發試算'}</p><strong className="metric">{money(m.total_cents)}</strong></div><button onClick={()=>setSourcesOpen(true)}>核對我的薪資來源</button></div><p className="muted">完成堂數、提成與評價均依實際服務技師計入。可核對本薪、提成、出勤、加班與加扣的來源；試算金額仍須店主確認結算。</p></>}</section>
  {sourcesOpen&&!missingMonth&&<Modal title="我的薪資來源" onClose={()=>setSourcesOpen(false)}><PayrollSources staffId={wage?.staff_id||s.id} from={from} to={to} expectedRow={wage}/></Modal>}
  <h2>我的評價</h2>{!data.reviews.length&&<Empty>這段期間尚未收到評價。</Empty>}{data.reviews.map((r,i)=><article className="card" key={i} style={{marginTop:12}}><h3>{'★'.repeat(r.rating)} · {r.service_name}</h3><p className="muted">{r.reference} · {dateTime(r.created_at)} · {{pending:'待審核',published:'已公開',hidden:'未公開'}[r.status]}</p><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{r.comment || '僅評分'}</p>{r.reply&&<p>店家回覆：{r.reply}</p>}</article>)}

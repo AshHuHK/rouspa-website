@@ -6,7 +6,7 @@ import { STORE, businessTimeText, hoursText, publicName, publicTitle, therapistL
 import { publicRpc, errorText, money, dateAfter, taipeiDate } from "./lib/spa.js";
 import { createRequestId } from './lib/request-id.js';
 import { updateBusinessSeo } from './lib/seo.js';
-import { serviceAddonGroup, serviceCardVariant, serviceDurationGroups, serviceMenuTitle, servicePresentationCards } from "./lib/catalog-presentation.js";
+import { homeOnsiteServices, serviceAddonGroup, serviceCardVariant, serviceDurationGroups, serviceMenuTitle, servicePresentationCards } from "./lib/catalog-presentation.js";
 import { usePublicCatalog, usePublicData } from './lib/usePublicData.js';
 import { publicAnchorKey } from './lib/public-data.js';
 
@@ -191,7 +191,7 @@ const SealLogo = ({ size = 44, variant = "mark" }) => (
 );
 
 // 圓圈章印（清・養・通）+ 展開式方子卡片
-function FormulaCard({ stamp, name, sub, steps, isOpen, onToggle, variant = "v90" }) {
+function FormulaCard({ stamp, name, sub, price, steps, isOpen, onToggle, variant = "v90" }) {
   const panelId = useId();
   const expandable = steps.length > 0;
   const heading = <>
@@ -204,6 +204,7 @@ function FormulaCard({ stamp, name, sub, steps, isOpen, onToggle, variant = "v90
       <span className="formula-name">{name}</span>
       {sub && <span className="formula-sub">{sub}</span>}
     </span>
+    {price && <span className="formula-price">{price}</span>}
     {expandable && <span className="formula-toggle" aria-hidden="true">⌄</span>}
   </>;
   return (
@@ -523,7 +524,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
   const websiteServices = catalog?.website_services || services;
   const serviceRituals = service => servicePresentationCards(service, lang);
   const websiteServiceGroups = serviceDurationGroups(websiteServices, catalog?.service_categories || [], lang);
-  const websiteAddonGroup = serviceAddonGroup(catalog?.website_addons || [], lang);
+  const websiteAddonGroup = serviceAddonGroup(homeOnsiteServices(catalog?.website_addons), lang);
 
   const switchLanguage = () => setLang(lang === 'zh' ? 'en' : 'zh');
   const navigationItems = Object.entries(t.nav).map(([key, label]) => {
@@ -1272,11 +1273,12 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
             </article>;})}</div>
           </section>)}
           {websiteAddonGroup&&<section className={`service-duration-group service-addon-group ${isAnimated("services")?'animate-in-delay-4':''}`}>
-            <header className="service-duration-heading"><span>＋</span><div><h3>{websiteAddonGroup.name}</h3><small>{lang==='zh'?`${websiteAddonGroup.services.length} 項服務`:`${websiteAddonGroup.services.length} service${websiteAddonGroup.services.length===1?'':'s'}`}</small></div></header>
-            <div className="service-category-services">{websiteAddonGroup.services.map(addon=>{const rituals=serviceRituals(addon);return <article className="service-entry" key={addon.id}>
-              <div className="service-heading"><h4 className="service-name">{publicName(addon,lang)}</h4><span className="service-price">＋ {money(addon.price_cents)}</span></div>
-              <div className="service-vertical-list formula-list" style={{maxWidth:"520px",margin:"0 auto"}}>{rituals.map((ritual,index)=>{const key=`addon-${addon.id}-${index}`;return <FormulaCard key={key} stamp={ritual.stamp} name={ritual.name} sub={ritual.sub} steps={ritual.steps||[]} variant={serviceCardVariant(addon)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;})}</div>
-            </article>;})}</div>
+            <header className="service-duration-heading"><div><h3>{websiteAddonGroup.name}</h3><small className="onsite-service-notice">{lang==='zh'?'請至現場安排':'Please arrange at the store'}</small></div></header>
+            <div className="service-vertical-list formula-list onsite-service-list">{websiteAddonGroup.services.map(addon=>{
+              const key='onsite-'+addon.id;
+              const details=serviceRituals(addon);
+              return <FormulaCard key={key} stamp={addon.stamp||details[0].stamp} name={publicName(addon,lang)} price={money(addon.price_cents)} steps={details.flatMap(card=>card.steps)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;
+            })}</div>
           </section>}
           <p className="service-contact"><a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer">{lang === "zh" ? "療程諮詢 · 聯絡 LINE" : "Questions about treatments? Contact us on LINE"} ↗</a></p>
         </div>

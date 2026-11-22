@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { productPresentationMark, serviceAddonGroup, serviceCardVariant, serviceDurationGroups, serviceMenuTitle, servicePresentationCards } from '../src/lib/catalog-presentation.js';
+import { homeOnsiteServices, productPresentationMark, serviceAddonGroup, serviceCardVariant, serviceDurationGroups, serviceMenuTitle, servicePresentationCards } from '../src/lib/catalog-presentation.js';
 
 const legacy = servicePresentationCards({
   name: '90分方子',
@@ -14,7 +14,7 @@ const cleansing = servicePresentationCards({
   duration_minutes: 45,
   website_content: { zh: [{ name: '苦茶籽潔淨髮浴', steps: ['頭皮洗淨'] }] },
 });
-assert.equal(cleansing[0].stamp, '清', 'cleansing treatments receive the cleansing seal');
+assert.equal(cleansing[0].stamp, '淨', 'the camellia hair bath uses the 淨 seal');
 
 const added = { name: '拳推按摩', description: '按摩項目', duration_minutes: 120, website_content: {} };
 const fallback = servicePresentationCards(added);
@@ -51,4 +51,5 @@ assert.equal(serviceMenuTitle({ name: '120分全息', duration_minutes: 120, cat
 assert.equal(productPresentationMark({ name: '身體乳' }, { code: 'body_care', name: '身體保養' }), '身', 'new product categories derive a stable artwork mark');
 assert.equal(productPresentationMark({ name: '普洱茶' }, { code: 'tea_cake', name: '茶餅' }), '茶', 'known product categories keep their brand mark');
 
+assert.deepEqual(homeOnsiteServices([{name:'按摩項目',price_cents:120000}]).map(row=>[row.name,row.stamp,row.price_cents]),[['拳推按摩','按',120000],['乾式頭療','乾',120000],['頭部溫罐艾灸','艾',50000]],'the three onsite services render once with a stamp and price');
 console.log('catalog presentation tests passed');

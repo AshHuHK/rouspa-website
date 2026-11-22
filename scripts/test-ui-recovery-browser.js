@@ -5,9 +5,14 @@ let checks=0;
 for(const width of [390,768,1440]){
   await page.setViewportSize({width,height:844});
   await page.goto(`${fixtureUrl}?width=${width}`,{waitUntil:'domcontentloaded'});
+  const serviceButtons=page.locator('.booking-service-grid button');
+  await expect(serviceButtons).toHaveCount(3);checks++;
+  const serviceTops=await serviceButtons.evaluateAll(buttons=>buttons.map(button=>button.getBoundingClientRect().top));
+  expect(new Set(serviceTops).size).toBe(1);checks++;
   await page.getByRole('button',{name:'測試療程',exact:false}).click();
   await page.getByRole('button',{name:'下一步',exact:true}).click();
-  await page.getByRole('button',{name:'不指定技師，由店家安排',exact:false}).click();
+  await expect(page.locator('.booking-method-grid button')).toHaveCount(2);checks++;
+  await page.getByRole('button',{name:'挑時間',exact:false}).click();
   await page.getByRole('button',{name:'下一步',exact:true}).click();
   const before=await page.evaluate(()=>scrollY);
   await page.locator('.booking-two-months').waitFor();
@@ -130,7 +135,7 @@ await ownerNav.getByRole('button',{name:'預約與日程',exact:true}).click();
 const bookingTiles=page.locator('[aria-label="所選日期預約指標"] .ops-metric-tile');
 await expect(bookingTiles).toHaveCount(4);
 const phoneTiles=await tileGeometry(bookingTiles);
-expect(phoneTiles.filter(tile=>tile.y===phoneTiles[0].y)).toHaveLength(3);checks++;
+expect(phoneTiles.filter(tile=>tile.y===phoneTiles[0].y)).toHaveLength(2);checks++;
 await expect(page.getByText('灰色預約', {exact:false})).toHaveCount(0);checks++;
 await expect(page.getByText('目前顯示', {exact:false})).toHaveCount(0);checks++;
 const processed=()=>page.evaluate(()=>window.uiFixture.adminReads.spa_admin_bookings);
@@ -187,6 +192,32 @@ for(const role of ['therapist','manager','restricted']){
  }else{
   expect(sections.indexOf('staff-bookings')).toBeLessThan(sections.indexOf('staff-self'));checks++;
   await expect(workspace.locator('#staff-bookings')).toBeVisible();checks++;
+ }
+}
+await page.goto(fixtureUrl+'?mode=admin&role=therapist&working=1',{waitUntil:'domcontentloaded'});
+const attendance=page.locator('#my-attendance');
+await expect(attendance.getByRole('button',{name:'下班打卡'})).toBeEnabled();checks++;
+await expect(attendance.getByRole('button',{name:'上班打卡'})).toBeDisabled();checks++;
+await expect(attendance.getByText('異常原因／備註',{exact:false})).toHaveCount(0);checks++;
+for (const [start,end] of [['2026-10-06T22:00','2026-10-06T23:00'],['2026-10-07T00:20','2026-10-07T01:20']]){
+ await attendance.getByLabel('開始休息（台灣時間）').fill(start);
+ await attendance.getByLabel('結束休息（台灣時間）').fill(end);
+ await attendance.getByRole('button',{name:'確認送出'}).click();
+ if(start.includes('22:00'))await attendance.getByRole('button',{name:'＋ 新增第二段休息'}).click();
+}
+await expect(attendance.getByText('合計休息 120 分鐘')).toBeVisible();checks++;
+await expect(attendance.locator('.attendance-break-section input')).toHaveCount(0);checks++;
+await attendance.getByLabel('補打卡原因').fill('昨晚忘記打下班卡');
+await attendance.getByRole('button',{name:'送出',exact:true}).click();
+await expect(attendance.getByRole('status').filter({hasText:'已送交店主審核'})).toBeVisible();checks++;
+for(const [width,countFour,countFive] of [[1440,4,5],[390,2,3]]){
+ await page.setViewportSize({width,height:844});
+ for(const [name,items,columns] of [['今日營運指標',4,countFour],['選定日期營運指標',4,countFour],['個人服務指標',5,countFive]]){
+  const match=page.locator('[aria-label="'+name+'"] .ops-metric-tile');
+  await expect(match).toHaveCount(items);checks++;
+  const geometry=await tileGeometry(match);
+  expect(geometry.filter(tile=>tile.y===geometry[0].y)).toHaveLength(columns);checks++;
+  expect(geometry.every(tile=>Math.abs(tile.width-tile.height)<2)).toBe(true);checks++;
  }
 }
 return {checks,productionRequests:0};

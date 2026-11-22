@@ -54,9 +54,10 @@ async function appointment(client,day){return (await db.query(`insert into spa_a
  ((now() at time zone 'Asia/Taipei')::date-$6::int+time '11:00') at time zone 'Asia/Taipei','completed',$7,$8) returning *`,[randomUUID(),client,people[0].id,room,service.id,day,service.name,service.price_cents])).rows[0];}
 const source=await appointment(customer,3),target=await appointment(customer,2),wrongTarget=await appointment(other,1);
 await call(null,'spa_submit_review',[source.review_token,5,'舒服的服務']);
-const reward=(await db.query('select * from spa_coupons where appointment_id=$1',[source.id])).rows[0];
+check((await db.query('select * from spa_coupons where appointment_id=$1',[source.id])).rows.length===0,'review does not issue a new coupon');
+const reward=(await db.query("insert into spa_coupons(customer_id,appointment_id,code) values($1,$2,'ROU50-HISTORICAL-ROLE') returning *",[customer,source.id])).rows[0];
 const member=await call(null,'spa_member_login',['0991000001','核對會員']);
-check(member.member.coupons.length===1&&member.member.coupons[0].status==='active','review reward is visible to its member');
+check(member.member.coupons.length===1&&member.member.coupons[0].status==='active','previously issued review reward is visible to its member');
 const privateLink=await call(null,'spa_booking_link_access',[source.manage_token]);
 await reject(()=>call(null,'spa_member_detail',[privateLink.access_token]),/FORBIDDEN/);
 check((await call(null,'spa_customer_booking_list',[privateLink.access_token])).length===1,'private booking token remains scoped to its single appointment');

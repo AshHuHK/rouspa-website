@@ -150,7 +150,7 @@ equal((await call('spa_create_booking',firstArgs)).manage_token,receipt.manage_t
 await call('spa_submit_review',[reviewAppointment.review_token,5,'Synthetic restored review']);
 await call('spa_submit_review',[reviewAppointment.review_token,5,'Synthetic restored review']);
 equal(Number((await db.query('select count(*) count from spa_reviews where appointment_id=$1',[reviewAppointment.id])).rows[0].count),1,'restored review link retains idempotent review submission');
-equal(Number((await db.query('select count(*) count from spa_coupons where appointment_id=$1',[reviewAppointment.id])).rows[0].count),1,'restored review issues one coupon only');
+equal(Number((await db.query('select count(*) count from spa_coupons where appointment_id=$1',[reviewAppointment.id])).rows[0].count),0,'restored review leaves the retired rewards program disabled');
 await call('spa_cancel_booking',[cancellable.manage_token,'Synthetic restored cancellation']);
 equal((await db.query('select status from spa_appointments where id=$1',[cancellable.id])).rows[0].status,'cancelled','restored cancellation link preserves the original valid cancellation flow');
 

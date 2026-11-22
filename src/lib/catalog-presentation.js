@@ -67,13 +67,30 @@ export function serviceAddonGroup(addons = [], lang = 'zh') {
   };
 }
 
+const onsiteMenu = [
+  { id: 'onsite-manual-massage', aliases: ['拳推按摩', '按摩項目'], name: '拳推按摩', name_en: 'Fist-pressure massage', stamp: '按', price_cents: 120000 },
+  { id: 'onsite-dry-head-care', aliases: ['乾式頭療'], name: '乾式頭療', name_en: 'Dry head treatment', stamp: '乾', price_cents: 120000 },
+  { id: 'onsite-head-moxa', aliases: ['頭部溫罐艾灸'], name: '頭部溫罐艾灸', name_en: 'Warming cup moxibustion for the head', stamp: '艾', price_cents: 50000 },
+];
+
+export function homeOnsiteServices(addons = []) {
+  const known = new Set(onsiteMenu.flatMap(item => item.aliases));
+  return [
+    ...onsiteMenu.map(({ aliases, ...item }) => ({
+      ...addons.find(addon => aliases.includes(addon.name)),
+      ...item,
+    })),
+    ...addons.filter(addon => !known.has(addon.name)),
+  ];
+}
+
 export function servicePresentationCards(service, lang = 'zh') {
   const configured = service?.website_content?.[lang] || service?.website_content?.zh;
   if (Array.isArray(configured) && configured.length) {
     return configured.map(card => {
       const name = String(card?.name || localized(service, 'name', lang)).trim();
       return {
-        stamp: String(card?.stamp || serviceMark(name, lang)).trim().slice(0, 2),
+        stamp: /苦茶籽潔淨髮浴/.test(name) ? '淨' : String(card?.stamp || serviceMark(name, lang)).trim().slice(0, 2),
         name,
         sub: String(card?.sub || '').trim(),
         steps: Array.isArray(card?.steps) ? card.steps.map(step => String(step).trim()).filter(Boolean) : [],

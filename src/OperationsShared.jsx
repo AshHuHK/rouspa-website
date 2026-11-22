@@ -64,7 +64,14 @@ export function PrivateLink({ path, label }) {
 export { rpc };
 
 export function MetricTiles({items, label}){
- return <dl className="ops-metric-tiles" aria-label={label} style={{'--tile-count':items.length}}>
+ return <dl className="ops-metric-tiles" aria-label={label} style={{'--tile-count':items.length,'--mobile-tile-count':items.length%2 ? 3 : 2}}>
   {items.map(([name,value])=><div className="card ops-metric-tile" key={name}><dt>{name}</dt><dd>{value}</dd></div>)}
  </dl>;
+}
+
+export function BedSuggestion({booking}){
+ if (!Object.hasOwn(booking,'suggested_bed')) return null;
+ return <span className={'badge bed-suggestion'+(booking.suggested_bed==null?' bed-pending':'')}>
+  {booking.suggested_bed==null?'床位待協調':('建議床位 '+booking.suggested_bed+' 號')}
+ </span>;
 }

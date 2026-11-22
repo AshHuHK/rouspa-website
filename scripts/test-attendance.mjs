@@ -12,8 +12,8 @@ for(const file of (await readdir(directory)).sort()){
  if(file==='202610060001_employee_attendance.sql'){
   // Controlled clock in this local test database only. Production uses server now().
   await db.exec(`create table public.attendance_test_clock(at_time timestamptz);insert into public.attendance_test_clock values('2026-10-06T10:00:00+08:00');create function spa_private.attendance_test_now() returns timestamptz language sql stable as $$select at_time from public.attendance_test_clock$$;`);
-  sql=sql.replaceAll('now()','spa_private.attendance_test_now()');
  }
+ if(['202610060001_employee_attendance.sql','202611220001_attendance_break_records.sql'].includes(file))sql=sql.replaceAll('now()','spa_private.attendance_test_now()');
  await db.exec(sql);
 }
 const owner=randomUUID(),employee=randomUUID(),other=randomUUID(),staff=(await db.query("select id from spa_staff where active and employment_status='active' order by display_order limit 2")).rows;
@@ -27,7 +27,7 @@ async function call(user,name,args=[]){return (await as(user?'authenticated':'an
 const clock=async at=>db.query('update attendance_test_clock set at_time=$1',[at]);
 const range=['2026-10-01','2026-10-31'];
 await reject(()=>call(null,'spa_attendance_self',range));await reject(()=>call(employee,'spa_attendance_admin',range));await reject(()=>call(employee,'spa_attendance_setting_save',[23,120,100,50,5,1440,'store']));
-for(const table of ['spa_attendance','spa_attendance_events','spa_attendance_requests','spa_attendance_settings']){await reject(()=>as('anon',null,`select * from ${table}`));await reject(()=>as('authenticated',employee,`select * from ${table}`));}
+for(const table of ['spa_attendance','spa_attendance_events','spa_attendance_requests','spa_attendance_settings','spa_attendance_breaks']){await reject(()=>as('anon',null,`select * from ${table}`));await reject(()=>as('authenticated',employee,`select * from ${table}`));}
 const settings=(await call(owner,'spa_attendance_admin',range)).settings;
 check(settings.latitude===23.4768128&&settings.longitude===120.4431785&&settings.radius_m===100,'existing address marker coordinates and initial radius');
 await db.query("insert into spa_daily_shifts(staff_id,business_date,is_working,start_minute,end_minute) values($1,'2026-10-06',true,600,1080)",[staff[0].id]);
@@ -98,6 +98,42 @@ check(nightOut.flags.includes('early_departure'),'early departure compared with 
 const missing=await call(employee,'spa_attendance_request',[randomUUID(),null,'2026-10-08','2026-10-08T10:00:00+08:00','2026-10-08T12:00:00+08:00',0,'忘記打卡']);
 await call(owner,'spa_attendance_request_review',[missing,true,'核對門店紀錄']);
 check((await call(employee,'spa_attendance_self',range)).rows.some(r=>r.flags.includes('manual_request')&&r.status==='approved'&&!r.clock_in),'approved missing punch keeps honest lack of raw location');
+// The current punch flow keeps real GPS evidence and immutable break intervals.
+const currentPunch=(kind,coordinates,id=randomUUID())=>call(employee,'spa_attendance_punch_v2',[id,kind,...coordinates]);
+await clock('2026-10-10T18:00:00+08:00');
+await reject(()=>currentPunch('in',[null,null,null]),/INVALID_LOCATION/);
+const split=await currentPunch('in',[24,121,8]);
+check(split.flags.includes('outside_store'),'valid outside GPS automatically flags punch for review');
+await clock('2026-10-11T01:30:00+08:00');
+const restOne=[randomUUID(),split.id,'2026-10-10T20:00:00+08:00','2026-10-10T21:00:00+08:00'];
+const restTwo=[randomUUID(),split.id,'2026-10-11T00:00:00+08:00','2026-10-11T01:00:00+08:00'];
+const restId=await call(employee,'spa_attendance_break_add',restOne);
+check(await call(employee,'spa_attendance_break_add',restOne)===restId,'same break retry is idempotent');
+await reject(()=>call(employee,'spa_attendance_break_add',[restOne[0],...restTwo.slice(1)]),/REQUEST_CONFLICT/);
+await reject(()=>call(other,'spa_attendance_break_add',restTwo));
+await reject(()=>call(employee,'spa_attendance_break_add',[randomUUID(),split.id,'2026-10-10T20:40:00+08:00','2026-10-10T22:00:00+08:00']),/ATTENDANCE_BREAK_OVERLAP/);
+await reject(()=>call(employee,'spa_attendance_break_add',[randomUUID(),split.id,'2026-10-11T01:30:00+08:00','2026-10-11T01:35:00+08:00']),/ATTENDANCE_BREAK_TIME/);
+await call(employee,'spa_attendance_break_add',restTwo);
+check((await call(employee,'spa_attendance_self',range)).open.break_minutes===120,'two breaks across midnight total 120 minutes');
+check((await call(other,'spa_attendance_self',range)).breaks.length===0,'employee cannot read another employee breaks');
+await reject(()=>as('authenticated',employee,'update spa_attendance_breaks set ends_at=starts_at'));
+const newClose=await currentPunch('out',loc);
+check(newClose.status==='pending'&&newClose.break_minutes===120,'clock-out automatically uses saved break total before review');
+await reject(()=>call(employee,'spa_attendance_break_add',[randomUUID(),...restTwo.slice(1)]),/ATTENDANCE_NOT_IN/);
+await reject(()=>call(owner,'spa_attendance_review',[split.id,newClose.version,true,newClose.effective_start,newClose.effective_end,0,'wrong break total']),/ATTENDANCE_BREAK_REVIEW/);
+await call(owner,'spa_attendance_review',[split.id,newClose.version,true,newClose.effective_start,newClose.effective_end,120,'核對分段休息']);
+const splitReviewed=(await call(owner,'spa_attendance_admin',range)).rows.find(r=>r.id===split.id);
+check(attendanceMinutes(splitReviewed)===330,'approved payroll takes only net minutes of the split shift');
+const quickArgs=[randomUUID(),null,'10/09 漏打上下班卡'];
+const quick=await call(employee,'spa_attendance_request_quick',quickArgs);
+check((await call(employee,'spa_attendance_request_quick',quickArgs))===quick,'reason-only submission retry remains idempotent');
+const pending=(await call(owner,'spa_attendance_admin',range)).requests.find(r=>r.id===quick);
+check(pending.reason_only&&pending.proposed_start===null&&pending.status==='pending','employees submit a reason alone without originating work times');
+const quickReview=[quick,true,'核對後補卡','2026-10-09','2026-10-09T10:00:00+08:00','2026-10-09T12:00:00+08:00',15,null];
+await reject(()=>call(employee,'spa_attendance_request_review_v2',quickReview));
+await call(owner,'spa_attendance_request_review_v2',quickReview);
+check((await call(employee,'spa_attendance_self',range)).requests.some(r=>r.id===quick&&r.status==='approved'&&r.work_date==='2026-10-09'),'owner may assign actual dates and approve a quick request');
+
 // Dashboard month view uses the final dated roster, current active team, leave,
 // actual appointment staff and bed from one permission-checked read model.
 const fixture=(await db.query("select (select id from spa_services where active order by display_order limit 1) service,(select id from spa_rooms order by name limit 1) room")).rows[0],customer=randomUUID(),appointment=randomUUID();
@@ -112,6 +148,23 @@ check(monthDay.leaves.some(row=>row.staff_id===staff[0].id&&row.reason==='教育
 check(monthDay.appointments.some(row=>row.id===appointment&&row.staff_id===staff[0].id&&!('room_id' in row)&&row.customer_name==='月小姐'),'employee calendar keeps actual staff, omits legacy bed assignment and reduces customer identity to surname');
 check((await call(owner,'spa_monthly_operations',['2026-10-01'])).days.find(day=>day.date==='2026-10-06').appointments.some(row=>row.id===appointment&&row.customer_name==='月曆測試客人'),'owner calendar retains the full customer name');
 check((await call(owner,'spa_monthly_operations',['2026-02-15'])).days.length===28,'monthly operations handles shorter months');
+// Overlapping treatment priority is shared across the owner and employee views.
+const day='2026-10-12';
+const addBedBooking=async(minutes,time)=>{
+ const id=randomUUID(),start=new Date(day+'T'+time+':00+08:00'),end=new Date(+start+minutes*60_000);
+ const staffId=(await db.query("insert into spa_staff(name,job_title_id,employment_type_code) select '床位測試技師',id,'full_time' from spa_job_titles where code='ft_junior' returning id")).rows[0].id;
+ await db.query("insert into spa_appointments(id,request_id,customer_id,staff_id,service_id,business_date,starts_at,ends_at,blocked_until,status,service_name,price_cents) values($1,$2,$3,$4,$5,$6,$7,$8,$8,'completed','床位測試',120000)",[id,randomUUID(),customer,staffId,fixture.service,day,start,end]);
+ return id;
+};
+const short=await addBedBooking(45,'10:00'),long=await addBedBooking(120,'10:15'),medium=await addBedBooking(90,'10:10');
+const shortTwo=await addBedBooking(45,'10:05'),shortThree=await addBedBooking(45,'10:20');
+const readBeds=async()=>new Map((await call(owner,'spa_admin_bookings',[day,day])).map(r=>[r.id,r.suggested_bed]));
+const beds=await readBeds();
+check(beds.get(long)===1&&beds.get(medium)===2&&beds.get(short)===3&&beds.get(shortTwo)===4&&beds.get(shortThree)===null,'120 takes left before 90, 45 takes right, overflow remains recorded');
+const shared=(await call(employee,'spa_monthly_operations',[day])).days.find(row=>row.date===day).appointments;
+check(shared.every(row=>row.suggested_bed===beds.get(row.id)),'employee month uses same bed suggestions without introducing legacy room assignment');
+await db.query("update spa_appointments set status='cancelled' where id=$1",[long]);
+check((await readBeds()).get(medium)===1,'cancellation releases the highest priority bed');
 await db.query("update spa_appointments set status='cancelled' where id=$1",[appointment]);
 check(!(await call(owner,'spa_monthly_operations',['2026-10-01'])).days.find(day=>day.date==='2026-10-06').appointments.some(row=>row.id===appointment),'cancelled bookings do not occupy the operations calendar');
 await mkdir('work',{recursive:true});await writeFile('work/attendance-qa.json',JSON.stringify({owner,employee,settings,admin:await call(owner,'spa_attendance_admin',range),self:await call(employee,'spa_attendance_self',range),team:await call(owner,'spa_team_os'),catalog:await call(null,'spa_catalog'),profile:await call(employee,'spa_staff_self',range),dashboard:await call(owner,'spa_dashboard'),employeeSession:await call(employee,'spa_session'),ownerSession:await call(owner,'spa_session')}));
