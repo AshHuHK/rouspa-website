@@ -1,33 +1,32 @@
 import { AttendanceManager } from './Attendance.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { cents, dateAfter, dateTime, errorText, exportCSV, money, rpc, statusNames, taipeiDate } from './lib/spa.js';
-import { Empty, Field, Modal, MutationForm } from './OperationsShared.jsx';
-import { StaffAccountForm, StaffArchiveForm, staffRoleNames } from './StaffPortal.jsx';
+import { Empty, Field, MetricTiles, Modal, MutationForm } from './OperationsShared.jsx';
+import { StaffAccountForm, StaffArchiveForm } from './StaffPortal.jsx';
 import { exportPayrollXlsx } from './lib/payroll-xlsx.js';
+import { payrollRuleDisplayName, showSettlementVersion } from './lib/payroll-rule-display.js';
 import { OperationsConvenience } from './OperationsConvenience.jsx';
 import { useLiveRefresh } from './lib/useLiveRefresh.js';
 import { weeklyRosterFields, reconcileWeeklyRoster } from './lib/operations-drafts.js';
 import PayrollSources from './PayrollSources.jsx';
 import StaffProfileForm from './StaffProfileEditor.jsx';
-import StaffAnnualReviews from './StaffAnnualReviews.jsx';
 import ProductCategories from './ProductCategories.jsx';
 import ProductEditor from './ProductEditor.jsx';
 import PayrollPolicyEditor from './PayrollPolicyEditor.jsx';
 import PayrollNoticeEditor, { PayrollNoticeSetup } from './PayrollNoticeEditor.jsx';
 import PosWorkspace from './PosWorkspace.jsx';
-import { tenureLabel } from './lib/staff-tenure.js';
 import RosterDatePicker from './RosterDatePicker.jsx';
 import { attendanceStatusLabels, dashboardAttendanceBoundaries, summarizeDashboardAttendance } from './lib/dashboard-attendance.js';
 import { useBookingClock } from './lib/useBookingClock.js';
 import { saveDownload } from './lib/native-platform.js';
 
-const moduleLabels={dashboard:'營運首頁',bookings:'預約與日程',customers:'會員與儲值金',pos:'門店 POS',team:'人員與排班',payroll:'薪資與提成',catalog:'服務・商品・庫存',reviews:'評價',reports:'經營報表',access:'角色與權限',settings:'系統設定',self:'我的薪資與績效'};
+const moduleLabels={dashboard:'營運首頁',bookings:'預約與日程',customers:'會員與儲值金',pos:'門店 POS',team:'人員與排班',payroll:'薪資與提成',catalog:'服務・商品・庫存',reviews:'評價',reports:'經營報表',access:'角色與權限',settings:'系統設定',self:'我的薪資與績效','staff-home':'員工工作台'};
 const overtimeNames={weekday:'平日延長工時',rest_day:'休息日出勤',national_holiday:'國定／特別休假',regular_holiday:'例假日出勤'};
 const employmentStatusNames={active:'在職',departed:'已離職',inactive:'停用／未任職'};
 
 export function moduleName(id){return moduleLabels[id]||id;}
 
-export function DashboardOS({data,onNavigate,allowed,onReload,userKey}){
+export function DashboardOS({data,onNavigate,allowed,onReload,userKey,staffPage=false}){
  const [hoursModal,setHoursModal]=useState(false);
  const cards=[
   ['bookings','預約工作台','今日 '+data.appointments+' 筆預約，'+data.pending+' 筆待確認','◎'],
@@ -49,13 +48,17 @@ export function DashboardOS({data,onNavigate,allowed,onReload,userKey}){
  const today=data.today_hours||{};
  const saved=async()=>{setHoursModal(false);await onReload();};
  return <>
-  <section className="os-hero"><div><p className="eyebrow">BUSINESS OPERATING SYSTEM</p><h2>今天的門店，一頁掌握</h2><p className="muted">{data.date} · Asia/Taipei · 所有數字直接來自正式營運資料</p></div><button className="primary" onClick={()=>onNavigate('bookings')}>開啟今日工作台</button></section>
-  <div className="grid os-metrics">{metrics.map(([label,value])=><article className="card" key={label}><p className="muted">{label}</p><div className="metric">{value}</div></article>)}</div>
-  <section className={`card os-today-hours ${today.is_open?'is-open':'is-closed'}`}><div><p className="eyebrow">TODAY · LIVE</p><h2>{today.is_open?'今日營業':'今日休假'}</h2><p>{today.is_open?`${minuteLabel(today.opening_minute)}–${minuteLabel(today.closing_minute)}`:'官網今日不提供新預約時段'}{today.note?` · ${today.note}`:''}</p><p className="muted">{today.source==='override'?'今日特殊設定，已即時同步官網與預約空檔。':'目前使用每週營業時間。'}</p></div>{allowed('settings')&&<button className="primary" onClick={()=>setHoursModal(true)}>設定今日營業／休假</button>}</section>
+  <section className="os-hero"><h2>{staffPage?'營運概況':'今天的門店，一頁掌握'}</h2>{allowed('bookings')&&<button className="primary" onClick={()=>onNavigate('bookings')}>開啟今日工作台</button>}</section>
+  <MetricTiles items={metrics} label="今日營運指標"/>
+  <section className={`card os-today-hours ${today.is_open?'is-open':'is-closed'}`}>
+   <div className="os-hours-heading"><span className="eyebrow">TODAY · LIVE</span><h2>{today.is_open?'今日營業':'今日休假'}</h2></div>
+   <div className="os-hours-actions"><span>{today.is_open?`${minuteLabel(today.opening_minute)}–${minuteLabel(today.closing_minute)}`:'官網今日不提供新預約時段'}</span>{allowed('settings')&&<button className="primary" onClick={()=>setHoursModal(true)}>設定今日營業／休假</button>}</div>
+   {today.note&&<p className="os-hours-note">{today.note}</p>}
+  </section>
   {data.attendance_today&&<TodayAttendance data={data.attendance_today} canOpenTeam={allowed('team')} onOpen={()=>onNavigate('team',{from:data.date,to:data.date,section:'attendance-review'})}/>}
-  <OperationsConvenience userKey={userKey} refreshToken={data} onNavigate={onNavigate} allowed={allowed}/>
-  <MonthlyOperationsCalendar today={data.date} refreshToken={data} onNavigate={onNavigate}/>
-  <h2>系統直通車</h2><div className="os-launcher">{cards.map(([id,title,desc,icon])=><button key={id} onClick={()=>onNavigate(id)}><span className="os-icon">{icon}</span><span><strong>{title}</strong><small>{desc}</small></span></button>)}</div>
+  <OperationsConvenience userKey={userKey} refreshToken={data} onNavigate={onNavigate} allowed={allowed} staffPage={staffPage}/>
+  {!staffPage&&<><MonthlyOperationsCalendar today={data.date} refreshToken={data} onNavigate={onNavigate}/>
+   <h2>系統直通車</h2><div className="os-launcher">{cards.map(([id,title,desc,icon])=><button key={id} onClick={()=>onNavigate(id)}><span className="os-icon">{icon}</span><span><strong>{title}</strong><small>{desc}</small></span></button>)}</div></>}
   <div className="split os-dashboard-lower"><section className="card"><h2>接下來的預約</h2>{!data.next_appointments.length&&<Empty>今天目前沒有有效預約。</Empty>}{data.next_appointments.map(row=><button className="os-list-button" key={row.id} onClick={()=>onNavigate('bookings')}><span><strong>{dateTime(row.starts_at)}</strong><small>{row.customer_name} · {row.service_name}</small></span><span>{row.staff_name}{row.capacity_exceeded&&<><br/><small className="alert">超出建議容量</small></>}</span></button>)}</section><section className="card"><h2>今日提醒</h2><p>{data.pending?`還有 ${data.pending} 筆預約等待確認。`:'待確認預約已清空。'}</p><p>{data.cancelled?`今日取消或未到 ${data.cancelled} 筆。`:'今日沒有取消或未到。'}</p>{data.low_stock!=null&&<p>{data.low_stock?`${data.low_stock} 項商品已達低庫存門檻。`:'目前沒有低庫存提醒。'}</p>}<p>{data.capacity_attention_count?`今日有 ${data.capacity_attention_count} 筆超出建議容量的預約，請核對並聯絡顧客。`:`今日沒有超出 ${data.simultaneous_capacity??4} 位建議容量的待處理預約。`}</p></section></div>
   {hoursModal&&<Modal title="今日營業狀態" onClose={()=>setHoursModal(false)}><DayOverrideForm date={data.date} value={today} saved={saved}/></Modal>}
  </>;
@@ -63,7 +66,7 @@ export function DashboardOS({data,onNavigate,allowed,onReload,userKey}){
 
 function TodayAttendance({data,canOpenTeam,onOpen}){
  const now=useBookingClock(dashboardAttendanceBoundaries(data)),summary=summarizeDashboardAttendance(data,now);
- return <section className="card dashboard-attendance" aria-labelledby="dashboard-attendance-title"><div className="ops-convenience-heading"><div><p className="eyebrow">ATTENDANCE · LIVE</p><h2 id="dashboard-attendance-title">今日出勤</h2><p className="muted">按正式班表、休假與打卡記錄即時計算；遲到以班表開始加寬限時間判斷。</p></div>{canOpenTeam&&<button onClick={onOpen}>開啟出勤審核</button>}</div><div className="dashboard-attendance-metrics"><article><span>今日應到</span><strong>{summary.scheduled}</strong><small>人</small></article><article><span>已到崗</span><strong>{summary.arrived}</strong><small>人</small></article><article><span>正在上班</span><strong>{summary.working}</strong><small>人</small></article><article className={summary.lateMissing?'is-warning':''}><span>遲到／未到</span><strong>{summary.lateMissing}</strong><small>人</small></article></div>{summary.staff.length?<div className="dashboard-attendance-list">{summary.staff.map(row=><article className={`attendance-${row.display_status}`} key={row.staff_id}><span className="dashboard-attendance-person"><strong>{row.staff_name}</strong><small>{row.staff_title}</small></span><span className="dashboard-attendance-shift"><strong>{clockTime(row.shift_start)}–{clockTime(row.shift_end)}</strong><small>{attendanceDetail(row,now)}</small></span><span className="dashboard-attendance-state">{attendanceStatusLabels[row.display_status]}</span></article>)}</div>:<Empty>今天沒有安排人員上班。</Empty>}<p className="ops-convenience-footnote">「已到崗」包含目前上班中及今天已打下班卡的人員；休假中與尚未到班不列為遲到。打卡審核結果仍以「人員與排班 → 出勤與打卡審核」為準。</p></section>;
+ return <section className="card dashboard-attendance" aria-labelledby="dashboard-attendance-title"><div className="ops-convenience-heading"><div><p className="eyebrow">ATTENDANCE · LIVE</p><h2 id="dashboard-attendance-title">今日出勤</h2></div>{canOpenTeam&&<button onClick={onOpen}>開啟出勤審核</button>}</div><div className="dashboard-attendance-metrics"><article><span>今日應到</span><strong>{summary.scheduled}</strong><small>人</small></article><article><span>已到崗</span><strong>{summary.arrived}</strong><small>人</small></article><article><span>正在上班</span><strong>{summary.working}</strong><small>人</small></article><article className={summary.lateMissing?'is-warning':''}><span>遲到／未到</span><strong>{summary.lateMissing}</strong><small>人</small></article></div>{summary.staff.length?<div className="dashboard-attendance-list">{summary.staff.map(row=><article className={`attendance-${row.display_status}`} key={row.staff_id}><span className="dashboard-attendance-person"><strong>{row.staff_name}</strong><small>{row.staff_title}</small></span><span className="dashboard-attendance-shift"><strong>{clockTime(row.shift_start)}–{clockTime(row.shift_end)}</strong><small>{attendanceDetail(row,now)}</small></span><span className="dashboard-attendance-state">{attendanceStatusLabels[row.display_status]}</span></article>)}</div>:<Empty>今天沒有安排人員上班。</Empty>}</section>;
 }
 
 function attendanceDetail(row,now){
@@ -84,7 +87,7 @@ export function MonthlyOperationsCalendar({today,refreshToken,onNavigate}){
  const leaveIds=new Set((day?.leaves||[]).map(row=>row.staff_id)),visibleRests=(day?.rests||[]).filter(row=>!leaveIds.has(row.staff_id));
  const label=calendarMonthLabel(month),hours=day?.store_hours||{};
  return <section className="card operations-calendar" aria-labelledby="operations-calendar-title">
-  <div className="operations-calendar-heading"><div><p className="eyebrow">MONTHLY OPERATIONS</p><h2 id="operations-calendar-title">當月營運總表</h2><p className="muted">班表、休假、預約、實際服務技師與同時接客峰值會在同一張日曆即時對應。</p></div><div className="operations-calendar-nav" aria-label="切換月份"><button onClick={()=>changeMonth(-1)} aria-label="上一個月">‹</button><strong>{label}</strong><button onClick={()=>changeMonth(1)} aria-label="下一個月">›</button><button onClick={()=>{setMonth(initialMonth);setSelected(today);}}>本月</button></div></div>
+  <div className="operations-calendar-heading"><div><p className="eyebrow">MONTHLY OPERATIONS</p><h2 id="operations-calendar-title">當月營運總表</h2></div><div className="operations-calendar-nav" aria-label="切換月份"><button onClick={()=>changeMonth(-1)} aria-label="上一個月">‹</button><strong>{label}</strong><button onClick={()=>changeMonth(1)} aria-label="下一個月">›</button><button onClick={()=>{setMonth(initialMonth);setSelected(today);}}>本月</button></div></div>
   {error&&<p className="alert" role="alert">月曆載入失敗：{error}</p>}
   <div className={`operations-calendar-grid ${loading?'is-loading':''}`} role="grid" aria-label={`${label}營運月曆`}>
    {['一','二','三','四','五','六','日'].map(name=><span className="operations-weekday" role="columnheader" key={name}>週{name}</span>)}
@@ -124,14 +127,33 @@ export function TeamOS({data,catalog,canManage,canAccounts,onReload,navigationCo
  const roles=data.role_profiles||[];
  const saved=async()=>{setModal(null);await onReload();};
  return <>
-  <div className="os-page-title"><div><h2>人員與排班</h2><p className="muted">人事資料、職稱、服務能力、帳號與歷史績效都綁定同一位人員；薪資與提成統一到「薪資與提成」依職稱和聘僱類型設定。</p></div>{canManage&&<button className="primary" onClick={()=>setModal({kind:'profile',row:null})}>新增人員</button>}</div>
+  <div className="os-page-title"><div><h2>人員與排班</h2></div>{canManage&&<button className="primary" onClick={()=>setModal({kind:'profile',row:null})}>新增人員</button>}</div>
   <div id="schedule-review"><ScheduleReviewPanel canManage={canManage} refreshToken={data} onReload={onReload} navigationContext={navigationContext}/></div>
   {activeStaff.length>0&&<SmartRoster data={data} staffId={rosterStaff||activeStaff[0].id} setStaffId={setRosterStaff} canManage={canManage} onReload={onReload}/>}
   <div className="toolbar"><input aria-label="搜尋人員" placeholder="搜尋姓名、手機、職稱" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="任職狀態" value={status} onChange={e=>setStatus(e.target.value)}><option value="employment">在職與已離職</option>{Object.entries(employmentStatusNames).map(([id,label])=><option key={id} value={id}>{label}</option>)}<option value="all">全部（含停用／未任職）</option></select><label className="auto-refresh"><input type="checkbox" checked={archived} onChange={e=>setArchived(e.target.checked)}/>顯示已封存</label></div>
-  {!rows.length&&<Empty/>}<div className="grid os-team-grid">{rows.map(s=>{const workStatus=s.employment_status||(s.active?'active':'inactive'),isCurrent=workStatus==='active',account=data.accounts.find(a=>a.staff_id===s.id),shifts=data.shifts.filter(x=>x.staff_id===s.id),daily=(data.daily_shifts||[]).filter(x=>x.staff_id===s.id&&x.business_date>=taipeiDate()).slice(0,3);return <article className={`card ${workStatus==='departed'?'staff-departed':''}`} key={s.id}><div className="os-person"><span className="os-avatar">{s.name.slice(0,1)}</span><div><h3>{s.name}</h3><p>{s.job_title_name||s.title} · {s.employment_type_name||'未設定'}</p></div></div><div className="row"><span className="badge">{employmentStatusNames[workStatus]}</span><span className="badge">{isCurrent&&s.is_bookable&&!s.archived_at?'可接單':'不接單'}</span><span className="badge">{isCurrent&&s.website_visible?'官網顯示':'官網隱藏'}</span></div>{workStatus==='departed'&&<p className="staff-departure"><strong>離職日：{s.departed_on}</strong>{s.departure_reason&&<> · {s.departure_reason}</>}</p>}<p className="muted">到職 {s.hire_date||'待補'} · 年資 {tenureLabel(s)}</p><p>{s.phone||'未填手機'} · {s.email||'未填電子郵件'}</p><p className="muted">薪資規則：{s.job_title_name||s.title} × {s.employment_type_name||'未設定'}，請至「薪資與提成」維護。</p>{isCurrent&&<><div className="os-shift-summary">{shifts.length?shifts.sort((a,b)=>a.weekday-b.weekday).map(sh=><small key={sh.id}>週{'日一二三四五六'[sh.weekday]} {minuteLabel(sh.start_minute)}–{minuteLabel(sh.end_minute)}</small>):<small>尚未設定每週排班</small>}</div>{daily.length>0&&<div className="os-daily-summary">{daily.map(sh=><small key={sh.id}>{sh.business_date} · {sh.is_working?`${minuteLabel(sh.start_minute)}–${minuteLabel(sh.end_minute)}`:'休班'}{sh.note?` · ${sh.note}`:''}</small>)}</div>}</>}<p className="muted">登入：{account?`${account.username||'未命名'} · ${roles.find(r=>r.code===account.role)?.name||staffRoleNames[account.role]||account.role} · ${account.active?'啟用':'停用'}`:'尚未建立'}</p>{canManage&&<div className="actions"><button onClick={()=>setModal({kind:'profile',row:s})}>編輯檔案</button>{canAccounts&&<button onClick={()=>setModal({kind:'annual-review',row:s})}>年度考核</button>}{isCurrent&&<><button onClick={()=>{setRosterStaff(s.id);requestAnimationFrame(()=>document.getElementById('smart-roster')?.scrollIntoView({behavior:'smooth',block:'start'}));}}>排班日曆</button><button onClick={()=>setModal({kind:'off',row:s})}>休假／封鎖</button>{canAccounts&&account?.role!=='owner'&&<button onClick={()=>setModal({kind:'account',row:s,account})}>登入帳號</button>}</>}{canAccounts&&account?.role!=='owner'&&<button onClick={()=>setModal({kind:'archive',row:s})}>{s.archived_at?'恢復':'封存'}</button>}</div>}</article>})}</div>
+  {!rows.length&&<Empty/>}
+  <div className="grid os-team-grid">{rows.map(person=>{
+   const status=person.employment_status||(person.active?'active':'inactive');
+   const current=status==='active';
+   const account=data.accounts.find(item=>item.staff_id===person.id);
+   return <article className={`card ${status==='departed'?'staff-departed':''}`} key={person.id}>
+    <div className="os-person"><span className="os-avatar">{person.name.slice(0,1)}</span><div><h3>{person.name}</h3><p>{person.job_title_name||person.title} · {person.employment_type_name||'未設定'}</p></div></div>
+    <div className="row"><span className="badge">{employmentStatusNames[status]}</span><span className="badge">{current&&person.is_bookable&&!person.archived_at?'可接單':'不接單'}</span><span className="badge">{current&&person.website_visible?'官網顯示':'官網隱藏'}</span></div>
+    {person.phone&&<p>{person.phone}</p>}
+    {canManage&&<div className="actions">
+     <button onClick={()=>setModal({kind:'profile',row:person})}>編輯檔案</button>
+     {current&&<>
+      <button onClick={()=>{setRosterStaff(person.id);requestAnimationFrame(()=>document.getElementById('smart-roster')?.scrollIntoView({behavior:'smooth',block:'start'}));}}>排班日曆</button>
+      <button onClick={()=>setModal({kind:'off',row:person})}>休假／封鎖</button>
+      {canAccounts&&account?.role!=='owner'&&<button onClick={()=>setModal({kind:'account',row:person,account})}>登入帳號</button>}
+     </>}
+     {canAccounts&&account?.role!=='owner'&&<button onClick={()=>setModal({kind:'archive',row:person})}>{person.archived_at?'恢復':'封存'}</button>}
+    </div>}
+   </article>;
+  })}</div>
   {canAccounts&&<AttendanceManager initialRange={navigationContext?.section==='attendance-review'?navigationContext:null}/>}
   <h2>休假與特殊封鎖</h2><p className="muted">這些時段會立即從官網可預約時段排除；可用於請假、休息、訓練或特殊日期停班。</p>{!data.time_off.length&&<Empty>目前沒有休假或封鎖時段。</Empty>}<div className="grid">{data.time_off.map(t=><article className="card" key={t.id}><h3>{data.staff.find(s=>s.id===t.staff_id)?.name||'已封存人員'}</h3><p>{dateTime(t.starts_at)} ～ {dateTime(t.ends_at)}</p><p className="muted">{t.reason}</p>{canManage&&<button className="danger" onClick={()=>setModal({kind:'off-delete',row:t})}>刪除</button>}</article>)}</div>
-  {modal&&<Modal title={{profile:modal.row?'編輯人員':'新增人員',account:'登入帳號與角色','annual-review':'年度考核與年資',archive:modal.row?.archived_at?'恢復人員':'封存人員',off:'新增休假／封鎖時段','off-delete':'刪除休假／封鎖時段'}[modal.kind]} onClose={()=>setModal(null)}>{modal.kind==='profile'&&<StaffProfileForm row={modal.row} data={data} catalog={catalog} saved={saved}/>} {modal.kind==='annual-review'&&<StaffAnnualReviews staffId={modal.row.id} name={modal.row.name} manager refreshToken={data} onSaved={saved}/>} {modal.kind==='account'&&<StaffAccountForm row={modal.row} account={modal.account} roles={roles} saved={saved}/>} {modal.kind==='archive'&&<StaffArchiveForm row={modal.row} saved={saved}/>} {modal.kind==='off'&&<TimeOffEditor row={modal.row} saved={saved}/>} {modal.kind==='off-delete'&&<MutationForm action={()=>rpc('spa_time_off_delete',{p_id:modal.row.id})} onSaved={saved} submit="確認刪除"><p>{modal.row.reason}</p><p className="alert">刪除後，這段時間將重新開放供預約引擎判斷。</p></MutationForm>}</Modal>}
+  {modal&&<Modal title={{profile:modal.row?'編輯人員':'新增人員',account:'登入帳號與角色',archive:modal.row?.archived_at?'恢復人員':'封存人員',off:'新增休假／封鎖時段','off-delete':'刪除休假／封鎖時段'}[modal.kind]} onClose={()=>setModal(null)}>{modal.kind==='profile'&&<StaffProfileForm row={modal.row} data={data} catalog={catalog} saved={saved}/>} {modal.kind==='account'&&<StaffAccountForm row={modal.row} account={modal.account} roles={roles} saved={saved}/>} {modal.kind==='archive'&&<StaffArchiveForm row={modal.row} saved={saved}/>} {modal.kind==='off'&&<TimeOffEditor row={modal.row} saved={saved}/>} {modal.kind==='off-delete'&&<MutationForm action={()=>rpc('spa_time_off_delete',{p_id:modal.row.id})} onSaved={saved} submit="確認刪除"><p>{modal.row.reason}</p><p className="alert">刪除後，這段時間將重新開放供預約引擎判斷。</p></MutationForm>}</Modal>}
  </>;
 }
 
@@ -238,18 +260,22 @@ function CatalogDelete({row,kind,saved}){const [confirmation,setConfirmation]=us
 function InventoryEditor({row,saved}){const [quantity,setQuantity]=useState(''),[reason,setReason]=useState('');return <MutationForm action={id=>rpc('spa_inventory_adjust',{p_request:id,p_product:row.id,p_delta:Number(quantity),p_reason:reason})} onSaved={saved}><p>{row.name} · 目前庫存 {row.inventory}</p><Field label="調整數量（增加為正數，扣除為負數）"><input required type="number" step="1" value={quantity} onChange={e=>setQuantity(e.target.value)}/></Field><Field label="原因"><textarea required maxLength="500" value={reason} onChange={e=>setReason(e.target.value)}/></Field></MutationForm>}
 
 export function PayrollOS({data,staff,from,to,canManage,onReload,navigationContext,onNavigate}){
- const activeRuleId=data.rules.filter(x=>x.status==='active'&&x.effective_from<=to).sort((a,b)=>b.effective_from.localeCompare(a.effective_from)||b.version_no-a.version_no)[0]?.id||data.rules.find(x=>x.status==='active')?.id||'';
+ const rules=data.rules.map(rule=>({...rule,name:payrollRuleDisplayName(rule)}));
+ const activeRuleId=rules.filter(x=>x.status==='active'&&x.effective_from<=to).sort((a,b)=>b.effective_from.localeCompare(a.effective_from)||b.version_no-a.version_no)[0]?.id||rules.find(x=>x.status==='active')?.id||'';
  const [tab,setTab]=useState(navigationContext?.section==='history'?'history':'summary'),[modal,setModal]=useState(null),[rule,setRule]=useState(navigationContext?.rule_id||activeRuleId),[previewData,setPreviewData]=useState(null),[previewError,setPreviewError]=useState(''),[previewLoading,setPreviewLoading]=useState(true),[draftBusy,setDraftBusy]=useState(false),[draftNotice,setDraftNotice]=useState('');
  useEffect(()=>{if(['history','summary'].includes(navigationContext?.section))setTab(navigationContext.section);},[navigationContext]);
- const selected=data.rules.find(x=>x.id===rule),noticeRule=selected?.calculation_engine==='notice_v1';
+ const selected=rules.find(x=>x.id===rule),noticeRule=selected?.calculation_engine==='notice_v1';
  const noticeRangeInvalid=noticeRule&&(to<selected.effective_from||from.slice(0,7)!==to.slice(0,7));
  const previewKey=JSON.stringify([from,to,rule]),previewReady=previewData?.key===previewKey&&previewData?.token===data.preview&&!previewLoading&&!previewError,preview=previewReady?previewData.rows:[];
- useEffect(()=>{setRule(navigationContext?.rule_id&&data.rules.some(row=>row.id===navigationContext.rule_id)?navigationContext.rule_id:activeRuleId);},[activeRuleId,navigationContext?.rule_id]);
+ useEffect(()=>{setRule(navigationContext?.rule_id&&rules.some(row=>row.id===navigationContext.rule_id)?navigationContext.rule_id:activeRuleId);},[activeRuleId,navigationContext?.rule_id]);
  useEffect(()=>{let live=true;setPreviewError('');setDraftNotice('');setPreviewLoading(true);if(!rule||noticeRangeInvalid){setPreviewLoading(false);return;}rpc('spa_payroll_preview',{p_from:from,p_to:to,p_rule:rule}).then(rows=>{if(live)setPreviewData({key:previewKey,token:data.preview,rows});}).catch(error=>{if(live)setPreviewError(errorText(error));}).finally(()=>{if(live)setPreviewLoading(false);});return()=>{live=false;};},[rule,from,to,data.preview,noticeRangeInvalid]);
  async function saveDraft(){if(!previewReady||draftBusy)return;setDraftBusy(true);setPreviewError('');try{await rpc('spa_payroll_run_save',{p_from:from,p_to:to,p_rule:rule,p_finalize:false});await onReload();setDraftNotice('薪資草稿已儲存。');}catch(e){setPreviewError(errorText(e));}finally{setDraftBusy(false);}}
  const [policyState,setPolicyState]=useState(null),[policyError,setPolicyError]=useState('');
  useEffect(()=>{let live=true;setPolicyState(null);setPolicyError('');if(!rule)return;rpc('spa_payroll_admin',{p_from:from,p_to:to,p_rule:rule}).then(value=>{if(live)setPolicyState({rule,token:data.preview,value});}).catch(e=>{if(live)setPolicyError(errorText(e));});return()=>{live=false;};},[rule,from,to,data.preview]);
- const policyReady=policyState?.rule===rule&&policyState?.token===data.preview,policyData=policyReady?policyState.value:{...data,compensation_profiles:[],rates:[],tiers:[]};
+ const policyReady=policyState?.rule===rule&&policyState?.token===data.preview,policyData=policyReady?{...policyState.value,rules}:{...data,rules,compensation_profiles:[],rates:[],tiers:[]};
+ const settlementRules=rules.filter(showSettlementVersion);
+ const activeChoice=rules.find(item=>item.id===activeRuleId);
+ const previousChoice=selected&&selected.id!==activeRuleId&&!showSettlementVersion(selected);
  const total=preview.reduce((sum,row)=>sum+Number(row.total_cents),0),serviceRevenue=preview.reduce((sum,row)=>sum+Number(row.service_sales_cents),0),commissionTotal=preview.reduce((sum,row)=>sum+Number(row.service_commission_cents)+Number(row.product_commission_cents)+Number(row.designated_bonus_cents)+Number(row.package_bonus_cents||0),0),adjustmentTotal=preview.reduce((sum,row)=>sum+Number(row.entered_bonus_cents??row.bonus_cents)+Number(row.allowance_cents)-Number(row.deduction_cents),0),settled=preview.reduce((n,row)=>n+Number(row.service_count),0),unsettled=preview.reduce((n,row)=>n+Number(row.unsettled_completed_count),0),warningCount=preview.filter(row=>row.commission_warning||row.overtime_warning).length;
  const monthStart=from.slice(0,7)+'-01',monthEnd=new Date(Date.UTC(Number(from.slice(0,4)),Number(from.slice(5,7)),0)).toISOString().slice(0,10),fullMonth=from===monthStart&&to===monthEnd,ordered=noticeRule||selected?.calculation_engine==='ordered_v2',classificationPending=preview.filter(row=>row.classification_pending),canFinalize=previewReady&&(!ordered||fullMonth)&&!classificationPending.length&&(!noticeRule||(selected.status==='active'&&rule===activeRuleId));
  const previewNoticeMonth=()=>{const month=selected.effective_from.slice(0,7);const [year,number]=month.split('-').map(Number);onNavigate?.('payroll',{from:month+'-01',to:new Date(Date.UTC(year,number,0)).toISOString().slice(0,10),section:'summary',rule_id:rule});};
@@ -263,7 +289,7 @@ export function PayrollOS({data,staff,from,to,canManage,onReload,navigationConte
   </nav>
   {policyError&&<p className="alert" role="alert">制度載入失敗：{policyError}</p>}{previewLoading&&<p role="status" className="muted">正在核對本期薪資…</p>}{draftNotice&&<p role="status" className="success">{draftNotice}</p>}{previewError&&<p role="alert" className="alert">{previewError}</p>}
   {tab==='summary'&&<section className="payroll-panel">
-   <div className="card payroll-command"><div><span className="payroll-command-label">目前制度</span><strong>{selected?`v${selected.version_no} · ${selected.name}`:'尚未設定'}</strong><small>{selected?.status==='active'?'已啟用':selected?.status==='draft'?'制度草稿':'歷史版本'} · {selected?.effective_from||'—'}</small></div><Field label="試算版本"><select value={rule} onChange={e=>setRule(e.target.value)}>{data.rules.map(x=><option key={x.id} value={x.id}>v{x.version_no} · {x.name}</option>)}</select></Field>{canManage&&<div className="actions"><button onClick={()=>setModal({kind:'adjustment'})}>加扣項</button><button disabled={!previewReady||draftBusy} onClick={saveDraft}>{draftBusy?'儲存中…':'儲存草稿'}</button><button disabled={!canFinalize||draftBusy} className="primary" onClick={()=>setModal({kind:'finalize'})}>確認結算</button></div>}</div>
+   <div className="card payroll-command"><div><span className="payroll-command-label">目前制度</span><strong>{selected?(showSettlementVersion(selected)?`v${selected.version_no} · ${selected.name}`:selected.name):'尚未設定'}</strong><small>{selected?.status==='active'?'已啟用':selected?.status==='draft'?'制度草稿':'歷史版本'} · {selected?.effective_from||'—'}</small></div><Field label="試算版本"><select value={rule} onChange={e=>setRule(e.target.value)}>{activeChoice&&!showSettlementVersion(activeChoice)&&<option value={activeChoice.id}>目前生效制度</option>}{previousChoice&&<option value={selected.id}>歷史結算使用制度</option>}{settlementRules.map(item=><option key={item.id} value={item.id}>v{item.version_no} · {item.name}{item.status==='draft'?'（草稿）':''}</option>)}</select></Field>{canManage&&<div className="actions"><button onClick={()=>setModal({kind:'adjustment'})}>加扣項</button><button disabled={!previewReady||draftBusy} onClick={saveDraft}>{draftBusy?'儲存中…':'儲存草稿'}</button><button disabled={!canFinalize||draftBusy} className="primary" onClick={()=>setModal({kind:'finalize'})}>確認結算</button></div>}</div>
    {noticeRangeInvalid&&<div className="payroll-notice"><span>請選單一月份試算。此制度自 {selected.effective_from.slice(0,7)} 適用。</span><button onClick={previewNoticeMonth}>試算生效月份</button></div>}
    {noticeRule&&selected.status==='draft'&&<p className="payroll-notice">草稿僅供試算，請在「制度設定」核對後啟用。</p>}
    {ordered&&!fullMonth&&!noticeRangeInvalid&&<div className="payroll-notice"><span>目前是區間試算；新制度需完整自然月才能正式結算。資格與級距仍按所屬月份計算。</span><button onClick={()=>onNavigate?.('payroll',{from:monthStart,to:monthEnd,section:'summary',rule_id:rule})}>切換 {monthStart.slice(0,7)} 全月</button></div>}
@@ -276,8 +302,8 @@ export function PayrollOS({data,staff,from,to,canManage,onReload,navigationConte
   {tab==='time'&&<PayrollTimePanel data={data} canManage={canManage} open={kind=>setModal({kind})}/>}
   {tab==='policy'&&<>
    <div className="card payroll-command">
-    <Field label="制度版本"><select value={rule} onChange={event=>setRule(event.target.value)}>{data.rules.map(item=><option key={item.id} value={item.id}>v{item.version_no} · {item.name}{item.status==='draft'?'（草稿）':''}</option>)}</select></Field>
-    {canManage&&!data.rules.some(item=>item.calculation_engine==='notice_v1'&&item.status==='draft')&&<button className="primary" onClick={()=>setModal({kind:'notice-setup'})}>建立 03-1 制度草稿</button>}
+    <Field label="制度版本"><select value={rule} onChange={event=>setRule(event.target.value)}>{rules.map(item=><option key={item.id} value={item.id}>v{item.version_no} · {item.name}{item.status==='draft'?'（草稿）':''}</option>)}</select></Field>
+    {canManage&&!rules.some(item=>item.calculation_engine==='notice_v1'&&item.status==='draft')&&<button className="primary" onClick={()=>setModal({kind:'notice-setup'})}>建立 03-1 制度草稿</button>}
    </div>
    {noticeRule?<PayrollNoticeEditor rule={selected} staff={staff} canManage={canManage} onReload={onReload} onPreview={previewNoticeMonth} inUse={data.runs?.some(run=>run.rule_version_id===rule)} onDelete={()=>setModal({kind:'delete-rule',rule:selected})}/>
     :<PayrollPolicyPanel data={policyData} rule={selected} canManage={canManage} onSelect={setRule} open={(kind,extra={})=>{if(['profiles','tiers','rates'].includes(kind)&&!policyReady)return;setModal({kind,...extra});}}/>}
@@ -289,7 +315,7 @@ export function PayrollOS({data,staff,from,to,canManage,onReload,navigationConte
    {modal.kind==='attendance'&&<TimeEntryForm staff={staff} saved={saved}/>}
    {modal.kind==='overtime'&&<OvertimeForm staff={staff} saved={saved}/>}
    {modal.kind==='adjustment'&&<AdjustmentForm staff={staff} from={from} to={to} saved={saved}/>}
-   {modal.kind==='rule'&&<RuleForm current={data.rules.find(x=>x.id===activeRuleId)} saved={saved}/>}
+   {modal.kind==='rule'&&<RuleForm current={rules.find(x=>x.id===activeRuleId)} saved={saved}/>}
    {modal.kind==='delete-rule'&&<PayrollRuleDeleteForm rule={modal.rule} saved={saved}/>}
    {modal.kind==='tiers'&&<PayrollComponentsForm rule={selected} data={policyData} saved={saved} section="tiers"/>}
    {modal.kind==='rates'&&<PayrollComponentsForm rule={selected} data={policyData} saved={saved} section="rates"/>}
@@ -362,7 +388,7 @@ function ReopenForm({run,saved}){const [reason,setReason]=useState('');return <M
 
 export function AccessOS({data,onReload}){
  const [modal,setModal]=useState(null);const saved=async()=>{setModal(null);await onReload();};
- return <><div className="os-page-title"><div><h2>角色與權限</h2><p className="muted">店主擁有完整後台權限。其他角色統一只能查看營運首頁、預約與日程、評價，以及自己的薪資與績效。</p></div><button className="primary" onClick={()=>setModal({})}>新增角色</button></div><div className="grid">{data.roles.map(role=><article className="card" key={role.code}><div className="row"><h3>{role.name}</h3>{role.system_role&&<span className="badge">系統角色</span>}</div><p className="muted">{role.code} · {role.active?'啟用':'停用'}</p><div className="os-permission-list">{role.permissions.map(code=><span className="badge" key={code}>{data.permissions.find(x=>x.code===code)?.name||code}</span>)}</div>{role.code!=='owner'&&<button onClick={()=>setModal(role)}>編輯角色</button>}</article>)}</div>{modal&&<Modal title={modal.code?'編輯角色':'新增角色'} onClose={()=>setModal(null)}><RoleForm row={modal} saved={saved}/></Modal>}</>;
+ return <><div className="os-page-title"><div><h2>角色與權限</h2><p className="muted">店主使用完整後台。其他角色使用單頁工作台，依權限顯示出勤、班表、預約、薪資與評價。</p></div><button className="primary" onClick={()=>setModal({})}>新增角色</button></div><div className="grid">{data.roles.map(role=><article className="card" key={role.code}><div className="row"><h3>{role.name}</h3>{role.system_role&&<span className="badge">系統角色</span>}</div><p className="muted">{role.code} · {role.active?'啟用':'停用'}</p><div className="os-permission-list">{role.permissions.map(code=><span className="badge" key={code}>{data.permissions.find(x=>x.code===code)?.name||code}</span>)}</div>{role.code!=='owner'&&<button onClick={()=>setModal(role)}>編輯角色</button>}</article>)}</div>{modal&&<Modal title={modal.code?'編輯角色':'新增角色'} onClose={()=>setModal(null)}><RoleForm row={modal} saved={saved}/></Modal>}</>;
 }
 function RoleForm({row,saved}){const [code,setCode]=useState(row.code||''),[name,setName]=useState(row.name||''),[active,setActive]=useState(row.active??true);const permissions=['dashboard.view','appointments.view','reviews.view'];return <MutationForm action={()=>rpc('spa_role_profile_save',{p_code:code,p_name:name,p_permissions:permissions,p_active:active,p_display_order:row.display_order||100})} onSaved={saved}><Field label="角色代碼"><input required disabled={!!row.code} pattern="[a-z][a-z0-9_]{1,31}" value={code} onChange={e=>setCode(e.target.value.toLowerCase())}/></Field><Field label="角色名稱"><input required value={name} onChange={e=>setName(e.target.value)}/></Field><Field label="狀態"><select value={String(active)} onChange={e=>setActive(e.target.value==='true')}><option value="true">啟用</option><option value="false">停用</option></select></Field><fieldset><legend>員工固定權限</legend><div className="os-permission-list"><span className="badge">營運首頁</span><span className="badge">預約與日程</span><span className="badge">評價</span><span className="badge">自己的薪資與績效</span></div><p className="muted">這些權限由系統強制保護，不能擴充到會員、收支、人事、商品或系統設定。</p></fieldset></MutationForm>}
 

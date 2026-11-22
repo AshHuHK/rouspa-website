@@ -5,12 +5,19 @@ import { createRoot } from 'react-dom/client';
 import '../../src/public-theme.css';
 import '../../src/responsive.css';
 import '../../src/public-navigation.css';
+import '../../src/operations.css';
+import '../../src/operations-cyber.css';
 
 const service={id:'fixture-service',name:'測試療程',duration_minutes:45,price_cents:110000,active:true};
 const staff={id:'fixture-staff',name:'測試技師',active:true};
-const catalog={services:[service],staff:[staff],skills:[{service_id:service.id,staff_id:staff.id,enabled:true}]};
+const catalog={services:[service],staff:[staff],skills:[{service_id:service.id,staff_id:staff.id,enabled:true}],settings:{booking_days:60}};
 const params=new URLSearchParams(location.search);
-const fixture={calendarReads:0,slotReads:0,shopReads:0,planReads:0,createRequests:[],bookings:0,failShop:params.has('fail'),failPlan:params.has('fail'),failSession:params.has('fail'),signedOut:0,noSlots:false};
+const fixture={calendarReads:0,slotReads:0,shopReads:0,planReads:0,createRequests:[],bookings:0,adminReads:{},failShop:params.has('fail'),failPlan:params.has('fail'),failSession:params.has('fail'),signedOut:0,noSlots:false};
+const role=params.get('role');
+const adminRules=[1,3,5,6,7,8].map(version=>({id:`rule-${version}`,version_no:version,
+ name:version===8?'技師薪資制度告知書 03-1':`測試薪資版本 ${version}`,
+ effective_from:'2026-01-01',status:version===8?'draft':version===7?'active':'archived',calculation_engine:version>=7?'notice_v1':'ordered_v2'}));
+const customers=[{id:'member-1',name:'測試會員 甲',phone:'0911222333',tier:'一般會員',customer_type:'member',balance_cents:10000,visits:1},{id:'guest-2',name:'測試顧客 乙',phone:'0922333444',customer_type:'guest',balance_cents:0,visits:0}];
 window.uiFixture=fixture;
 const NativeSocket=window.WebSocket;
 window.WebSocket=class extends EventTarget {
@@ -23,8 +30,25 @@ window.fetch=async(input,init={})=>{
   const body=JSON.parse(init.body||'{}'),name=url.pathname==='/api/public-rpc'?body.rpc:url.pathname.split('/').pop(),args=body.args||body;
   const response=data=>new Response(JSON.stringify(data),{status:200,headers:{'content-type':'application/json'}});
   const failure=()=>new Response(JSON.stringify({message:'PUBLIC_NETWORK_ERROR'}),{status:503,headers:{'content-type':'application/json'}});
+  if(role)fixture.adminReads[name]=(fixture.adminReads[name]||0)+1;
   if(name==='spa_server_time')return response(new Date().toISOString());
-  if(name==='spa_session')return fixture.failSession?new Response(JSON.stringify({message:'No suitable key or wrong key type',code:'PGRST301'}),{status:401}):response({role:null});
+  if(name==='spa_session')return fixture.failSession?new Response(JSON.stringify({message:'No suitable key or wrong key type',code:'PGRST301'}),{status:401}):response(role?{role:role==='restricted'?'therapist':role,staff_id:role==='owner'?null:staff.id,permissions:role==='restricted'?[]:['dashboard.view','appointments.view','reviews.view'] }:{role:null});
+  if(name==='spa_catalog')return response(catalog);
+  if(name==='spa_dashboard')return response({date:new Date().toISOString().slice(0,10),appointments:4,pending:0,completed:2,staff_working:1,simultaneous_capacity:4,
+   ...role==='owner'?{revenue_cents:100000,unsettled_completed:0,low_stock:0}:null,next_appointments:[],today_hours:{is_open:true,opening_minute:600,closing_minute:1560,source:'weekly'}});
+  if(name==='spa_monthly_operations')return response({month:args.p_month.slice(0,7),days:[]});
+  if(name==='spa_operations_convenience')return response({is_owner:role==='owner',todos:[]});
+  if(name==='spa_admin_bookings')return response([]);
+  if(name==='spa_customers_list')return response(customers);
+  if(name==='spa_team_os')return response({staff:[{...staff,phone:'0912000800',email:null,title:'試用技師',
+   employment_type_name:'正職',hire_date:null,is_bookable:true,website_visible:true}],accounts:[],shifts:[],daily_shifts:[],time_off:[]});
+  if(name==='spa_schedule_admin')return response({target_month:'2026-12-01',edit_open:false,staff:[],requests:[]});
+  if(name==='spa_attendance_admin')return response({settings:{address:'測試門店'},rows:[],events:[],requests:[],staff:[]});
+  if(name==='spa_reviews_admin')return response({reviews:[],feedback:[]});
+  if(name==='spa_payroll_admin')return response({rules:adminRules,staff:[],runs:[{id:'saved-run',rule_version_id:'rule-5',period_start:'2026-01-01',period_end:'2026-01-31',status:'finalized'}],preview:[],rates:[],tiers:[]});
+  if(name==='spa_payroll_preview')return response([]);
+  if(name==='spa_attendance_self')return response({settings:{address:'測試門店',radius_m:100,max_accuracy_m:100},open:null,rows:[],events:[],requests:[]});
+  if(name==='spa_staff_self')return response({profile:{id:staff.id,name:staff.name,title:'技師'},metrics:{completed:0,settled_completed:0,unsettled_completed:0,minutes:0,commission_cents:0,reviews:0,total_cents:0},lifetime_completed:0,reviews:[],daily_shifts:[],shifts:[],time_off:[]});
   if(name==='spa_booking_calendar'){
     fixture.calendarReads++;await new Promise(resolve=>setTimeout(resolve,250));
     const [y,m]=args.p_month.slice(0,7).split('-').map(Number),count=new Date(Date.UTC(y,m,0)).getUTCDate();

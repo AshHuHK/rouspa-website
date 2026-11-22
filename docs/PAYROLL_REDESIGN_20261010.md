@@ -28,7 +28,7 @@
 
 初始四項指標各 25%、達標 70 分是可編輯示例，附件並未指定這些數字。每筆考核保存當時指標與達標線；之後修改門店考核制度，不重寫歷史記錄。發布、更正、撤回及草稿刪除有版本檢查及操作稽核，資料變更使用既有即時通知。
 
-主要檔案：[StaffAnnualReviews.jsx](../src/StaffAnnualReviews.jsx)、[StaffPortal.jsx](../src/StaffPortal.jsx)、[staff-tenure.js](../src/lib/staff-tenure.js)、[年資與考核遷移](../supabase/migrations/202610100002_staff_annual_reviews.sql)。
+主要檔案：[StaffPortal.jsx](../src/StaffPortal.jsx)、[staff-tenure.js](../src/lib/staff-tenure.js)、[年資與考核遷移](../supabase/migrations/202610100002_staff_annual_reviews.sql)。
 
 ## 3. 以版本管理薪資制度
 

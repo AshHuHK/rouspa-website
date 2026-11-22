@@ -80,6 +80,6 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
       {technician && <Field wide label="可提供療程"><div className="os-check-grid">{catalog.services.filter(service => service.status !== 'archived').map(service => <label key={service.id}><input type="checkbox" checked={services.includes(service.id)} onChange={event => setServices(event.target.checked ? [...services, service.id] : services.filter(id => id !== service.id))}/>{service.name}</label>)}</div></Field>}
     </div>
     <p className="muted">店主為單一職位；櫃台只可正職／兼職；正職技師採七階，兼職及承攬技師各一職位。登入權限另由帳號角色決定。</p>
-    <p className="muted">年資按台灣日期由到職日即時計算，離職後截至離職日；未填到職日顯示待補，不猜歷史資料。年資及年度考核不會自動晉升或調薪。薪資僅在「薪資與提成」設定。</p>
+    <p className="muted">年資按台灣日期由到職日計算，離職後截至離職日。薪資在「薪資與提成」設定。</p>
   </MutationForm>;
 }

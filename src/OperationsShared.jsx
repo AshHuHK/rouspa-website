@@ -62,3 +62,9 @@ export function PrivateLink({ path, label }) {
   return <div className="actions"><a className="button" href={url} target="_blank" rel="noreferrer">{label}</a><button type="button" onClick={async()=>{try{await navigator.clipboard.writeText(url);setCopied(true);}catch{setError('複製失敗，請開啟連結後複製網址。');}}}>{copied?'已複製':'複製私人連結'}</button>{error&&<span role="alert">{error}</span>}</div>;
 }
 export { rpc };
+
+export function MetricTiles({items, label}){
+ return <dl className="ops-metric-tiles" aria-label={label} style={{'--tile-count':items.length}}>
+  {items.map(([name,value])=><div className="card ops-metric-tile" key={name}><dt>{name}</dt><dd>{value}</dd></div>)}
+ </dl>;
+}

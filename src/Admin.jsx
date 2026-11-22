@@ -10,41 +10,97 @@ import { AskSteward } from './AskSteward.jsx';
 import { isTechnician } from './lib/staff-work-roles.js';
 import { isInvalidSession } from './lib/rpc-result.js';
 import { NATIVE_CATCHUP_EVENT, publicWebsiteUrl } from './lib/native-platform.js';
-import { useSession, Login, Field, Modal, Empty, Method, MutationForm, PrivateLink } from './OperationsShared.jsx';
-import { StaffSelf, StaffAccountForm, StaffArchiveForm, EmployeeCustomer, staffRoleNames, payLabel, payBasisNames } from './StaffPortal.jsx';
+import { useSession, Login, Field, MetricTiles, Modal, Empty, Method, MutationForm, PrivateLink } from './OperationsShared.jsx';
+import { StaffSelf, StaffSchedule, StaffAccountForm, StaffArchiveForm, EmployeeCustomer, staffRoleNames, payLabel, payBasisNames } from './StaffPortal.jsx';
+import { AttendanceEmployee } from './Attendance.jsx';
 import { AccessOS, CatalogOS, DashboardOS, MonthlyOperationsCalendar, PayrollOS, PosOS, SettingsOS, TeamOS, moduleName } from './BusinessOS.jsx';
+
+const tenMinutes=10*60*1000;
+const rangedTabs=['bookings','reports','self','payroll'];
+const staffSections={dashboard:'staff-dashboard',bookings:'staff-bookings',reviews:'staff-reviews',self:'staff-self'};
+const personalMonth=()=>{const today=taipeiDate();return {from:today.slice(0,8)+'01',to:today};};
+const rangeArgs=({from,to})=>({p_from:from,p_to:to});
+const accessScope=value=>JSON.stringify([value?.role,value?.staff_id,[...(value?.permissions||[])].sort()]);
+
+async function loadStaffSections(access,bookingsRange,personalRange){
+ const permissions=access.permissions||[];
+ const queries=[];
+ if(access.staff_id&&validRange(personalRange))queries.push(['self','spa_staff_self',rangeArgs(personalRange)]);
+ if(permissions.includes('appointments.view')&&validRange(bookingsRange))queries.push(['bookings','spa_admin_bookings',rangeArgs(bookingsRange)]);
+ if(permissions.includes('reviews.view'))queries.push(['reviews','spa_reviews_admin']);
+ if(permissions.includes('dashboard.view'))queries.push(['dashboard','spa_dashboard']);
+ const results=await Promise.allSettled(queries.map(([,name,args])=>rpc(name,args)));
+ return Object.fromEntries(results.map((result,index)=>{
+  if(result.status==='rejected'&&isInvalidSession(result.reason))throw result.reason;
+  return [queries[index][0],result.status==='fulfilled'?{value:result.value}:{error:errorText(result.reason)}];
+ }));
+}
 
 export default function Admin() {
  const {session,error:sessionError,retry:retrySession}=useSession(),[access,setAccess]=useState(null),[tab,setTab]=useState('dashboard'),[range,setRange]=useState(sevenDayRange);
+ const [ownRange,setOwnRange]=useState(personalMonth);
  const [accessChecking,setAccessChecking]=useState(false),[accessFailure,setAccessFailure]=useState(null),[accessRetry,setAccessRetry]=useState(0);
- const {from,to}=range;
+ const {from,to}=range,ownFrom=ownRange.from,ownTo=ownRange.to;
  const [lastUpdated,setLastUpdated]=useState(null),[syncError,setSyncError]=useState('');
  const [data,setData]=useState(null),[catalog,setCatalog]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[modal,setModal]=useState(null),[notice,setNotice]=useState('');
  const [navigationContext,setNavigationContext]=useState(null);
  const loadSequence=useRef(0),refreshRef=useRef(null),mainNavRef=useRef(null);
  const activeData=data?.tab===tab?data.value:null;
- useEffect(()=>{if(!activeData||!navigationContext?.section)return;const frame=requestAnimationFrame(()=>{document.getElementById(navigationContext.section)?.scrollIntoView({behavior:'smooth',block:'start'});});return()=>cancelAnimationFrame(frame);},[activeData&&data?.tab,navigationContext]);
+ useEffect(()=>{if(!activeData||!navigationContext)return;const target=navigationContext.section||staffSections[navigationContext.workspaceModule];if(!target)return;const frame=requestAnimationFrame(()=>{document.getElementById(target)?.scrollIntoView({behavior:'smooth',block:'start'});});return()=>cancelAnimationFrame(frame);},[activeData&&data?.tab,navigationContext]);
  const role=access?.role,permissions=access?.permissions||[],has=permission=>role==='owner'||permissions.includes(permission),manager=has('finance.manage'),front=has('appointments.manage'),cashier=has('pos.use');
- useEffect(()=>{let live=true;loadSequence.current++;setAccess(null);setData(null);setCatalog(null);setModal(null);setNotice('');setNavigationContext(null);setSyncError('');setLastUpdated(null);setAccessFailure(null);setAccessChecking(!!session);if(session)rpc('spa_session').then(next=>{if(live){setAccess(next);setTab(next.permissions?.includes('dashboard.view')||next.role==='owner'?'dashboard':'bookings');setError('');}}).catch(e=>{if(live)setAccessFailure(e);}).finally(()=>{if(live)setAccessChecking(false);});return()=>{live=false;};},[session?.user?.id,accessRetry]);
+ const scope=accessScope(access);
+ const staffPage=tab==='staff-home'&&role!=='owner';
+ const timedRefresh=staffPage||tab==='bookings'||tab==='customers';
+ useEffect(()=>{let live=true;loadSequence.current++;setAccess(null);setData(null);setCatalog(null);setModal(null);setNotice('');setNavigationContext(null);setSyncError('');setLastUpdated(null);setAccessFailure(null);setAccessChecking(!!session);if(session)rpc('spa_session').then(next=>{if(live){setAccess(next);setTab(next.role==='owner'?'dashboard':'staff-home');setError('');}}).catch(e=>{if(live)setAccessFailure(e);}).finally(()=>{if(live)setAccessChecking(false);});return()=>{live=false;};},[session?.user?.id,accessRetry]);
  useEffect(()=>{if(!session||access)return;const retry=()=>setAccessRetry(value=>value+1);window.addEventListener('online',retry);return()=>window.removeEventListener('online',retry);},[session?.user?.id,access]);
  async function load({background=false}={}){
-  if(!role||(['bookings','reports','self','payroll'].includes(tab)&&!validRange(range)))return;const sequence=++loadSequence.current;setBusy(true);if(!background)setError('');
+  if(!role||(rangedTabs.includes(tab)&&!validRange(range)))return;const sequence=++loadSequence.current;setBusy(true);if(!background)setError('');
   try{
    const nextAccess=await rpc('spa_session');
    if(sequence!==loadSequence.current)return;
    setAccess(nextAccess);
    if(!nextAccess.role){setData(null);setModal(null);return;}
-   if(nextAccess.role!=='owner'&&!['dashboard','bookings','reviews',...(nextAccess.staff_id?['self']:[])].includes(tab)){setData(null);setModal(null);setTab('dashboard');return;}
-   const [cat,result]=await Promise.all([rpc('spa_catalog'),tab==='dashboard'?rpc('spa_dashboard'):tab==='bookings'?rpc('spa_admin_bookings',{p_from:from,p_to:to}):tab==='self'?rpc('spa_staff_self',{p_from:from,p_to:to}):tab==='customers'?rpc('spa_customers_list'):tab==='pos'?Promise.all([rpc('spa_catalog_admin'),rpc('spa_customers_list')]).then(([store,customers])=>({store,customers})):tab==='team'?rpc('spa_team_os'):tab==='payroll'?rpc('spa_payroll_admin',{p_from:from,p_to:to,p_rule:null}):tab==='catalog'?rpc('spa_catalog_admin'):tab==='reviews'?rpc('spa_reviews_admin'):tab==='access'?rpc('spa_access_admin'):tab==='settings'?rpc('spa_settings_os'):rpc('spa_report',{p_from:from,p_to:to})]);
+   if((nextAccess.role!=='owner')!==(tab==='staff-home')){setData(null);setModal(null);setTab(nextAccess.role==='owner'?'dashboard':'staff-home');return;}
+   const [cat,result]=await Promise.all([rpc('spa_catalog'),tab==='staff-home'?loadStaffSections(nextAccess,range,ownRange):tab==='dashboard'?rpc('spa_dashboard'):tab==='bookings'?rpc('spa_admin_bookings',rangeArgs(range)):tab==='self'?rpc('spa_staff_self',rangeArgs(range)):tab==='customers'?rpc('spa_customers_list'):tab==='pos'?Promise.all([rpc('spa_catalog_admin'),rpc('spa_customers_list')]).then(([store,customers])=>({store,customers})):tab==='team'?rpc('spa_team_os'):tab==='payroll'?rpc('spa_payroll_admin',{p_from:from,p_to:to,p_rule:null}):tab==='catalog'?rpc('spa_catalog_admin'):tab==='reviews'?rpc('spa_reviews_admin'):tab==='access'?rpc('spa_access_admin'):tab==='settings'?rpc('spa_settings_os'):rpc('spa_report',{p_from:from,p_to:to})]);
    if(sequence===loadSequence.current){setCatalog(cat);setData({tab,value:result});setLastUpdated(new Date());setSyncError('');}
   }catch(e){if(sequence===loadSequence.current){if(isInvalidSession(e)){setData(null);setCatalog(null);setModal(null);setAccess(null);setAccessFailure(e);setAccessChecking(false);}else if(e.message?.includes('FORBIDDEN')){setData(null);setCatalog(null);setModal(null);try{const next=await rpc('spa_session');if(sequence===loadSequence.current)setAccess(next);}catch{if(sequence===loadSequence.current)setAccess({role:null});}setError(errorText(e));}else if(background){setSyncError('自動更新失敗，以下保留上次成功載入的資料。'+errorText(e));}else{setError(errorText(e));setData(null);}}}finally{if(sequence===loadSequence.current)setBusy(false);}
  }
- refreshRef.current={load,busy,role};
- useEffect(()=>{const catchUp=()=>{if(!refreshRef.current?.role)setAccessRetry(value=>value+1);else void refreshRef.current.load({background:true});};window.addEventListener(NATIVE_CATCHUP_EVENT,catchUp);return()=>window.removeEventListener(NATIVE_CATCHUP_EVENT,catchUp);},[]);
- useEffect(()=>{setData(null);setBusy(false);setLastUpdated(null);setSyncError('');load();return()=>{loadSequence.current++;};},[role,tab,from,to]);
+ async function verifyAccess(){
+  const sequence=loadSequence.current;
+  try{
+   const next=await rpc('spa_session');
+   if(sequence!==loadSequence.current||accessScope(next)===scope)return;
+   loadSequence.current++;setAccess(next);setData(null);setCatalog(null);setModal(null);setNotice('');
+   if(next.role!==role)setTab(next.role==='owner'?'dashboard':'staff-home');
+  }catch(error){
+   if(sequence===loadSequence.current&&isInvalidSession(error)){
+    loadSequence.current++;setData(null);setCatalog(null);setModal(null);setAccess(null);setAccessFailure(error);setAccessChecking(false);
+   }
+  }
+ }
+ refreshRef.current={load,busy,role,timedRefresh,modal,verifyAccess};
+ useEffect(()=>{const catchUp=()=>{const current=refreshRef.current;if(!current?.role)setAccessRetry(value=>value+1);else if(!current.timedRefresh)void current.load({background:true});};window.addEventListener(NATIVE_CATCHUP_EVENT,catchUp);return()=>window.removeEventListener(NATIVE_CATCHUP_EVENT,catchUp);},[]);
+ useEffect(()=>{setData(null);setBusy(false);setLastUpdated(null);setSyncError('');load();return()=>{loadSequence.current++;};},[scope,tab,from,to,ownFrom,ownTo]);
+ useEffect(()=>{
+  if(!role||!timedRefresh)return;
+  let due=Date.now()+tenMinutes;
+  const refresh=()=>{
+   const current=refreshRef.current;
+   if(Date.now()<due||current.busy||current.modal||document.visibilityState==='hidden'||navigator.onLine===false||document.querySelector('dialog[open]'))return;
+   due=Date.now()+tenMinutes;
+   void current.load({background:true});
+  };
+  const timer=setInterval(refresh,tenMinutes);
+  document.addEventListener('visibilitychange',refresh);
+  window.addEventListener('online',refresh);
+  return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',refresh);window.removeEventListener('online',refresh);};
+ },[role,tab,timedRefresh,lastUpdated]);
  const now=useBookingClock(),currentDay=taipeiDate(new Date(now)),previousDay=useRef(currentDay);
- const liveUpdate=useLiveRefresh(()=>refreshRef.current.load({background:true}),{audience:'operations',enabled:!!role,paused:busy||!!modal});
- useEffect(()=>{if(previousDay.current!==currentDay){previousDay.current=currentDay;liveUpdate.invalidate();}},[currentDay,liveUpdate.invalidate]);
+ const liveUpdate=useLiveRefresh(()=>{
+  const current=refreshRef.current;
+  return current.timedRefresh?current.verifyAccess():current.load({background:true});
+ },{audience:'operations',enabled:!!role,scopes:timedRefresh?['team']:[],paused:!timedRefresh&&(busy||!!modal),protectEditing:!timedRefresh});
+ useEffect(()=>{if(previousDay.current!==currentDay){previousDay.current=currentDay;if(!timedRefresh)liveUpdate.invalidate();}},[currentDay,timedRefresh,liveUpdate.invalidate]);
  useEffect(()=>{mainNavRef.current?.querySelector('[aria-current="page"]')?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});},[tab,role]);
  function accessDenied(){loadSequence.current++;setData(null);setCatalog(null);setModal(null);setNotice('');setNavigationContext(null);setAccess({role:null});setError('權限已變更，請重新登入確認。');}
  async function saved({bookingDate}={}){
@@ -63,16 +119,57 @@ export default function Admin() {
  function navigateFromDashboard(id,context){
   if(!allowed(id))return;
   const today=activeData?.date||taipeiDate(),hint=typeof context==='string'?{from:context,to:context}:context;
-  if(hint?.from&&hint?.to||['bookings','payroll','self','reports'].includes(id)){
-   const next=hint?.from&&hint?.to?{from:hint.from,to:hint.to}:id==='bookings'?{from:today,to:today}:{from:today.slice(0,8)+'01',to:today};
-   if(validRange(next))setRange(next);
+  const suppliedRange=hint?.from&&hint?.to&&validRange(hint)?{from:hint.from,to:hint.to}:null;
+  if(staffPage){
+   if(id==='bookings')setRange(suppliedRange||{from:today,to:today});
+   if(id==='self'&&hint?.section==='my-attendance'&&suppliedRange)setOwnRange(suppliedRange);
+   setNavigationContext({...hint,workspaceModule:id});setNotice('');return;
   }
+  if(suppliedRange)setRange(suppliedRange);
+  else if(id==='bookings')setRange({from:today,to:today});
+  else if(['payroll','self','reports'].includes(id))setRange(personalMonth());
   setNavigationContext(hint||null);setNotice('');setTab(id);
  }
- return <div className="ops"><main><header className="ops-admin-header"><div className="ops-admin-brand"><span className="eyebrow">ROU SPA OPERATIONS</span><h1>柔療髮浴</h1><p className="ops-admin-identity"><span>{access.role_name||staffRoleNames[role]||role}</span><span>{role==='owner'?session.user.email:(access.username||'人員帳號')}</span></p></div><div className="ops-admin-actions">{access.staff_id&&<button className="primary" onClick={()=>{setTab('self');const today=taipeiDate();setRange({from:today.slice(0,8)+'01',to:today});}}>出勤打卡</button>}<a className="button" href={publicWebsiteUrl('/')}>查看網站</a><button onClick={()=>supabase.auth.signOut()}>登出</button></div></header><nav ref={mainNavRef} className="os-main-nav" aria-label="後台主要功能">{tabs.map(([id])=><button key={id} className={tab===id?'active':''} aria-current={tab===id?'page':undefined} onClick={()=>{setNavigationContext(null);setTab(id);setNotice('');if(['self','payroll'].includes(id)){const today=taipeiDate();setRange({from:today.slice(0,8)+'01',to:today});}}}>{moduleName(id)}</button>)}</nav>
- {['bookings','reports','self','payroll'].includes(tab)&&<div className="card date-panel"><div className="toolbar"><Field label="開始日期"><input required type="date" value={from} onChange={e=>{const next=e.target.value;setRange({from:next,to:next&&next>to?dateAfter(6,next):to});}}/></Field><Field label="結束日期"><input required type="date" min={from} value={to} onChange={e=>setRange({...range,to:e.target.value})}/></Field><div className="range-shortcuts"><button onClick={()=>{const today=taipeiDate();setRange({from:today,to:today});}}>今天</button><button onClick={()=>setRange(sevenDayRange())}>未來 7 天</button><button onClick={()=>{const today=taipeiDate();setRange({from:dateAfter(-6,today),to:today});}}>最近 7 天</button>{tab==='bookings'&&catalog&&<button onClick={()=>setRange({from:taipeiDate(),to:dateAfter(catalog.settings.booking_days)})}>全部可預約日期</button>}<button disabled={!validRange(range)} onClick={()=>setRange(shiftRange(range,-1))}>上一段</button><button disabled={!validRange(range)} onClick={()=>setRange(shiftRange(range,1))}>下一段</button></div></div>{validRange(range)?<p className="muted">目前顯示 {from} ～ {to}，共 {rangeDays(range)} 天（含起訖日）。{tab==='bookings'?'依預約營業日期篩選；日期外的預約不會列入，凌晨時段歸前一營業日。':tab==='self'?'按療程營業日期統計自己的完成數、提成及評價。':tab==='payroll'?'依台灣營業日期、核准工時及已結帳紀錄試算；結算後保存快照。':'預約依營業日期統計；收支依台灣時間入帳日期統計。'}</p>:<p className="alert" role="alert">請選擇完整日期，結束日期不得早於開始日期，查詢範圍最多 367 天。</p>}</div>}
- <div className="row sync-toolbar"><button disabled={busy||(['bookings','reports','self','payroll'].includes(tab)&&!validRange(range))} onClick={()=>load()}>{busy?'更新中…':'重新整理'}</button><span className={`ops-live-status ${liveUpdate.status}`} role="status">{liveUpdate.status==='connected'?'資料變動時自動更新':liveUpdate.status==='connecting'?'即時連線中…':'即時連線中斷，恢復後會補齊資料。'}{liveUpdate.pending?' · 有更新，編輯結束後套用':''}</span>{lastUpdated&&<span className="muted ops-last-updated">上次更新：{dateTime(lastUpdated)}（台灣時間）</span>}{notice&&<span className="success" role="status">{notice}</span>}</div>{syncError&&<p className="alert" role="alert">{syncError}</p>}{error&&<p className="alert" role="alert">{error}</p>}
- {activeData&&catalog&&<>
+ const feedback=<>{syncError&&<p className="alert" role="alert">{syncError}</p>}{error&&<p className="alert" role="alert">{error}</p>}</>;
+ const syncToolbar=<div className="row sync-toolbar">
+  <button disabled={busy||(rangedTabs.includes(tab)&&!validRange(range))} onClick={()=>load()}>{busy?'更新中…':'重新整理'}</button>
+  <span className={`ops-live-status ${timedRefresh?'scheduled':liveUpdate.status}`} role="status">
+   {timedRefresh?'每 10 分鐘更新':liveUpdate.status==='connected'?'資料變動時自動更新':liveUpdate.status==='connecting'?'即時連線中…':'即時連線中斷，恢復後會補齊資料。'}
+   {!timedRefresh&&liveUpdate.pending?' · 有更新，編輯結束後套用':''}
+  </span>
+  {lastUpdated&&<span className="muted ops-last-updated">上次更新：{dateTime(lastUpdated)}（台灣時間）</span>}
+  {notice&&<span className="success" role="status">{notice}</span>}
+ </div>;
+ const bookingsContext=!staffPage||navigationContext?.workspaceModule==='bookings'?navigationContext:null;
+ const reviewsContext=!staffPage||navigationContext?.workspaceModule==='reviews'?navigationContext:null;
+ const attendanceRange=validRange(ownRange)?ownRange:personalMonth();
+ return <div className="ops"><main>
+ <header className="ops-admin-header"><div className="ops-admin-brand"><span className="eyebrow">ROU SPA OPERATIONS</span><h1>柔療髮浴</h1><p className="ops-admin-identity"><span>{access.role_name||staffRoleNames[role]||role}</span><span>{role==='owner'?session.user.email:(access.username||'人員帳號')}</span></p></div>
+  <div className="ops-admin-actions">
+   {access.staff_id&&!staffPage&&<button className="primary" onClick={()=>navigateFromDashboard('self',{section:'my-attendance'})}>出勤打卡</button>}
+   <a className="button" href={publicWebsiteUrl('/')}>查看網站</a><button onClick={()=>supabase.auth.signOut()}>登出</button>
+  </div>
+ </header>
+ {staffPage?<div className="staff-workspace" aria-label="員工工作台">
+  {access.staff_id?<><AttendanceEmployee from={attendanceRange.from} to={attendanceRange.to} compact/>
+   <StaffSchedule data={activeData?.self?.value} onReload={load}/></>:<Empty>尚未綁定人員資料，請由店主在「人員與排班」設定帳號。</Empty>}
+  {allowed('dashboard')&&<MonthlyOperationsCalendar today={currentDay} refreshToken={activeData} onNavigate={navigateFromDashboard}/>}
+  {allowed('bookings')?<section id="staff-bookings" className="staff-workspace-section">
+   <h2>預約與日程</h2><DatePanel range={range} setRange={setRange} tab="bookings" catalog={catalog}/>{syncToolbar}{feedback}
+   {validRange(range)&&<StaffSectionData packet={activeData?.bookings}>{rows=>catalog&&<Bookings rows={rows} catalog={catalog} front={front} cashier={cashier} manager={manager} open={setModal} navigationContext={bookingsContext}/>}</StaffSectionData>}
+  </section>:<>{syncToolbar}{feedback}</>}
+  {access.staff_id&&<section id="staff-self" className="staff-workspace-section">
+   <h2>我的薪資與績效</h2><DatePanel range={ownRange} setRange={setOwnRange} tab="self"/>
+   {validRange(ownRange)&&<StaffSectionData packet={activeData?.self}>{details=><StaffSelf data={details} from={ownFrom} to={ownTo} showWorkday={false}/>}</StaffSectionData>}
+  </section>}
+  {allowed('reviews')&&<section id="staff-reviews" className="staff-workspace-section"><h2>評價</h2><StaffSectionData packet={activeData?.reviews}>{details=><Reviews data={details} open={setModal} canManage={has('reviews.manage')} navigationContext={reviewsContext}/>}</StaffSectionData></section>}
+  {allowed('dashboard')&&<section id="staff-dashboard" className="staff-workspace-section"><StaffSectionData packet={activeData?.dashboard}>{details=><DashboardOS staffPage userKey={session.user.id} data={details} onNavigate={navigateFromDashboard} allowed={allowed} onReload={load}/>}</StaffSectionData></section>}
+ </div>:<>
+  <nav ref={mainNavRef} className="os-main-nav" aria-label="後台主要功能">{tabs.map(([id])=><button key={id} className={tab===id?'active':''} aria-current={tab===id?'page':undefined} onClick={()=>{setNavigationContext(null);setTab(id);setNotice('');if(['self','payroll'].includes(id))setRange(personalMonth());}}>{moduleName(id)}</button>)}</nav>
+  {rangedTabs.includes(tab)&&<DatePanel tab={tab} range={range} setRange={setRange} catalog={catalog}/>}
+  {syncToolbar}{feedback}
+ </>}
+ {!staffPage&&activeData&&catalog&&<>
  {tab==='dashboard'&&<DashboardOS userKey={session.user.id} data={activeData} onNavigate={navigateFromDashboard} allowed={allowed} onReload={load}/>}
  {tab==='bookings'&&<Bookings rows={activeData} catalog={catalog} front={front} cashier={cashier} manager={manager} open={setModal} navigationContext={navigationContext}/>}
  {tab==='customers'&&<Customers rows={activeData} owner={has('customers.manage')} open={setModal}/>}
@@ -112,17 +209,42 @@ export default function Admin() {
  {modal.kind==='service'&&<ServiceForm row={modal.row} saved={saved}/>}
   </Modal>}
  <OperationsNotifications userKey={session.user.id} enabled={allowed('dashboard')} allowed={allowed} onNavigate={navigateFromDashboard} onAccessDenied={accessDenied}/>
- <AskSteward userKey={session.user.id} accessKey={JSON.stringify([role,access.staff_id||null,[...permissions].sort()])} page={tab} pageLabel={moduleName(tab)} range={range} disabled={!!modal} onAccessDenied={accessDenied}/>
+ <AskSteward userKey={session.user.id} accessKey={JSON.stringify([role,access.staff_id||null,[...permissions].sort()])} page={staffPage?(access.staff_id?'self':'dashboard'):tab} pageLabel={moduleName(tab)} range={staffPage&&access.staff_id?ownRange:range} disabled={!!modal} onAccessDenied={accessDenied}/>
  <footer className="ops-legal-footer"><a href={publicWebsiteUrl('/privacy/')}>隱私權說明</a><span aria-hidden="true">·</span><a href={publicWebsiteUrl('/support/')}>支援</a></footer>
  </main></div>;
 }
+function StaffSectionData({packet,children}){
+ if(packet?.error)return <p className="alert" role="alert">{packet.error}</p>;
+ return packet?<>{children(packet.value)}</>:<Empty>正在載入…</Empty>;
+}
+
+function DatePanel({range,setRange,tab,catalog}){
+ const {from,to}=range,valid=validRange(range);
+ return <div className="card date-panel">
+  <div className="toolbar">
+   <Field label="開始日期"><input required type="date" value={from} onChange={event=>{const next=event.target.value;setRange({from:next,to:next&&next>to?dateAfter(6,next):to});}}/></Field>
+   <Field label="結束日期"><input required type="date" min={from} value={to} onChange={event=>setRange({...range,to:event.target.value})}/></Field>
+   <div className="range-shortcuts">
+    <button onClick={()=>{const today=taipeiDate();setRange({from:today,to:today});}}>今天</button>
+    <button onClick={()=>setRange(sevenDayRange())}>未來 7 天</button>
+    <button onClick={()=>{const today=taipeiDate();setRange({from:dateAfter(-6,today),to:today});}}>最近 7 天</button>
+    {tab==='bookings'&&catalog&&<button onClick={()=>setRange({from:taipeiDate(),to:dateAfter(catalog.settings.booking_days)})}>全部可預約日期</button>}
+    <button disabled={!valid} onClick={()=>setRange(shiftRange(range,-1))}>上一段</button>
+    <button disabled={!valid} onClick={()=>setRange(shiftRange(range,1))}>下一段</button>
+   </div>
+  </div>
+  {!valid?<p className="alert" role="alert">請選擇完整日期，結束日期不得早於開始日期，查詢範圍最多 367 天。</p>:tab!=='bookings'&&
+   <p className="muted">目前顯示 {from} ～ {to}，共 {rangeDays(range)} 天。{tab==='self'?'按營業日期統計自己的服務和薪資。':tab==='payroll'?'依核准工時及已結帳紀錄試算。':'預約依營業日期統計，收支依入帳日期統計。'}</p>}
+ </div>;
+}
+
 function Bookings({rows,catalog,front,cashier,manager,open,navigationContext}){
  const now=useBookingClock(rows.flatMap(row=>[row.starts_at,row.ends_at,row.blocked_until,row.change_before]));
  const [filter,setFilter]=useState('all'),[staff,setStaff]=useState('all'),[view,setView]=useState('list'),[search,setSearch]=useState('');
  const [contextEnabled,setContextEnabled]=useState(true);
  useEffect(()=>{setContextEnabled(true);},[navigationContext]);
  const filtered=rows.filter(r=>(!contextEnabled||bookingMatchesContext(r,navigationContext))&&(filter==='all'||r.status===filter)&&(staff==='all'||r.staff_id===staff)&&`${r.customer_name} ${r.phone||''} ${r.reference}`.includes(search));
- return <>{navigationContext&&contextEnabled&&<p className="muted" role="status">已帶入營運首頁篩選 · {filtered.length} 筆 <button onClick={()=>setContextEnabled(false)}>清除待辦篩選</button></p>}<div className="grid">{[['範圍內預約',rows.length],['範圍內待確認',rows.filter(r=>r.status==='pending').length],['超出容量待聯絡',rows.filter(r=>r.status==='pending'&&r.capacity_exceeded).length],...(front?[['範圍內待結帳',rows.filter(r=>r.status==='completed'&&!r.has_checkout).length]]:[])].map(([k,n])=><div className="card" key={k}><span className="muted">{k}</span><div className="metric">{n}</div></div>)}</div><div className="toolbar">{front&&<button className="primary" onClick={()=>open({kind:'new-booking',title:'新增門店預約'})}>新增預約</button>}<input aria-label="搜尋預約" placeholder={front?'姓名、手機或預約編號':'姓名或預約編號'} value={search} onChange={e=>setSearch(e.target.value)}/><select aria-label="預約狀態" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">全部狀態</option>{Object.entries(statusNames).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select><select aria-label="技師篩選" value={staff} onChange={e=>setStaff(e.target.value)}><option value="all">全部技師</option>{catalog.staff.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select><button onClick={()=>setView(view==='list'?'schedule':'list')}>{view==='list'?'查看排程':'查看列表'}</button>{front&&<button onClick={()=>exportCSV('預約.csv',filtered.map(r=>({編號:r.reference,顧客:r.customer_name,手機:r.phone,療程:r.service_name,原預約技師:r.original_therapist,實際服務技師:r.therapist,開始:dateTime(r.starts_at),結束:dateTime(r.ends_at),超出建議容量:r.capacity_exceeded?'是':'否',狀態:statusNames[r.status]})))}>匯出 CSV</button>}</div><p className="muted">灰色預約：依台灣時間，服務已結束或已完成、取消、未到店。後台指定的「實際服務技師」會同步成為完成堂數、評價、收入與提成的計入。</p>
+ return <>{navigationContext&&contextEnabled&&<p className="muted" role="status">已帶入營運首頁篩選 · {filtered.length} 筆 <button onClick={()=>setContextEnabled(false)}>清除待辦篩選</button></p>}<MetricTiles label="所選日期預約指標" items={[['範圍內預約',rows.length],['範圍內待確認',rows.filter(r=>r.status==='pending').length],['超出容量待聯絡',rows.filter(r=>r.status==='pending'&&r.capacity_exceeded).length],...(front?[['範圍內待結帳',rows.filter(r=>r.status==='completed'&&!r.has_checkout).length]]:[])]}/><div className="toolbar">{front&&<button className="primary" onClick={()=>open({kind:'new-booking',title:'新增門店預約'})}>新增預約</button>}<input aria-label="搜尋預約" placeholder={front?'姓名、手機或預約編號':'姓名或預約編號'} value={search} onChange={e=>setSearch(e.target.value)}/><select aria-label="預約狀態" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">全部狀態</option>{Object.entries(statusNames).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select><select aria-label="技師篩選" value={staff} onChange={e=>setStaff(e.target.value)}><option value="all">全部技師</option>{catalog.staff.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select><button onClick={()=>setView(view==='list'?'schedule':'list')}>{view==='list'?'查看排程':'查看列表'}</button>{front&&<button onClick={()=>exportCSV('預約.csv',filtered.map(r=>({編號:r.reference,顧客:r.customer_name,手機:r.phone,療程:r.service_name,原預約技師:r.original_therapist,實際服務技師:r.therapist,開始:dateTime(r.starts_at),結束:dateTime(r.ends_at),超出建議容量:r.capacity_exceeded?'是':'否',狀態:statusNames[r.status]})))}>匯出 CSV</button>}</div>
  {view==='schedule'?<div className="table-wrap"><table className="schedule"><thead><tr><th>技師</th><th>療程排程（含緩衝時間）</th></tr></thead><tbody>{catalog.staff.map(s=><tr key={s.id}><th>{s.name}</th><td><div className="row">{filtered.filter(r=>r.staff_id===s.id).map(r=><div key={r.id} className={`card occupied ${isInactiveBooking(r,now)?'booking-inactive':''}`}><strong>{dateTime(r.starts_at)} → {dateTime(r.blocked_until)}</strong><p>{r.customer_name} · {r.service_name}</p><span className="badge">{statusNames[r.status]}</span>{r.capacity_exceeded&&<p className="alert" role="alert">{r.capacity_current_count}／{r.capacity_limit} 位，請致電顧客協調</p>}</div>)}</div></td></tr>)}</tbody></table></div>:<>{!filtered.length&&<Empty>{rows.length?'目前篩選沒有符合的預約，請調整姓名、狀態或技師。':'所選日期範圍沒有預約，請調整上方日期或查看全部可預約日期。'}</Empty>}{filtered.map(r=><article className={`card ${isInactiveBooking(r,now)?'booking-inactive':''}`} data-booking-id={r.id} key={r.id} style={{marginTop:16}}><div className="row" style={{justifyContent:'space-between'}}><h3>{r.customer_name} <span className="badge">{statusNames[r.status]}</span></h3><span className="muted">{r.reference}</span></div><p>{dateTime(r.starts_at)} → {dateTime(r.ends_at)} · 實際技師：<strong>{r.therapist}</strong></p>{r.capacity_exceeded&&<p className="alert" role="alert">此時段同時 {r.capacity_current_count} 位，超出建議上限 {r.capacity_limit} 位。預約已保留，請先致電顧客協調，確認安排後再更新狀態。</p>}{Number(r.staff_change_count)>0&&<p className="staff-attribution"><span>原預約：{r.original_therapist}</span><span>目前計入：{r.therapist}</span>{r.last_reassignment_reason&&<small>更換原因：{r.last_reassignment_reason}</small>}</p>}<p>{r.service_name}{front&&<> · {money(Number(r.price_cents)+Number(r.tea_cents))}</>}{r.phone&&<> · {r.phone}</>}</p>{r.note&&<p className="muted">{r.note}</p>}{r.has_checkout&&<p className="badge">{r.checkout_refunded?'已全額退款':r.checkout?`已結帳 ${money(r.checkout.revenue_cents)} · 提成 ${money(r.checkout.commission_cents)}`:'已結帳'}</p>}
  <div className="actions">{(front?({pending:['confirmed','cancelled'],confirmed:['checked_in','cancelled','no_show'],checked_in:['completed']}[r.status]||[]):[]).map(status=><button key={status} onClick={()=>open({kind:'status',title:statusNames[status],row:r,status})}>{statusNames[status]}</button>)}{front&&['pending','confirmed'].includes(r.status)&&<button onClick={()=>open({kind:'reschedule',title:'預約改期／更換預約技師',row:r})}>改期</button>}{front&&['pending','confirmed','checked_in','in_service','completed'].includes(r.status)&&<button onClick={()=>open({kind:'reassign',title:'指定實際服務技師',row:r})}>指定實際技師</button>}{front&&cashier&&r.status==='completed'&&!r.has_checkout&&<button className="primary" onClick={()=>open({kind:'checkout',title:'療程結帳',row:r})}>收款／扣儲值金</button>}{manager&&['pending','confirmed','checked_in','in_service','completed'].includes(r.status)&&(r.self_sourced_client||catalog.staff.find(s=>s.id===r.staff_id)?.employment_type_code==='contractor')&&<button onClick={()=>open({kind:'commission-flags',title:'承攬自帶客認定',row:r})}>{r.self_sourced_client?'自帶客・更正':'認定自帶客'}</button>}{manager&&r.has_checkout&&!r.checkout_refunded&&r.checkout&&<button className="danger" onClick={()=>open({kind:'refund',title:'全額退款並恢復儲值金',row:r,required:true})}>全額退款</button>}</div>
  {front&&<PrivateLink path={`manage/${r.manage_token}`} label="顧客預約連結"/>}{front&&r.status==='completed'&&<PrivateLink path={`review/${r.review_token}`} label="顧客評價連結"/>}
@@ -174,9 +296,31 @@ function CommissionFlags({row,saved}){
  return <MutationForm action={()=>rpc('spa_appointment_commission_flags',{p_id:row.id,p_self_sourced:selfSourced,p_reason:reason})} onSaved={saved} submit="儲存自帶客認定"><p>{row.reference} · 實際技師 {row.therapist}</p><Field label="承攬技師自帶客"><label><input type="checkbox" checked={selfSourced} onChange={e=>setSelfSourced(e.target.checked)}/>由店主確認為這位實際承攬技師帶來的客人</label></Field><Field label="認定／更正原因"><textarea required maxLength={1000} value={reason} onChange={e=>setReason(e.target.value)}/></Field><p className="muted">僅實際承攬技師可使用自帶客比例；客人指定技師不等於自帶客。該堂自帶比例取代普通服務抽成與指定加成。更換實際技師會清除此認定，須重新核對；已結算月份須先重開。</p></MutationForm>;
 }
 function Customers({rows,owner,open}){
- const [search,setSearch]=useState(''),[type,setType]=useState('all'),[archived,setArchived]=useState(false);
- const selected=rows.filter(r=>(archived||!r.archived_at)&&(type==='all'||r.customer_type===type)&&`${r.name} ${r.phone} ${r.tier} ${r.customer_type==='member'?'會員':'消費客人'}`.includes(search));
- return <><div className="toolbar"><input aria-label="搜尋顧客" value={search} onChange={e=>setSearch(e.target.value)} placeholder="姓名、手機或會員等級"/><select aria-label="顧客類型" value={type} onChange={e=>setType(e.target.value)}><option value="all">全部類型</option><option value="guest">消費客人</option><option value="member">會員</option></select><label className="auto-refresh"><input type="checkbox" checked={archived} onChange={e=>setArchived(e.target.checked)}/>顯示已封存</label>{owner&&<><button className="primary" onClick={()=>open({kind:'customer',title:'新增顧客／會員',row:null})}>新增顧客／會員</button><button onClick={()=>exportCSV('顧客會員.csv',selected.map(r=>({姓名:r.name,手機:r.phone,類型:r.customer_type==='member'?'會員':'消費客人',等級:r.tier,儲值餘額:Number(r.balance_cents)/100,完成次數:r.visits,狀態:r.archived_at?'已封存':'使用中',最近到店:r.last_visit?dateTime(r.last_visit):''})))}>匯出 CSV</button></>}</div><div className="table-wrap"><table><thead><tr><th>顧客</th><th>手機</th><th>類型</th><th>等級</th><th>儲值餘額</th><th>已完成療程</th><th>操作</th></tr></thead><tbody>{selected.map(r=><tr key={r.id} className={r.archived_at?'booking-inactive':''}><td>{r.name}{r.archived_at&&<small className="table-sub">已封存</small>}</td><td>{r.phone}</td><td><span className="badge">{r.customer_type==='member'?'會員':'消費客人'}</span></td><td>{r.customer_type==='member'?r.tier:'—'}</td><td>{money(r.balance_cents)}</td><td>{r.visits}</td><td><div className="row"><button onClick={()=>open({kind:owner?'detail':'employee-customer',title:`${r.name} · 顧客帳戶`,row:r})}>{owner?'帳戶／儲值／套票':'查看顧客'}</button>{owner&&!r.archived_at&&<><button onClick={()=>open({kind:'customer',title:'修改顧客資料',row:r})}>編輯</button><button className="danger" onClick={()=>open({kind:'customer-delete',title:'刪除／封存顧客',row:r})}>刪除</button></>}{owner&&r.archived_at&&<button onClick={()=>open({kind:'customer-restore',title:'恢復顧客檔案',row:r})}>恢復</button>}</div></td></tr>)}</tbody></table></div>{!selected.length&&<Empty/>}</>;
+ const [search,setSearch]=useState(''),[query,setQuery]=useState(''),[type,setType]=useState('all'),[archived,setArchived]=useState(false);
+ const submitted=search.trim()===query&&!!query;
+ const normalized=query.normalize('NFKC').toLocaleLowerCase();
+ const phone=value=>String(value||'').normalize('NFKC').replace(/^\+?886/,'0').replace(/\D/g,'');
+ const searchedPhone=/^\+?[\d ()-]+$/.test(normalized)?phone(normalized):'';
+ const selected=submitted?rows.filter(row=>(archived||!row.archived_at)&&(type==='all'||row.customer_type===type)&&(
+  searchedPhone?phone(row.phone).includes(searchedPhone):row.name.normalize('NFKC').toLocaleLowerCase().includes(normalized)
+ )):[];
+ const exportResults=()=>exportCSV('顧客會員.csv',selected.map(row=>({姓名:row.name,手機:row.phone,類型:row.customer_type==='member'?'會員':'消費客人',等級:row.tier,儲值餘額:Number(row.balance_cents)/100,完成次數:row.visits,狀態:row.archived_at?'已封存':'使用中',最近到店:row.last_visit?dateTime(row.last_visit):''})));
+ return <>
+  <form className="card toolbar customer-search" onSubmit={event=>{event.preventDefault();setQuery(search.trim());}}>
+   <input type="search" aria-label="搜尋顧客" value={search} onChange={event=>setSearch(event.target.value)} placeholder="輸入顧客姓名或手機"/>
+   <button className="primary" type="submit" disabled={!search.trim()}>查詢</button>
+   <select aria-label="顧客類型" value={type} onChange={event=>setType(event.target.value)}><option value="all">全部類型</option><option value="guest">消費客人</option><option value="member">會員</option></select>
+   <label className="auto-refresh"><input type="checkbox" checked={archived} onChange={event=>setArchived(event.target.checked)}/>顯示已封存</label>
+   {owner&&<><button type="button" onClick={()=>open({kind:'customer',title:'新增顧客／會員',row:null})}>新增顧客／會員</button>{submitted&&<button type="button" disabled={!selected.length} onClick={exportResults}>匯出 CSV</button>}</>}
+  </form>
+  {submitted&&(selected.length?<div className="table-wrap"><table><thead><tr><th>顧客</th><th>手機</th><th>類型</th><th>等級</th><th>儲值餘額</th><th>已完成療程</th><th>操作</th></tr></thead><tbody>{selected.map(row=><tr key={row.id} className={row.archived_at?'booking-inactive':''}>
+   <td>{row.name}{row.archived_at&&<small className="table-sub">已封存</small>}</td><td>{row.phone}</td><td><span className="badge">{row.customer_type==='member'?'會員':'消費客人'}</span></td><td>{row.customer_type==='member'?row.tier:'—'}</td><td>{money(row.balance_cents)}</td><td>{row.visits}</td>
+   <td><div className="row">
+    <button onClick={()=>open({kind:owner?'detail':'employee-customer',title:`${row.name} · 顧客帳戶`,row})}>{owner?'帳戶／儲值／套票':'查看顧客'}</button>
+    {owner&&!row.archived_at&&<><button onClick={()=>open({kind:'customer',title:'修改顧客資料',row})}>編輯</button><button className="danger" onClick={()=>open({kind:'customer-delete',title:'刪除／封存顧客',row})}>刪除</button></>}
+    {owner&&row.archived_at&&<button onClick={()=>open({kind:'customer-restore',title:'恢復顧客檔案',row})}>恢復</button>}
+   </div></td></tr>)}</tbody></table></div>:<Empty>找不到符合姓名或手機的顧客。</Empty>)}
+ </>;
 }
 function CustomerForm({row,manager,saved}){
  const [form,setForm]=useState(row||{name:'',phone:'',email:'',tier:'一般會員',notes:'',auth_user_id:'',customer_type:'guest'});const set=(key,value)=>setForm({...form,[key]:value});

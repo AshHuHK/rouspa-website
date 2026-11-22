@@ -3,7 +3,6 @@ import { supabase, rpc, errorText, money, dateTime } from './lib/spa.js';
 import { Field, MutationForm, Empty, Modal } from './OperationsShared.jsx';
 import { AttendanceEmployee } from './Attendance.jsx';
 import PayrollSources from './PayrollSources.jsx';
-import StaffAnnualReviews from './StaffAnnualReviews.jsx';
 import { confirmedStaffPassword } from './lib/staff-account.js';
 
 export const staffRoleNames = {owner:'店主',manager:'主管',receptionist:'櫃台',therapist:'技師'};
@@ -68,22 +67,38 @@ export function EmployeeSchedulePlanner({refreshToken,onReload}){
  {(plan.requests||[]).length>0&&<details className="schedule-request-history"><summary>查看我的更動申請（{plan.requests.length}）</summary>{plan.requests.map(row=><p key={row.id}><strong>{row.business_date}</strong> · {row.desired_working?`${minutes(row.desired_start_minute)}–${minutes(row.desired_end_minute)}`:'休班'} · {{pending:'待店主確認',approved:'已核准並套用',rejected:'未核准'}[row.status]}<br/><span className="muted">{row.reason}{row.review_note?` · 店主備註：${row.review_note}`:''}</span></p>)}</details>}
  </section>;
 }
-export function StaffSelf({data,from,to,onReload}) {
+export function StaffSchedule({data,onReload}) {
+ return <section aria-label="個人班表">
+  <EmployeeSchedulePlanner refreshToken={data} onReload={onReload}/>
+  {data?.profile&&<details className="card staff-roster-details">
+   <summary>我的排班與休假紀錄</summary>
+   <h3>每日排班</h3>
+   {(data.daily_shifts||[]).map(row=><p key={row.id}>{row.business_date} · {row.is_working?`${minutes(row.start_minute)}–${minutes(row.end_minute)}`:'休班'}{row.note?` · ${row.note}`:''}</p>)}
+   {!(data.daily_shifts||[]).length&&<Empty>所選期間沒有每日覆蓋設定。</Empty>}
+   <h3>每週排班</h3>
+   {data.shifts.map(row=><p key={row.id}>週{'日一二三四五六'[row.weekday]} {minutes(row.start_minute)}–{minutes(row.end_minute)}</p>)}
+   {!data.shifts.length&&<Empty/>}
+   <h3>休假</h3>
+   {data.time_off.map(row=><p key={row.id}>{dateTime(row.starts_at)}–{dateTime(row.ends_at)} · {row.reason}</p>)}
+   {!data.time_off.length&&<Empty/>}
+  </details>}
+ </section>;
+}
+export function StaffSelf({data,from,to,onReload,showWorkday=true}) {
  const [sourcesOpen,setSourcesOpen]=useState(false);
  if (!data.profile) return <Empty>此帳號尚未綁定人員資料，請由店主在「人員管理」配置登入帳號。</Empty>;
  const s=data.profile,m=data.metrics,wage=data.payroll;
  const notice=wage?.calculation?.calculation_engine==='notice_v1',missingMonth=!wage&&from.slice(0,7)!==to.slice(0,7);
  const commission=Number(m.commission_cents)+Number(wage?.package_bonus_cents||0);
- return <><AttendanceEmployee from={from} to={to}/><EmployeeSchedulePlanner refreshToken={data} onReload={onReload}/><div className="card"><h2>{s.name}</h2>
+ return <>{showWorkday&&<><AttendanceEmployee from={from} to={to}/><StaffSchedule data={data} onReload={onReload}/></>}<div className="card"><h2>{s.name}</h2>
  {notice?<><p>{wage.role} · {wage.notice_category==='04'?'依合作比例計酬':payLabel(s)}</p><p className="muted">累計完成 {data.lifetime_completed} 堂。服務抽成與指定客資格請查看本期薪資明細。</p></>
  :<><p>{s.title} · {s.employment_type}{!missingMonth&&' · '+payLabel(s)}</p>{!missingMonth&&<p>基本服務提成 {(Number(s.commission_bps)/100).toFixed(2)}% · 商品銷售提成 {(Number(s.product_commission_bps)/100).toFixed(2)}% · 指定客服務加成 {(Number(s.designated_client_bonus_bps||0)/100).toFixed(2)}%</p>}<p className="muted">累計完成 {data.lifetime_completed} 堂。</p></>}
- </div><StaffAnnualReviews refreshToken={data}/>
+ </div>
  <div className="grid">{[['實際完成療程',m.completed],['已結帳／待結帳',`${m.settled_completed} / ${m.unsettled_completed}`],['已結帳服務分鐘',wage?.service_minutes??m.minutes],...(!missingMonth?[[m.payroll_status==='finalized'?'已結算提成':'本期試算提成',money(commission)]]:[]),['平均評分／評價數',`${m.rating??'—'} / ${m.reviews}`]].map(([label,value])=><div className="card" key={label}><p className="muted">{label}</p><div className="metric">{value}</div></div>)}</div>
  <section className="card">{missingMonth?<p>請選擇同一個月份查看薪資。</p>:<><div className="os-page-title"><div><p className="muted">{m.payroll_status==='finalized'?'本期已結算應發':'本期應發試算'}</p><strong className="metric">{money(m.total_cents)}</strong></div><button onClick={()=>setSourcesOpen(true)}>核對我的薪資來源</button></div><p className="muted">完成堂數、提成與評價均依實際服務技師計入。可核對本薪、提成、出勤、加班與加扣的來源；試算金額仍須店主確認結算。</p></>}</section>
  {sourcesOpen&&!missingMonth&&<Modal title="我的薪資來源" onClose={()=>setSourcesOpen(false)}><PayrollSources staffId={wage?.staff_id||s.id} from={from} to={to} expectedRow={wage}/></Modal>}
  <h2>我的評價</h2>{!data.reviews.length&&<Empty>這段期間尚未收到評價。</Empty>}{data.reviews.map((r,i)=><article className="card" key={i} style={{marginTop:12}}><h3>{'★'.repeat(r.rating)} · {r.service_name}</h3><p className="muted">{r.reference} · {dateTime(r.created_at)} · {{pending:'待審核',published:'已公開',hidden:'未公開'}[r.status]}</p><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{r.comment || '僅評分'}</p>{r.reply&&<p>店家回覆：{r.reply}</p>}</article>)}
- <p className="muted">最多顯示最近 100 則，評價總數包含整個所選期間。</p><h2>我的每日排班</h2>{(data.daily_shifts||[]).map(s=><p key={s.id}>{s.business_date} · {s.is_working?`${minutes(s.start_minute)}–${minutes(s.end_minute)}`:'休班'}{s.note?` · ${s.note}`:''}</p>)}{!(data.daily_shifts||[]).length&&<p className="muted">所選期間沒有每日覆蓋設定，使用下方每週排班設定。</p>}<h2>我的每週排班設定</h2>{data.shifts.map(s=><p key={s.id}>週{'日一二三四五六'[s.weekday]} · {minutes(s.start_minute)}–{minutes(s.end_minute)}</p>)}{!data.shifts.length&&<Empty/>}
- <h2>我的休假</h2>{data.time_off.map(t=><p key={t.id}>{dateTime(t.starts_at)}–{dateTime(t.ends_at)} · {t.reason}</p>)}{!data.time_off.length&&<Empty/>}</>;
+ <p className="muted">最多顯示最近 100 則，評價總數包含整個所選期間。</p></>;
 }
 const minutes=n=>`${n>=1440?'翌日 ':''}${String(Math.floor(n/60)%24).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 export function EmployeeCustomer({row}) {

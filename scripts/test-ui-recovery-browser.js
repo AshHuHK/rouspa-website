@@ -104,4 +104,89 @@ await expect(page.getByRole('heading',{name:'尚未開通管理權限'})).toBeVi
 await page.goto(`${fixtureUrl}?mode=boundary`,{waitUntil:'domcontentloaded'});
 await expect(page.getByRole('heading',{name:'頁面暫時無法顯示'})).toBeVisible();checks++;
 await expect(page.getByRole('button',{name:'重新載入頁面'})).toBeEnabled();checks++;
+
+const ownerUrl=fixtureUrl+'?mode=admin&role=owner';
+const tileGeometry=locator=>locator.evaluateAll(tiles=>tiles.map(tile=>{
+ const {width,height,y}=tile.getBoundingClientRect();
+ return {width,height,y};
+}));
+await page.goto(ownerUrl,{waitUntil:'domcontentloaded'});
+const dashboardTiles=page.locator('[aria-label="今日營運指標"] .ops-metric-tile');
+await expect(dashboardTiles).toHaveCount(7);
+for(const [width,columns] of [[1440,7],[768,7],[390,3],[320,3]]){
+ await page.setViewportSize({width,height:844});
+ const geometry=await tileGeometry(dashboardTiles);
+ expect(geometry.filter(tile=>tile.y===geometry[0].y)).toHaveLength(columns);checks++;
+ expect(geometry.every(tile=>Math.abs(tile.width-tile.height)<2)).toBe(true);checks++;
+}
+await expect(page.getByRole('heading',{name:'時段接客容量',exact:true})).toHaveCount(0);checks++;
+await expect(page.locator('.os-hours-heading')).toHaveText('TODAY · LIVE今日營業');checks++;
+await expect(page.locator('.os-hours-actions')).toContainText('10:00–翌日 02:00');checks++;
+await expect(page.locator('.os-hours-actions').getByRole('button',{name:'設定今日營業／休假'})).toBeVisible();checks++;
+await expect(page.getByText('目前使用每週營業時間。')).toHaveCount(0);checks++;
+const ownerNav=page.getByRole('navigation',{name:'後台主要功能'});
+await page.clock.install();
+await ownerNav.getByRole('button',{name:'預約與日程',exact:true}).click();
+const bookingTiles=page.locator('[aria-label="所選日期預約指標"] .ops-metric-tile');
+await expect(bookingTiles).toHaveCount(4);
+const phoneTiles=await tileGeometry(bookingTiles);
+expect(phoneTiles.filter(tile=>tile.y===phoneTiles[0].y)).toHaveLength(3);checks++;
+await expect(page.getByText('灰色預約', {exact:false})).toHaveCount(0);checks++;
+await expect(page.getByText('目前顯示', {exact:false})).toHaveCount(0);checks++;
+const processed=()=>page.evaluate(()=>window.uiFixture.adminReads.spa_admin_bookings);
+const countBefore=await processed();
+await page.clock.fastForward(9*60*1000);
+expect(await processed()).toBe(countBefore);checks++;
+await page.clock.fastForward(61*1000);
+await expect.poll(processed).toBe(countBefore+1);checks++;
+await page.getByRole('button',{name:'重新整理',exact:true}).click();
+await expect.poll(processed).toBe(countBefore+2);checks++;
+await ownerNav.getByRole('button',{name:'會員與儲值金',exact:true}).click();
+const search=page.getByRole('searchbox',{name:'搜尋顧客'});
+await expect(search).toBeVisible();
+await expect(page.getByRole('columnheader',{name:'顧客',exact:true})).toHaveCount(0);checks++;
+await search.fill('甲');
+await expect(page.getByText('測試會員 甲',{exact:true})).toHaveCount(0);checks++;
+await search.press('Enter');
+await expect(page.getByText('測試會員 甲',{exact:true})).toBeVisible();checks++;
+await expect(page.getByText('測試顧客 乙',{exact:true})).toHaveCount(0);checks++;
+await search.fill('+886 922-333-444');
+await page.getByRole('button',{name:'查詢',exact:true}).click();
+await expect(page.getByText('測試顧客 乙',{exact:true})).toBeVisible();checks++;
+await search.clear();
+await expect(page.getByRole('columnheader',{name:'顧客',exact:true})).toHaveCount(0);checks++;
+const readCustomers=()=>page.evaluate(()=>window.uiFixture.adminReads.spa_customers_list);
+const customersBefore=await readCustomers();
+await page.clock.fastForward(10*60*1000+1000);
+await expect.poll(readCustomers).toBe(customersBefore+1);checks++;
+await expect(page.getByRole('columnheader',{name:'顧客',exact:true})).toHaveCount(0);checks++;
+await ownerNav.getByRole('button',{name:'人員與排班',exact:true}).click();
+const teamCard=page.locator('.os-team-grid article').first();
+await expect(teamCard).toContainText('0912000800');checks++;
+await expect(teamCard.getByText(/未填電子郵件|年資|薪資規則|年度考核/)).toHaveCount(0);checks++;
+await expect(teamCard.getByRole('button',{name:'排班日曆'})).toBeEnabled();checks++;
+await ownerNav.getByRole('button',{name:'薪資與提成',exact:true}).click();
+await expect(page.getByLabel('試算版本').locator('option')).toHaveText(['目前生效制度','v8 · 2027第一版薪資制度（草稿）']);checks++;
+await page.getByRole('button',{name:'結算紀錄',exact:true}).click();
+await page.getByRole('button',{name:'核對原週期',exact:true}).click();
+await expect(page.getByLabel('試算版本')).toHaveValue('rule-5');checks++;
+
+for(const role of ['therapist','manager','restricted']){
+ await page.goto(fixtureUrl+`?mode=admin&role=${role}`,{waitUntil:'domcontentloaded'});
+ const workspace=page.locator('.staff-workspace');
+ await expect(workspace.getByRole('button',{name:'上班打卡'})).toBeEnabled();checks++;
+ await expect(workspace.getByRole('button',{name:'下班打卡'})).toBeDisabled();checks++;
+ await expect(page.getByRole('navigation',{name:'後台主要功能'})).toHaveCount(0);checks++;
+ await expect(workspace.getByRole('heading',{name:'我的薪資與績效',exact:true})).toBeVisible();checks++;
+ await expect(workspace.getByText('年度考核',{exact:false})).toHaveCount(0);checks++;
+ const sections=await workspace.locator(':scope > section, :scope > #my-attendance').evaluateAll(items=>items.map(item=>item.id||item.getAttribute('aria-label')));
+ expect(sections.slice(0,2)).toEqual(['my-attendance','個人班表']);checks++;
+ if(role==='restricted'){
+  await expect(workspace.locator('#staff-bookings, #staff-reviews, #staff-dashboard')).toHaveCount(0);checks++;
+  expect(await page.evaluate(()=>Object.keys(window.uiFixture.adminReads))).not.toContain('spa_admin_bookings');checks++;
+ }else{
+  expect(sections.indexOf('staff-bookings')).toBeLessThan(sections.indexOf('staff-self'));checks++;
+  await expect(workspace.locator('#staff-bookings')).toBeVisible();checks++;
+ }
+}
 return {checks,productionRequests:0};
