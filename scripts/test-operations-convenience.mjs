@@ -19,7 +19,7 @@ create function spa_private.convenience_test_now() returns timestamptz language 
 const directory=new URL('../supabase/migrations/',import.meta.url);
 for(const file of (await readdir(directory)).filter(file=>file.endsWith('.sql')).sort()){
  let source=await readFile(new URL(file,directory),'utf8');
- if(['202610080006_operations_convenience.sql','202610080010_operations_event_reminders.sql','202610110001_soft_capacity_and_title_retirement.sql'].includes(file))source=source.replaceAll('now()','spa_private.convenience_test_now()');
+ if(['202610080006_operations_convenience.sql','202610080010_operations_event_reminders.sql','202610110001_soft_capacity_and_title_retirement.sql','202611260001_review_visibility_and_attendance_batches.sql'].includes(file))source=source.replaceAll('now()','spa_private.convenience_test_now()');
  await db.exec(source);
 }
 await db.exec(`create or replace function spa_private.public_booking_last_date() returns date language sql stable security definer set search_path='' as $$
@@ -77,8 +77,8 @@ check(!JSON.stringify(staff).includes('0991888001')&&!JSON.stringify(staff).incl
 check(!staff.is_owner&&staff.todos.every(item=>item.key.startsWith('my_')&&['self','bookings'].includes(item.module)),'staff receives only own permitted reminders');
 check(count(admin).pending_bookings===1,'pending booking count excludes history outside destination window');
 check(count(admin).arrivals===2&&count(admin).unsettled===1,'near arrival, overdue unarrived booking and completed unsettled count derive actual appointment state');
-check(count(admin).attendance===2&&count(staff).my_attendance===1,'owner sees both pending attendances; staff sees only their own');
-check(count(admin).corrections===1&&count(admin).missing_clockout===1&&count(staff).my_clockout===1,'attendance corrections and overdue open shift drive correct reminders');
+check(count(admin).attendance===0&&count(staff).my_attendance===1,'owner reminders wait until half-month release while staff can see their own records');
+check(count(admin).corrections===0&&count(admin).missing_clockout===1&&count(staff).my_clockout===1,'attendance corrections and overdue open shift drive correct reminders');
 check(count(admin).schedule_requests===1&&count(admin).missing_schedule===1&&count(staff).my_requests===1&&count(staff).my_submission===1,'pending schedule requests and unsubmitted target month are shared source data');
 check(count(admin).payroll_drafts===1&&count(admin).low_stock>=1&&count(admin).reviews===1,'stale payroll, low inventory and pending reviews are owner-only actionable todos');
 check(count(staff).my_schedule===1,'staff service reminder uses assigned technician and bounded near-future window');

@@ -51,5 +51,5 @@ assert.equal(serviceMenuTitle({ name: '120分全息', duration_minutes: 120, cat
 assert.equal(productPresentationMark({ name: '身體乳' }, { code: 'body_care', name: '身體保養' }), '身', 'new product categories derive a stable artwork mark');
 assert.equal(productPresentationMark({ name: '普洱茶' }, { code: 'tea_cake', name: '茶餅' }), '茶', 'known product categories keep their brand mark');
 
-assert.deepEqual(homeOnsiteServices([{name:'按摩項目',price_cents:120000}]).map(row=>[row.name,row.stamp,row.price_cents]),[['拳推按摩','按',120000],['乾式頭療','乾',120000],['頭部溫罐艾灸','艾',50000]],'the three onsite services render once with a stamp and price');
+assert.deepEqual(homeOnsiteServices([{name:'按摩項目',price_cents:120000}]).map(row=>[row.name,row.stamp,row.price_cents]),[['拳推按摩','按',120000],['乾式頭療','乾',120000],['頭部溫罐艾灸','艾',52000]],'the three onsite services render once with a stamp and price');
 console.log('catalog presentation tests passed');

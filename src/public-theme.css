@@ -62,3 +62,19 @@ button, [role=button], a { -webkit-tap-highlight-color: transparent; }
   .public-home .onsite-service-list .formula-head { padding-inline: 12px; gap: 8px; }
   .public-home .onsite-service-list .formula-name, .public-home .formula-price { font-size: clamp(12px, 3.7vw, 16px); }
 }
+
+.public-home .onsite-service-list .formula-head {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 4px 16px;
+}
+.public-home .onsite-service-list .seal-stamp { grid-row: 1 / span 2; }
+.public-home .onsite-service-list .formula-title { grid-column: 2; }
+.public-home .onsite-service-list .formula-price { grid-column: 2; font-size: 17px; line-height: 1.5; }
+.public-home .onsite-duration { display: inline-block; margin-inline-start: .5em; white-space: nowrap; font-size: .88em; letter-spacing: 0; }
+.public-home .onsite-service-list .formula-toggle { grid-column: 1 / -1; text-align: center; }
+@media(max-width:480px) {
+  .public-home .onsite-service-list .formula-head { gap: 4px 12px; padding: 18px 14px; }
+  .public-home .onsite-service-list .formula-name { font-size: 16px; letter-spacing: .3px; }
+  .public-home .onsite-service-list .formula-price { font-size: 16px; }
+}

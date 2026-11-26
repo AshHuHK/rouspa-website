@@ -2,7 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
 
 // Only this server function uses Auth Admin credentials. Never log request bodies/passwords.
 export function createStaffHandler({ clientFactory, environment }) {
- const serviceVersion = '20261026-01';
+ const serviceVersion = '20261126-01';
  const origins = ['https://www.rouspa.tw','https://rouspa.tw','capacitor://localhost','http://localhost:5173','http://127.0.0.1:4178'];
  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
  return async (req) => {
@@ -34,7 +34,7 @@ export function createStaffHandler({ clientFactory, environment }) {
    if (!['create','password','username','access','archive','restore'].includes(action)) return reply(400,'INVALID_INPUT');
    if (['create','access'].includes(action) && (typeof input.role !== 'string' || !/^[a-z][a-z0-9_]{1,31}$/.test(input.role) || input.role === 'owner')) return reply(400,'INVALID_INPUT');
    if (action === 'access' && typeof input.active !== 'boolean') return reply(400,'INVALID_INPUT');
-   if (['create','password'].includes(action) && (typeof input.password !== 'string' || input.password.length < 12 || input.password.length > 128)) return reply(400,'PASSWORD_TOO_SHORT');
+   if (['create','password'].includes(action) && (typeof input.password !== 'string' || (!/^[0-9]{6,7}$/.test(input.password) && (input.password.length < 12 || input.password.length > 128)))) return reply(400,'PASSWORD_TOO_SHORT');
    const username = typeof input.username === 'string' ? input.username.trim().toLowerCase() : '';
    if (['create','username'].includes(action) && !/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)) return reply(400,'INVALID_USERNAME');
    const email = `${staff_id}@staff.rouspa.invalid`;

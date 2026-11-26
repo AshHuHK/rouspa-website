@@ -17,7 +17,7 @@ import { AccessOS, CatalogOS, DashboardOS, MonthlyOperationsCalendar, PayrollOS,
 
 const tenMinutes=10*60*1000;
 const rangedTabs=['bookings','reports','self','payroll'];
-const staffSections={dashboard:'staff-dashboard',bookings:'staff-bookings',reviews:'staff-reviews',self:'staff-self'};
+const staffSections={dashboard:'staff-dashboard',bookings:'staff-bookings',self:'staff-self'};
 const personalMonth=()=>{const today=taipeiDate();return {from:today.slice(0,8)+'01',to:today};};
 const rangeArgs=({from,to})=>({p_from:from,p_to:to});
 const accessScope=value=>JSON.stringify([value?.role,value?.staff_id,[...(value?.permissions||[])].sort()]);
@@ -27,7 +27,6 @@ async function loadStaffSections(access,bookingsRange,personalRange){
  const queries=[];
  if(access.staff_id&&validRange(personalRange))queries.push(['self','spa_staff_self',rangeArgs(personalRange)]);
  if(permissions.includes('appointments.view')&&validRange(bookingsRange))queries.push(['bookings','spa_admin_bookings',rangeArgs(bookingsRange)]);
- if(permissions.includes('reviews.view'))queries.push(['reviews','spa_reviews_admin']);
  if(permissions.includes('dashboard.view'))queries.push(['dashboard','spa_dashboard']);
  const results=await Promise.allSettled(queries.map(([,name,args])=>rpc(name,args)));
  return Object.fromEntries(results.map((result,index)=>{
@@ -114,7 +113,7 @@ export default function Admin() {
  if(!access)return <div className="ops"><main className="login card"><h1>{accessChecking?'正在確認權限…':isInvalidSession(accessFailure)?'請重新登入':'暫時無法載入後台'}</h1>{accessFailure&&<p className="alert" role="alert">{errorText(accessFailure)}</p>}{!accessChecking&&<p className="muted">{isInvalidSession(accessFailure)?'目前瀏覽器保存的登入狀態無法通過驗證。重新登入後會再次核對門店權限。':'請確認網路後重新載入，系統會保留登入狀態。'}</p>}<div className="actions"><button disabled={accessChecking} onClick={()=>setAccessRetry(value=>value+1)}>{accessChecking?'確認中…':'重新載入權限'}</button><button onClick={()=>supabase.auth.signOut({scope:'local'})}>{isInvalidSession(accessFailure)?'重新登入':'登出'}</button><a className="button" href={publicWebsiteUrl('/')}>查看官網</a></div></main></div>;
  if(!role)return <div className="ops"><div className="login card"><h1>尚未開通管理權限</h1><p>此帳號尚未加入門店團隊，請由店主配置權限。</p><a href={publicWebsiteUrl('/#member')}>前往會員中心</a><div className="actions"><button onClick={()=>supabase.auth.signOut()}>登出</button></div></div></div>;
  const allTabs=[['dashboard','dashboard.view'],['bookings','appointments.view'],['customers','customers.view'],['pos','pos.use'],['team','team.view'],['payroll','payroll.view'],['catalog','catalog.view'],['reviews','reviews.view'],['reports','reports.view'],['access','settings.manage'],['settings','settings.manage'],['self','self']];
- const tabs=allTabs.filter(([id,permission])=>permission==='self'?!!access.staff_id:role==='owner'||(['dashboard','bookings','reviews'].includes(id)&&has(permission)));
+ const tabs=allTabs.filter(([id,permission])=>permission==='self'?!!access.staff_id:role==='owner'||(['dashboard','bookings'].includes(id)&&has(permission)));
  const allowed=id=>tabs.some(([tabId])=>tabId===id);
  function navigateFromDashboard(id,context){
   if(!allowed(id))return;
@@ -162,7 +161,7 @@ export default function Admin() {
    <h2>我的薪資與績效</h2><DatePanel range={ownRange} setRange={setOwnRange} tab="self"/>
    {validRange(ownRange)&&<StaffSectionData packet={activeData?.self}>{details=><StaffSelf data={details} from={ownFrom} to={ownTo} showWorkday={false}/>}</StaffSectionData>}
   </section>}
-  {allowed('reviews')&&<section id="staff-reviews" className="staff-workspace-section"><h2>評價</h2><StaffSectionData packet={activeData?.reviews}>{details=><Reviews data={details} open={setModal} canManage={has('reviews.manage')} navigationContext={reviewsContext}/>}</StaffSectionData></section>}
+
   {allowed('dashboard')&&<section id="staff-dashboard" className="staff-workspace-section"><StaffSectionData packet={activeData?.dashboard}>{details=><DashboardOS staffPage userKey={session.user.id} data={details} onNavigate={navigateFromDashboard} allowed={allowed} onReload={load}/>}</StaffSectionData></section>}
  </div>:<>
   <nav ref={mainNavRef} className="os-main-nav" aria-label="後台主要功能">{tabs.map(([id])=><button key={id} className={tab===id?'active':''} aria-current={tab===id?'page':undefined} onClick={()=>{setNavigationContext(null);setTab(id);setNotice('');if(['self','payroll'].includes(id))setRange(personalMonth());}}>{moduleName(id)}</button>)}</nav>
@@ -174,7 +173,7 @@ export default function Admin() {
  {tab==='bookings'&&<Bookings rows={activeData} catalog={catalog} front={front} cashier={cashier} manager={manager} open={setModal} navigationContext={navigationContext}/>}
  {tab==='customers'&&<Customers rows={activeData} owner={has('customers.manage')} open={setModal}/>}
  {tab==='pos'&&<PosOS catalog={activeData.store} customers={activeData.customers} onReload={load}/>}
- {tab==='self'&&<><StaffSelf data={activeData} from={from} to={to} onReload={load}/><MonthlyOperationsCalendar today={taipeiDate()} refreshToken={activeData}/></>}
+ {tab==='self'&&<><StaffSelf showReviews={role==='owner'} data={activeData} from={from} to={to} onReload={load}/><MonthlyOperationsCalendar today={taipeiDate()} refreshToken={activeData}/></>}
  {tab==='team'&&<TeamOS data={activeData} catalog={catalog} canManage={has('team.manage')} canAccounts={role==='owner'} onReload={load} navigationContext={navigationContext}/>}
  {tab==='payroll'&&<PayrollOS data={activeData} staff={activeData.staff} from={from} to={to} canManage={has('payroll.manage')} onReload={load} navigationContext={navigationContext} onNavigate={navigateFromDashboard}/>}
  {tab==='catalog'&&<CatalogOS data={activeData} canManage={has('catalog.manage')} onReload={load}/>}

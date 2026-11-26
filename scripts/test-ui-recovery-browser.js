@@ -210,14 +210,39 @@ await expect(attendance.locator('.attendance-break-section input')).toHaveCount(
 await attendance.getByLabel('補打卡原因').fill('昨晚忘記打下班卡');
 await attendance.getByRole('button',{name:'送出',exact:true}).click();
 await expect(attendance.getByRole('status').filter({hasText:'已送交店主審核'})).toBeVisible();checks++;
-for(const [width,countFour,countFive] of [[1440,4,5],[390,2,3]]){
+for(const [width,countFour,countFive] of [[1440,4,4],[390,2,2]]){
  await page.setViewportSize({width,height:844});
- for(const [name,items,columns] of [['今日營運指標',4,countFour],['選定日期營運指標',4,countFour],['個人服務指標',5,countFive]]){
+ for(const [name,items,columns] of [['今日營運指標',4,countFour],['選定日期營運指標',4,countFour],['個人服務指標',4,countFive]]){
   const match=page.locator('[aria-label="'+name+'"] .ops-metric-tile');
   await expect(match).toHaveCount(items);checks++;
   const geometry=await tileGeometry(match);
   expect(geometry.filter(tile=>tile.y===geometry[0].y)).toHaveLength(columns);checks++;
   expect(geometry.every(tile=>Math.abs(tile.width-tile.height)<2)).toBe(true);checks++;
  }
+}
+await expect(page.getByRole('heading',{name:'我的評價',exact:true})).toHaveCount(0);checks++;
+expect(await page.evaluate(()=>Object.keys(window.uiFixture.adminReads))).not.toContain('spa_reviews_admin');checks++;
+await page.goto(ownerUrl,{waitUntil:'domcontentloaded'});
+await page.getByRole('navigation',{name:'後台主要功能'}).getByRole('button',{name:'人員與排班',exact:true}).click();
+const review=page.locator('#attendance-review');
+await expect(review.getByLabel('半月審核批次')).toBeVisible();checks++;
+await review.getByLabel('選取本批次待審核紀錄').check();
+await review.getByRole('button',{name:'核准所選 2 筆'}).click();
+await page.getByRole('dialog').getByLabel('批次審核說明').fill('核對半月工時與休息');
+await page.getByRole('dialog').getByRole('button',{name:'確認核准 2 筆'}).click();
+await expect(page.getByRole('dialog')).toHaveCount(0);checks++;
+expect((await page.evaluate(()=>window.uiFixture.batchRequest)).p_rows).toHaveLength(2);checks++;
+for(const width of [320,375,390,430,1440]){
+ await page.setViewportSize({width,height:844});
+ await page.goto(fixtureUrl+'?mode=home',{waitUntil:'domcontentloaded'});
+ const cards=page.locator('.onsite-service-list .formula-card');
+ await expect(cards).toHaveCount(3);checks++;
+ await expect(cards.locator('.formula-price')).toHaveText(['NT$1,200','NT$1,200','NT$520']);checks++;
+ await expect(cards.locator('.onsite-duration')).toHaveText(['60分','60分','40分']);checks++;
+ const prices=await cards.locator('.formula-price').evaluateAll(items=>items.map(el=>{
+  const r=el.getBoundingClientRect(),card=el.closest('.formula-card').getBoundingClientRect();
+  return {fits:r.left>=card.left&&r.right<=card.right&&el.scrollWidth<=el.clientWidth,visible:r.width>40&&r.right<=innerWidth};
+ }));
+ expect(prices.every(row=>row.fits&&row.visible)).toBe(true);checks++;
 }
 return {checks,productionRequests:0};

@@ -128,7 +128,8 @@ const store = await gather('settings');
 assert.equal(store.state.settings.booking.simultaneous_capacity, 4);
 assert.equal(store.state.settings.booking.closing_minute, 1560);
 assert.equal(store.state.settings.overrides[0].business_date, '2026-10-10');
-const ratings = await gather('reviews', worker);
+await assert.rejects(()=>gather('reviews', worker), /FORBIDDEN/);
+const ratings = await gather('reviews', owner);
 assert.equal(ratings.state.reviews.average_rating, 4);
 assert.equal(ratings.state.reviews.status_counts.pending, 1);
 assert.equal(ratings.state.reviews.feedback_count, 1);
@@ -144,9 +145,9 @@ for (const denial of permissionErrors) {
  await assert.rejects(gatherStewardContext({ scope: 'page', session: owner, page: 'payroll', range, now, rpc: async name => { calls.push(name); if (name === 'spa_dashboard') throw denial; return fixtures[name]; } }), error => error.status === 403 && error.code === 'FORBIDDEN');
  assert.deepEqual(calls, ['spa_catalog', 'spa_dashboard'], 'Permission failures must stop all further context reads');
 }
-const wrapped = await gather('reviews', worker, { spa_reviews_admin: { data: fixtures.spa_reviews_admin, error: null } });
+const wrapped = await gather('reviews', owner, { spa_reviews_admin: { data: fixtures.spa_reviews_admin, error: null } });
 assert.equal(wrapped.state.reviews.average_rating, 4);
-await assert.rejects(gatherStewardContext({ scope: 'page', session: worker, page: 'reviews', range, now, rpc: async name => name === 'spa_catalog' ? { data: null, error: { status: 401 } } : fixtures[name] }), error => error.status === 401);
+await assert.rejects(gatherStewardContext({ scope: 'page', session: owner, page: 'reviews', range, now, rpc: async name => name === 'spa_catalog' ? { data: null, error: { status: 401 } } : fixtures[name] }), error => error.status === 401);
 
 // Verify fixture shapes against the latest real SQL definitions, including the
 // easy-to-confuse attendance row key, session pay basis and tier mode field.
@@ -395,7 +396,7 @@ try {
   if (page === 'bookings') assert.equal(result.state.bookings.status_counts.completed, 1);
   if (page === 'reviews') assert.equal(result.state.reviews.average_rating, 4);
  }
- for (const page of ['dashboard', 'bookings', 'reviews', 'self']) {
+ for (const page of ['dashboard', 'bookings', 'self']) {
   const result = await gatherStewardContext({ scope: 'page', session: employeeSession, page, range, now, rpc: (name, args) => realRpc(employee, name, args) });
   assert.deepEqual(result.failures, [], `Actual employee ${page} RPCs must all succeed`); assertNoPrivateData(result);
   if (page === 'self') { assert.equal(result.state.attendance.approved_work_minutes, 450); assert.equal(result.state.attendance.settings.radius_m, 100); }

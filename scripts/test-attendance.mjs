@@ -13,7 +13,7 @@ for(const file of (await readdir(directory)).sort()){
   // Controlled clock in this local test database only. Production uses server now().
   await db.exec(`create table public.attendance_test_clock(at_time timestamptz);insert into public.attendance_test_clock values('2026-10-06T10:00:00+08:00');create function spa_private.attendance_test_now() returns timestamptz language sql stable as $$select at_time from public.attendance_test_clock$$;`);
  }
- if(['202610060001_employee_attendance.sql','202611220001_attendance_break_records.sql'].includes(file))sql=sql.replaceAll('now()','spa_private.attendance_test_now()');
+ if(['202610060001_employee_attendance.sql','202611220001_attendance_break_records.sql','202611260001_review_visibility_and_attendance_batches.sql'].includes(file))sql=sql.replaceAll('now()','spa_private.attendance_test_now()');
  await db.exec(sql);
 }
 const owner=randomUUID(),employee=randomUUID(),other=randomUUID(),staff=(await db.query("select id from spa_staff where active and employment_status='active' order by display_order limit 2")).rows;
@@ -168,6 +168,36 @@ check((await readBeds()).get(medium)===1,'cancellation releases the highest prio
 await db.query("update spa_appointments set status='cancelled' where id=$1",[appointment]);
 check(!(await call(owner,'spa_monthly_operations',['2026-10-01'])).days.find(day=>day.date==='2026-10-06').appointments.some(row=>row.id===appointment),'cancelled bookings do not occupy the operations calendar');
 await mkdir('work',{recursive:true});await writeFile('work/attendance-qa.json',JSON.stringify({owner,employee,settings,admin:await call(owner,'spa_attendance_admin',range),self:await call(employee,'spa_attendance_self',range),team:await call(owner,'spa_team_os'),catalog:await call(null,'spa_catalog'),profile:await call(employee,'spa_staff_self',range),dashboard:await call(owner,'spa_dashboard'),employeeSession:await call(employee,'spa_session'),ownerSession:await call(owner,'spa_session')}));
+// Review visibility follows the same owner-only rule through all private reads.
+const own=await call(employee,'spa_staff_self',range);
+check(!('reviews' in own)&&!('rating' in own.metrics)&&!('reviews' in own.metrics),'self data omits private review content and statistics');
+const snapshot=await call(employee,'spa_ai_business_snapshot',range);
+check(snapshot.staff.every(row=>!('reviews' in row)&&!('average_rating' in row)),'AI employee snapshot cannot access review statistics');
+const dueCases=[['2026-02-15','2026-02-16'],['2026-02-16','2026-02-28'],['2028-02-29','2028-02-29'],['2026-12-31','2026-12-31']];
+for(const [day,due] of dueCases)check((await db.query('select spa_private.attendance_release_date($1::date)::text due',[day])).rows[0].due===due,'Taiwan half-month release includes leap and year boundaries');
+const addPending=async(day,offset=0)=>(await db.query("insert into spa_attendance(staff_id,work_date,clock_in,clock_out,effective_start,effective_end,status) values($1,$2,$3::timestamptz+make_interval(mins=>$5),$4::timestamptz+make_interval(mins=>$5),$3::timestamptz+make_interval(mins=>$5),$4::timestamptz+make_interval(mins=>$5),'pending') returning *",[staff[0].id,day,day+'T10:00:00+08:00',day+'T11:00:00+08:00',offset])).rows[0];
+const semiOne=await addPending('2026-10-15'),semiTwo=await addPending('2026-10-15',60),secondHalf=await addPending('2026-10-16');
+await clock('2026-10-15T23:59:59+08:00');
+await reject(()=>call(owner,'spa_attendance_queue',['2026-10-01','2026-10-15']),/ATTENDANCE_PERIOD_NOT_READY/);
+await reject(()=>call(owner,'spa_attendance_batch_review',[[{id:semiOne.id,version:semiOne.version}],'too early']),/ATTENDANCE_PERIOD_NOT_READY/);
+await clock('2026-10-16T00:00:00+08:00');
+await reject(()=>call(employee,'spa_attendance_queue',[null,null]));
+const queue=await call(owner,'spa_attendance_queue',['2026-10-01','2026-10-15']);
+check(queue.rows.some(row=>row.id===semiOne.id)&&!queue.rows.some(row=>row.id===secondHalf.id),'16th releases first half and keeps second half separate');
+const batch=[{id:semiOne.id,version:semiOne.version},{id:semiTwo.id,version:semiTwo.version}];
+await reject(()=>call(employee,'spa_attendance_batch_review',[batch,'employee']),/FORBIDDEN/);
+await reject(()=>call(owner,'spa_attendance_batch_review',[[batch[0],{...batch[1],version:999}],'stale']),/ATTENDANCE_STALE/);
+check((await db.query('select status from spa_attendance where id=$1',[semiOne.id])).rows[0].status==='pending','one stale row rolls the entire batch back');
+check((await call(owner,'spa_attendance_batch_review',[batch,'半月出勤核准'])).approved_count===2,'one action approves two verified records');
+await reject(()=>call(owner,'spa_attendance_batch_review',[batch,'retry']),/ATTENDANCE_STALE/);
+const fresh=(await call(owner,'spa_attendance_admin',range)).rows.find(row=>row.id===semiOne.id);
+check(fresh.time_entry_id&&fresh.status==='approved','batch approval feeds normal payroll time entries');
+await clock('2026-10-30T23:59:59+08:00');
+await reject(()=>call(owner,'spa_attendance_queue',['2026-10-16','2026-10-31']),/ATTENDANCE_PERIOD_NOT_READY/);
+await clock('2026-10-31T00:00:00+08:00');
+check((await call(owner,'spa_attendance_queue',['2026-10-16','2026-10-31'])).rows.some(row=>row.id===secondHalf.id),'last day releases second half');
+await clock('2026-11-05T10:00:00+08:00');
+check((await call(owner,'spa_attendance_queue',[null,null])).periods.some(period=>period.from==='2026-10-16'&&period.pending_count>0),'unreviewed prior batches remain available after month rollover');
 await db.query("update spa_staff set active=false,employment_status='inactive' where id=$1",[staff[0].id]);await reject(()=>call(employee,'spa_attendance_self',range),/FORBIDDEN|STAFF_NOT_ACTIVE/);
 check(attendanceMinutes({effective_start:'2026-10-06T10:00:00Z',effective_end:'2026-10-06T11:00:35Z',break_minutes:10})===50,'UI net minutes use same rounding');
 check(taipeiInput('2026-10-06T16:15:00Z')==='2026-10-07T00:15'&&attendanceStamp('2026-10-07T00:15')==='2026-10-07T00:15:00+08:00','client conversion independent of host timezone');

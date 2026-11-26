@@ -16,6 +16,8 @@ const fixture={calendarReads:0,slotReads:0,shopReads:0,planReads:0,createRequest
 const role=params.get('role');
 const openAttendance=params.has('working')?{id:'fixture-attendance',clock_in:'2026-10-06T20:00:00+08:00',break_minutes:0}:null;
 const breaks=[];
+const batchAttendance=['batch-1','batch-2'].map((id,index)=>({id,version:1,staff_id:staff.id,employee:staff.name,work_date:'2026-11-10',status:'pending',effective_start:'2026-11-10T10:00:00+08:00',effective_end:'2026-11-10T18:00:00+08:00',break_minutes:60,flags:[]}));
+
 const adminRules=[1,3,5,6,7,8].map(version=>({id:`rule-${version}`,version_no:version,
  name:version===8?'技師薪資制度告知書 03-1':`測試薪資版本 ${version}`,
  effective_from:'2026-01-01',status:version===8?'draft':version===7?'active':'archived',calculation_engine:version>=7?'notice_v1':'ordered_v2'}));
@@ -48,6 +50,13 @@ window.fetch=async(input,init={})=>{
   if(name==='spa_team_os')return response({staff:[{...staff,phone:'0912000800',email:null,title:'試用技師',
    employment_type_name:'正職',hire_date:null,is_bookable:true,website_visible:true}],accounts:[],shifts:[],daily_shifts:[],time_off:[]});
   if(name==='spa_schedule_admin')return response({target_month:'2026-12-01',edit_open:false,staff:[],requests:[]});
+  if(name==='spa_public_reviews')return response([]);
+  if(name==='spa_attendance_queue')return response({settings:{address:'測試門店'},rows:batchAttendance,events:[],breaks:[],requests:[],period:{from:'2026-11-01',to:'2026-11-15'},periods:[{from:'2026-11-01',to:'2026-11-15',pending_count:2,request_count:0}]});
+  if(name==='spa_attendance_batch_review'){
+   fixture.batchRequest=args;
+   for(const row of batchAttendance)if(args.p_rows.some(picked=>picked.id===row.id))row.status='approved';
+   return response({approved_count:args.p_rows.length});
+  }
   if(name==='spa_attendance_admin')return response({settings:{address:'測試門店'},rows:[],events:[],requests:[],staff:[]});
   if(name==='spa_reviews_admin')return response({reviews:[],feedback:[]});
   if(name==='spa_payroll_admin')return response({rules:adminRules,staff:[],runs:[{id:'saved-run',rule_version_id:'rule-5',period_start:'2026-01-01',period_end:'2026-01-31',status:'finalized'}],preview:[],rates:[],tiers:[]});
@@ -90,7 +99,7 @@ window.fetch=async(input,init={})=>{
   }
   return failure();
 };
-const [{default:Booking},{default:Shop},{EmployeeSchedulePlanner},{default:Admin},{ApplicationBoundary},{supabase}]=await Promise.all([import('../../src/PublicBookingExperience.jsx'),import('../../src/Shop.jsx'),import('../../src/StaffPortal.jsx'),import('../../src/Admin.jsx'),import('../../src/ApplicationBoundary.jsx'),import('../../src/lib/spa.js')]);
+const [{default:Booking},{default:Home},{default:Shop},{EmployeeSchedulePlanner},{default:Admin},{ApplicationBoundary},{supabase}]=await Promise.all([import('../../src/PublicBookingExperience.jsx'),import('../../src/App.jsx'),import('../../src/Shop.jsx'),import('../../src/StaffPortal.jsx'),import('../../src/Admin.jsx'),import('../../src/ApplicationBoundary.jsx'),import('../../src/lib/spa.js')]);
 let authListener;
 supabase.auth.getSession=async()=>{if(params.get('outcome')==='session-read'&&fixture.failSession)throw new TypeError('Failed to fetch');return {data:{session:{user:{id:'fixture-user',email:'fixture@example.invalid'}}},error:null};};
 supabase.auth.onAuthStateChange=callback=>{authListener=callback;return {data:{subscription:{unsubscribe(){}}}};};
@@ -102,6 +111,7 @@ function Fixture(){
   fixture.refreshBooking=()=>setData(current=>({...current}));
   fixture.reloadPlan=()=>setVersion(value=>value+1);
   const mode=new URLSearchParams(location.search).get('mode');
+  if(mode==='home')return <Home/>;
   if(mode==='shop')return <Shop onNavigateHome={()=>{}}/>;
   if(mode==='staff')return <div className="ops"><main><EmployeeSchedulePlanner refreshToken={version}/></main></div>;
   if(mode==='admin')return <ApplicationBoundary><Admin/></ApplicationBoundary>;

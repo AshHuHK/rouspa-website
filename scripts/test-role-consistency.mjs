@@ -29,6 +29,8 @@ for(const name of ['spa_dashboard','spa_reviews_admin','spa_staff_self'])await r
 check((await call(employee,'spa_session',[],Math.floor(Date.now()/1000)-60)).role===null,'reset password revokes old session identity');
 await admin('spa_role_profile_save',['audit_assistant','營運助理',['dashboard.view','appointments.view','reviews.view'],true,50]);
 await admin('spa_staff_account_link',[people[1].id,freshUser,'audit_assistant',true,false,'audit_custom']);
+check(!(await call(freshUser,'spa_session')).permissions.includes('reviews.view'),'session excludes employee review permission even if the role lists it');
+await reject(()=>call(freshUser,'spa_reviews_admin'),/FORBIDDEN/);
 check((await call(freshUser,'spa_session')).role==='audit_assistant','owner-created custom role can be assigned to a staff account');
 await reject(()=>call(freshUser,'spa_payroll_admin',['2026-01-01','2026-01-31',null]),/FORBIDDEN/);
 await admin('spa_role_profile_save',['audit_assistant','營運助理',[],false,50]);

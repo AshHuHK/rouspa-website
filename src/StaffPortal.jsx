@@ -21,22 +21,22 @@ async function accountAction(body) {
  return data;
 }
 export function StaffAccountForm({row,account,saved,roles=[]}) {
- const [mode,setMode] = useState(account?'access':'create'), [username,setUsername] = useState(account?.username || ''), [password,setPassword] = useState(''), [passwordConfirm,setPasswordConfirm] = useState('');
+ const [mode,setMode] = useState(account?'access':'create'), [username,setUsername] = useState(account?.username || (row.phone||'').replace(/\D/g,'')), [password,setPassword] = useState(''), [passwordConfirm,setPasswordConfirm] = useState('');
  const [role,setRole] = useState(account?.role || 'therapist'), [active,setActive] = useState(account?.active ?? true);
  const choices=roles.filter(r=>r.code!=='owner'&&r.active).length?roles.filter(r=>r.code!=='owner'&&r.active):Object.entries(staffRoleNames).filter(([id])=>id!=='owner').map(([code,name])=>({code,name}));
  return <><p>{row.name} · {account?.username || '尚未建立登入帳號'}</p>
  {account && <nav>{[['access','角色與登入權限'],['password','重設密碼'],['username','修改登入帳號']].map(([id,label])=><button key={id} onClick={()=>{setMode(id);setPassword('');setPasswordConfirm('');}} className={mode===id?'active':''}>{label}</button>)}</nav>}
  <MutationForm key={mode} action={()=>accountAction({action:mode,staff_id:row.id,...(mode==='create'?{username,password:confirmedStaffPassword(password,passwordConfirm),role}:mode==='password'?{password:confirmedStaffPassword(password,passwordConfirm)}:mode==='username'?{username}:{role,active})})} onSaved={saved} submit={mode==='create'?'建立帳號':mode==='password'?'確認重設密碼':mode==='username'?'確認修改登入帳號':'儲存登入權限'}>
  <div className="form-grid">
- {['create','username'].includes(mode) && <Field wide label="登入使用者名稱"><input required autoComplete="off" minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" value={username} onChange={e=>setUsername(e.target.value)}/></Field>}
- {['create','password'].includes(mode) && <Field wide label="設定密碼（至少 12 個字元）"><input required type="password" autoComplete="new-password" minLength={12} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/></Field>}
- {['create','password'].includes(mode) && <Field wide label="再次輸入密碼"><input required type="password" autoComplete="new-password" minLength={12} maxLength={128} value={passwordConfirm} onChange={e=>setPasswordConfirm(e.target.value)}/></Field>}
+ {['create','username'].includes(mode) && <Field wide label="登入帳號（電話號碼）"><input required autoComplete="off" inputMode="tel" minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" value={username} onChange={e=>setUsername(e.target.value)}/></Field>}
+ {['create','password'].includes(mode) && <Field wide label="設定密碼（6～7 位數字）"><input required type="password" autoComplete="new-password" inputMode="numeric" pattern="[0-9]{6,7}" minLength={6} maxLength={7} value={password} onChange={e=>setPassword(e.target.value)}/></Field>}
+ {['create','password'].includes(mode) && <Field wide label="再次輸入密碼"><input required type="password" autoComplete="new-password" inputMode="numeric" pattern="[0-9]{6,7}" minLength={6} maxLength={7} value={passwordConfirm} onChange={e=>setPasswordConfirm(e.target.value)}/></Field>}
  {['create','access'].includes(mode) && <Field label="後台角色"><select value={role} onChange={e=>setRole(e.target.value)}>{choices.map(item=><option key={item.code} value={item.code}>{item.name}</option>)}</select></Field>}
  {mode==='access' && <Field label="後台登入"><select value={String(active)} onChange={e=>setActive(e.target.value==='true')}><option value="true">啟用</option><option value="false">停用</option></select></Field>}
  </div><p className="muted">角色權限由店主在「角色與權限」統一設定；職稱、薪酬與登入角色彼此獨立，店主帳號保持不變。</p>
  {mode==='password' && <p className="muted">密碼無法查看。重設後舊後台會話失效，請由門店把新密碼交給本人，再重新登入。</p>}
  {mode==='username' && <p className="muted">修改後請使用新使用者名稱登入。原密碼不變，舊後台會話失效。</p>}
- {mode==='create' && <p className="muted">使用者名稱限 3～32 字元的英文字母、數字、點、底線或連字號，忽略大小寫。員工不需要提供電子郵件。</p>}
+ {mode==='create' && <p className="muted">預設使用員工電話號碼作為帳號，密碼可用 6～7 位數字。電話開頭的 0 會保留。</p>}
  </MutationForm></>;
 }
 export function StaffArchiveForm({row,saved}) {
@@ -84,7 +84,7 @@ export function StaffSchedule({data,onReload}) {
   </details>}
  </section>;
 }
-export function StaffSelf({data,from,to,onReload,showWorkday=true}) {
+export function StaffSelf({data,from,to,onReload,showWorkday=true,showReviews=false}) {
  const [sourcesOpen,setSourcesOpen]=useState(false);
  if (!data.profile) return <Empty>此帳號尚未綁定人員資料，請由店主在「人員管理」配置登入帳號。</Empty>;
  const s=data.profile,m=data.metrics,wage=data.payroll;
@@ -94,11 +94,11 @@ export function StaffSelf({data,from,to,onReload,showWorkday=true}) {
  {notice?<><p>{wage.role} · {wage.notice_category==='04'?'依合作比例計酬':payLabel(s)}</p><p className="muted">累計完成 {data.lifetime_completed} 堂。服務抽成與指定客資格請查看本期薪資明細。</p></>
  :<><p>{s.title} · {s.employment_type}{!missingMonth&&' · '+payLabel(s)}</p>{!missingMonth&&<p>基本服務提成 {(Number(s.commission_bps)/100).toFixed(2)}% · 商品銷售提成 {(Number(s.product_commission_bps)/100).toFixed(2)}% · 指定客服務加成 {(Number(s.designated_client_bonus_bps||0)/100).toFixed(2)}%</p>}<p className="muted">累計完成 {data.lifetime_completed} 堂。</p></>}
  </div>
- <MetricTiles label="個人服務指標" items={[['實際完成療程',m.completed],['已結帳／待結帳',`${m.settled_completed} / ${m.unsettled_completed}`],['已結帳服務分鐘',wage?.service_minutes??m.minutes],[m.payroll_status==='finalized'?'已結算提成':'本期試算提成',missingMonth?'—':money(commission)],['平均評分／評價數',`${m.rating??'—'} / ${m.reviews}`]]}/>
+ <MetricTiles label="個人服務指標" items={[['實際完成療程',m.completed],['已結帳／待結帳',`${m.settled_completed} / ${m.unsettled_completed}`],['已結帳服務分鐘',wage?.service_minutes??m.minutes],[m.payroll_status==='finalized'?'已結算提成':'本期試算提成',missingMonth?'—':money(commission)],...(showReviews?[['平均評分／評價數',`${m.rating??'—'} / ${m.reviews}`]]:[])]}/>
  <section className="card">{missingMonth?<p>請選擇同一個月份查看薪資。</p>:<><div className="os-page-title"><div><p className="muted">{m.payroll_status==='finalized'?'本期已結算應發':'本期應發試算'}</p><strong className="metric">{money(m.total_cents)}</strong></div><button onClick={()=>setSourcesOpen(true)}>核對我的薪資來源</button></div><p className="muted">完成堂數、提成與評價均依實際服務技師計入。可核對本薪、提成、出勤、加班與加扣的來源；試算金額仍須店主確認結算。</p></>}</section>
  {sourcesOpen&&!missingMonth&&<Modal title="我的薪資來源" onClose={()=>setSourcesOpen(false)}><PayrollSources staffId={wage?.staff_id||s.id} from={from} to={to} expectedRow={wage}/></Modal>}
- <h2>我的評價</h2>{!data.reviews.length&&<Empty>這段期間尚未收到評價。</Empty>}{data.reviews.map((r,i)=><article className="card" key={i} style={{marginTop:12}}><h3>{'★'.repeat(r.rating)} · {r.service_name}</h3><p className="muted">{r.reference} · {dateTime(r.created_at)} · {{pending:'待審核',published:'已公開',hidden:'未公開'}[r.status]}</p><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{r.comment || '僅評分'}</p>{r.reply&&<p>店家回覆：{r.reply}</p>}</article>)}
- <p className="muted">最多顯示最近 100 則，評價總數包含整個所選期間。</p></>;
+ {showReviews&&<> <h2>我的評價</h2>{!data.reviews.length&&<Empty>這段期間尚未收到評價。</Empty>}{data.reviews.map((r,i)=><article className="card" key={i} style={{marginTop:12}}><h3>{'★'.repeat(r.rating)} · {r.service_name}</h3><p className="muted">{r.reference} · {dateTime(r.created_at)} · {{pending:'待審核',published:'已公開',hidden:'未公開'}[r.status]}</p><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{r.comment || '僅評分'}</p>{r.reply&&<p>店家回覆：{r.reply}</p>}</article>)}
+ <p className="muted">最多顯示最近 100 則，評價總數包含整個所選期間。</p></>}</>;
 }
 const minutes=n=>`${n>=1440?'翌日 ':''}${String(Math.floor(n/60)%24).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 export function EmployeeCustomer({row}) {

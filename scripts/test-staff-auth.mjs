@@ -6,7 +6,7 @@ async function load(file){const source=(await readFile(new URL('../supabase/func
 const {createStaffHandler}=await load('staff-accounts'),{createLoginHandler}=await load('staff-login');
 // Preflight runs before credentials and must work on both canonical and legacy
 // domains. A malformed deployed www entry previously blocked every staff login.
-for(const [createHandler,version] of [[createStaffHandler,'20261026-01'],[createLoginHandler,'20261025-01']]) {
+for(const [createHandler,version] of [[createStaffHandler,'20261126-01'],[createLoginHandler,'20261025-01']]) {
  const handler=createHandler({clientFactory:()=>{throw new Error('Preflight must not reach Auth');},environment:()=>undefined});
  for(const origin of ['https://www.rouspa.tw','https://rouspa.tw','capacitor://localhost','http://localhost:5173','http://127.0.0.1:4178']) {
   const response=await handler(new Request('https://example.test/functions/v1/staff-login',{method:'OPTIONS',headers:{origin,'access-control-request-method':'POST','access-control-request-headers':'apikey,authorization,content-type,x-client-info'}}));
@@ -44,6 +44,15 @@ f=fixture({invalidToken:true});r=await f.handler(request(payload));check(r.statu
 for(const role of ['therapist','manager','receptionist','customer']){f=fixture({role});r=await f.handler(request(payload));check(r.status===403&&!f.events.some(e=>e.key==='server-secret'),'only owner can administer accounts');}
 f=fixture();r=await f.handler(request(payload,{headers:{origin:'https://evil.test'}}));check(r.status===403&&f.events.length===0,'unknown origin rejected');
 for(const body of [{...payload,role:'owner'},{...payload,role:'Bad Role'},{...payload,staff_id:'not-a-uuid'},{...payload,username:'xx'},{...payload,password:'short'},'not json']){f=fixture({account:false});r=await f.handler(request(body));check(r.status===400&&!f.events.some(e=>e.key==='server-secret'),'bad inputs cannot reach Auth Admin');}
+for(const password of ['012345','0123456']) {
+ f=fixture({account:false});r=await f.handler(request({...payload,username:'0912345678',password}));
+ check(r.status===200&&f.events.find(event=>event.name==='auth.create').args.password===password,'six and seven digit PIN preserves leading zeros');
+ check(f.events.find(event=>event.name==='spa_staff_account_link').args.p_username==='0912345678','phone-number login links as text');
+}
+for(const password of ['12345','12345678','12a456','1234567 ']) {
+ f=fixture({account:false});r=await f.handler(request({...payload,password}));
+ check(r.status===400&&!f.events.some(event=>event.name==='auth.create'),'invalid short PIN is rejected before account creation');
+}
 f=fixture({account:false});r=await f.handler(request({...payload,role:'spa_lead'}));check(r.status===200&&f.events.find(e=>e.name==='spa_staff_account_link').args.p_role==='spa_lead','custom configured role reaches database authorization');
 f=fixture();r=await f.handler(request(payload));check(r.status===409&&!f.events.some(e=>e.name==='auth.create'),'duplicate create is not replayed');
 f=fixture({account:false});r=await f.handler(request(payload));const created=await r.json();check(r.status===200&&created.username==='rou_staff'&&!('password' in created)&&!('email' in created),'create response contains username only');

@@ -1277,7 +1277,7 @@ export default function RouSpa({ lang = "zh", onNavigateShop, onNavigateContact,
             <div className="service-vertical-list formula-list onsite-service-list">{websiteAddonGroup.services.map(addon=>{
               const key='onsite-'+addon.id;
               const details=serviceRituals(addon);
-              return <FormulaCard key={key} stamp={addon.stamp||details[0].stamp} name={publicName(addon,lang)} price={money(addon.price_cents)} steps={details.flatMap(card=>card.steps)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;
+              return <FormulaCard key={key} stamp={addon.stamp||details[0].stamp} name={<>{publicName(addon,lang)}{addon.duration_minutes>0&&<span className="onsite-duration">{addon.duration_minutes}{lang==='zh'?'分':' min'}</span>}</>} price={money(addon.price_cents)} steps={details.flatMap(card=>card.steps)} isOpen={openFormula===key} onToggle={()=>toggleFormula(key)}/>;
             })}</div>
           </section>}
           <p className="service-contact"><a href={CONFIG.LINE_URL} target="_blank" rel="noopener noreferrer">{lang === "zh" ? "療程諮詢 · 聯絡 LINE" : "Questions about treatments? Contact us on LINE"} ↗</a></p>

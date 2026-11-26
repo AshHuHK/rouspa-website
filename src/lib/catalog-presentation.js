@@ -68,9 +68,9 @@ export function serviceAddonGroup(addons = [], lang = 'zh') {
 }
 
 const onsiteMenu = [
-  { id: 'onsite-manual-massage', aliases: ['拳推按摩', '按摩項目'], name: '拳推按摩', name_en: 'Fist-pressure massage', stamp: '按', price_cents: 120000 },
-  { id: 'onsite-dry-head-care', aliases: ['乾式頭療'], name: '乾式頭療', name_en: 'Dry head treatment', stamp: '乾', price_cents: 120000 },
-  { id: 'onsite-head-moxa', aliases: ['頭部溫罐艾灸'], name: '頭部溫罐艾灸', name_en: 'Warming cup moxibustion for the head', stamp: '艾', price_cents: 50000 },
+  { id: 'onsite-manual-massage', aliases: ['拳推按摩', '按摩項目'], name: '拳推按摩', name_en: 'Fist-pressure massage', stamp: '按', duration_minutes: 60, price_cents: 120000 },
+  { id: 'onsite-dry-head-care', aliases: ['乾式頭療'], name: '乾式頭療', name_en: 'Dry head treatment', stamp: '乾', duration_minutes: 60, price_cents: 120000 },
+  { id: 'onsite-head-moxa', aliases: ['頭部溫罐艾灸'], name: '頭部溫罐艾灸', name_en: 'Warming cup moxibustion for the head', stamp: '艾', duration_minutes: 40, price_cents: 52000 },
 ];
 
 export function homeOnsiteServices(addons = []) {

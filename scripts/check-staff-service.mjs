@@ -3,7 +3,7 @@ import { PUBLIC_SUPABASE_URL } from '../src/lib/public-config.js';
 
 // Read-only deployment smoke check: OPTIONS never looks up an employee, uses a
 // password or creates a login attempt. Do not replace with real credentials.
-const versions = {'staff-login':'20261025-01','staff-accounts':'20261026-01'};
+const versions = {'staff-login':'20261025-01','staff-accounts':'20261126-01'};
 for (const name of ['staff-login', 'staff-accounts']) {
   for (const origin of ['https://www.rouspa.tw', 'https://rouspa.tw', 'capacitor://localhost', 'https://untrusted.example']) {
     const response = await fetch(`${PUBLIC_SUPABASE_URL}/functions/v1/${name}`, {

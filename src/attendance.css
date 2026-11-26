@@ -27,3 +27,7 @@
 .ops .attendance-quick-request label { flex: 1 1 200px; min-width: 0; margin: 0; }
 .ops .attendance-quick-request form .actions { margin: 0; }
 .ops .attendance-quick-request form .alert { order: 1; flex-basis: 100%; }
+
+.ops .attendance-batch-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 18px; }
+.ops label.attendance-select { display: inline-flex; flex-direction: row; align-items: center; gap: 8px; margin: 0; }
+.ops .attendance-select input[type=checkbox] { width: 18px; height: 18px; min-height: 18px; flex-shrink: 0; }
