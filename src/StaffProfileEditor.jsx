@@ -45,6 +45,7 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
   return <MutationForm action={action} onSaved={saved}>
     {retiredTitle&&<p className="alert" role="alert">原「首席調理師」職務已移除。人員、帳號、歷史預約、評價與薪資快照仍保留；請由店主明確選擇七階、兼職或承攬技師職稱後，才可重新接服務。</p>}
     {title?.legacy && <p className="alert">這位人員仍使用舊職稱。請由店主選定新職級；系統不會依年資擅自升等。對應前的新制度薪資只能試算，不能完成結算。</p>}
+    <p className="muted">排班模式為自由排班，職務提醒由「職務與排班提醒」集中維護。</p>
     <div className="form-grid">
       {text('姓名', 'name', 'text', { required: true, maxLength: 80 })}
       {text('英文姓名', 'name_en', 'text', { maxLength: 80 })}

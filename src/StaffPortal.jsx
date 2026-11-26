@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase, rpc, errorText, money, dateTime } from './lib/spa.js';
 import { Field, MutationForm, Empty, Modal, MetricTiles } from './OperationsShared.jsx';
+import { ScheduleReminder } from './ScheduleReminders.jsx';
 import { AttendanceEmployee } from './Attendance.jsx';
 import PayrollSources from './PayrollSources.jsx';
 import { confirmedStaffPassword } from './lib/staff-account.js';
@@ -47,7 +48,19 @@ export function StaffArchiveForm({row,saved}) {
  <Field label="處理原因"><textarea required maxLength={1000} value={reason} onChange={e=>setReason(e.target.value)}/></Field></MutationForm>;
 }
 function scheduleCells(month){const [y,m]=month.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)),pad=(first.getUTCDay()+6)%7,last=new Date(Date.UTC(y,m,0)).getUTCDate(),out=Array(pad).fill(null);for(let day=1;day<=last;day++)out.push(`${month}-${String(day).padStart(2,'0')}`);while(out.length%7)out.push(null);return out;}
-function ScheduleTime({label,value,onChange,disabled}){return <Field label={label}><select disabled={disabled} value={value} onChange={e=>onChange(Number(e.target.value))}>{Array.from({length:97},(_,i)=>i*30).map(n=><option key={n} value={n}>{minutes(n)}</option>)}</select></Field>}
+function ScheduleTime({label,value,onChange,disabled}){
+ const minute=Number(value)||0,day=Math.floor(minute/1440),clock=String(Math.floor(minute%1440/60)).padStart(2,'0')+':'+String(minute%60).padStart(2,'0');
+ return <div className="schedule-time-control">
+  <Field label={label}><input type="time" required step="60" disabled={disabled} value={clock} onChange={event=>{
+   if(!event.target.value)return;
+   const [hour,minute]=event.target.value.split(':').map(Number);
+   onChange(day*1440+hour*60+minute);
+  }}/></Field>
+  <Field label={label+'日期'}><select disabled={disabled} value={day} onChange={event=>onChange(Number(event.target.value)*1440+minute%1440)}>
+   <option value={0}>當日</option><option value={1}>翌日</option>{day===2&&<option value={2}>後日</option>}
+  </select></Field>
+ </div>;
+}
 export function EmployeeSchedulePlanner({refreshToken,onReload}){
  const [plan,setPlan]=useState(null),[draft,setDraft]=useState({}),[selected,setSelected]=useState(''),[reason,setReason]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const sequence=useRef(0),[loading,setLoading]=useState(false);
@@ -60,7 +73,8 @@ export function EmployeeSchedulePlanner({refreshToken,onReload}){
  async function submit(){if(busy)return;setBusy(true);setError('');setNotice('');try{await rpc('spa_staff_schedule_submit',{p_month:plan.target_month,p_days:Object.values(draft).map(day=>({date:day.business_date,is_working:day.is_working,start_minute:Number(day.start_minute),end_minute:Number(day.end_minute)}))});setNotice('下月班表已完成提交，店主後台和營運月表已同步。');await load();await onReload?.();}catch(e){setError(errorText(e));}finally{setBusy(false);}}
  async function request(){if(busy||!current)return;setBusy(true);setError('');setNotice('');try{await rpc('spa_staff_schedule_request',{p_date:selected,p_working:current.is_working,p_start:Number(current.start_minute),p_end:Number(current.end_minute),p_reason:reason});setReason('');setNotice('更動申請已送出，店主核准後會自動套用。');await load();await onReload?.();}catch(e){setError(errorText(e));}finally{setBusy(false);}}
  return <section id="my-schedule" className="card staff-schedule-self"><div className="staff-schedule-heading"><div><p className="eyebrow">NEXT MONTH ROSTER</p><h2>{month.replace('-',' 年 ')} 月自助排班</h2><p className="muted">每月 1–7 日可編輯下個月；只在按「完成修改」後一次寫入正式班表。8 日起由台灣伺服器鎖定，需改用更動申請。</p></div><span className={`badge ${plan.edit_open?'ok':'locked'}`}>{plan.edit_open?'開放編輯':'已經鎖定'}</span></div>
- <div className="staff-schedule-status"><span>{plan.submission?`已提交第 ${plan.submission.version} 版 · ${dateTime(plan.submission.submitted_at)}`:'本月尚未提交'}</span><span>每日最多 {plan.max_off_per_day} 人休班</span></div>
+ <div className="staff-schedule-status"><span>{plan.submission?`已提交第 ${plan.submission.version} 版 · ${dateTime(plan.submission.submitted_at)}`:'本月尚未提交'}</span><span>自由排班</span></div>
+ <ScheduleReminder value={plan.schedule_reminder}/>
  <div className="staff-schedule-layout"><div className="schedule-calendar-scroll" role="region" aria-label="下月班表，手機可左右捲動" tabIndex={0}><div className="schedule-weekdays">{['一','二','三','四','五','六','日'].map(x=><span key={x}>週{x}</span>)}</div><div className="schedule-month-grid">{scheduleCells(month).map((date,i)=>date?<button type="button" key={date} aria-pressed={selected===date} aria-label={`${date}，${draft[date]?.is_working?`上班 ${minutes(draft[date].start_minute)}至${minutes(draft[date].end_minute)}`:'休班'}，${draft[date]?.appointment_count||0} 筆預約`} className={`${selected===date?'selected':''} ${draft[date]?.is_working?'working':'off'} ${draft[date]?.appointment_count?'booked':''}`} onClick={()=>setSelected(date)}><strong>{Number(date.slice(-2))}</strong><small aria-hidden="true">{draft[date]?.is_working?<><span>{minutes(draft[date].start_minute)}</span><span>{minutes(draft[date].end_minute)}</span></>:'休班'}</small>{draft[date]?.appointment_count>0&&<em>{draft[date].appointment_count} 約</em>}</button>:<span className="outside" key={`blank-${i}`}/>)}</div></div>
  {current&&<aside className="schedule-self-editor"><p className="eyebrow">SELECTED DAY</p><h3>{selected}</h3><Field label="當天狀態"><select value={String(current.is_working)} onChange={e=>{const working=e.target.value==='true';if(!working&&!current.can_turn_off){setError('當天已有預約，員工不能自行改為休班；請先交由店主處理預約。');return;}setError('');setCurrent({is_working:working});}}><option value="true">上班／開放預約</option><option value="false">休班／不開放預約</option></select></Field>{current.is_working&&<div className="form-grid"><ScheduleTime label="開始" value={current.start_minute} onChange={value=>setCurrent({start_minute:value})}/><ScheduleTime label="結束" value={current.end_minute} onChange={value=>setCurrent({end_minute:value})}/></div>}<p className="muted">目前已有 {current.appointment_count} 筆預約；當天休班人數 {current.off_count} 人。</p>{plan.edit_open?<button className="primary" disabled={busy||!changed} onClick={submit}>{busy?'提交中…':'完成修改並同步'}</button>:<><Field label="更動原因"><textarea required maxLength="1000" value={reason} onChange={e=>setReason(e.target.value)} placeholder="說明為什麼需要更改這一天"/></Field><button className="primary" disabled={busy||reason.trim().length<2} onClick={request}>{busy?'送出中…':'送出更動申請'}</button></>}</aside>}</div>
  {error&&<p className="alert" role="alert">{error}</p>}{notice&&<p className="success" role="status">{notice}</p>}

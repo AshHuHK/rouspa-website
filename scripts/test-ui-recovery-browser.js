@@ -224,6 +224,13 @@ await expect(page.getByRole('heading',{name:'我的評價',exact:true})).toHaveC
 expect(await page.evaluate(()=>Object.keys(window.uiFixture.adminReads))).not.toContain('spa_reviews_admin');checks++;
 await page.goto(ownerUrl,{waitUntil:'domcontentloaded'});
 await page.getByRole('navigation',{name:'後台主要功能'}).getByRole('button',{name:'人員與排班',exact:true}).click();
+await page.getByRole('button',{name:'職務與排班提醒',exact:true}).click();
+const reminderDialog=page.getByRole('dialog',{name:'職務與排班提醒'});
+const fullTimeReminder=reminderDialog.getByLabel('正職人員排班提醒文字');
+await fullTimeReminder.fill('排班提醒可以自行修改。');
+await fullTimeReminder.locator('..').locator('..').getByRole('button',{name:'儲存提醒',exact:true}).click();
+await expect.poll(()=>page.evaluate(()=>window.uiFixture.reminders[0].reminder_text)).toBe('排班提醒可以自行修改。');checks++;
+await reminderDialog.getByRole('button',{name:'關閉',exact:true}).click();
 const review=page.locator('#attendance-review');
 await expect(review.getByLabel('半月審核批次')).toBeVisible();checks++;
 await review.getByLabel('選取本批次待審核紀錄').check();
@@ -245,4 +252,20 @@ for(const width of [320,375,390,430,1440]){
  }));
  expect(prices.every(row=>row.fits&&row.visible)).toBe(true);checks++;
 }
+await page.goto(fixtureUrl+'?mode=staff',{waitUntil:'domcontentloaded'});
+await page.waitForFunction(()=>typeof window.uiFixture?.reloadPlan==='function');
+for(const [role,name] of [['full_time','正職人員'],['contractor','承攬人員'],['part_time_hourly','兼職時薪人員'],['part_time_monthly','兼職月薪人員']]){
+ await page.evaluate(role=>{window.uiFixture.scheduleRole=role;window.uiFixture.reloadPlan();},role);
+ const banner=page.getByRole('complementary',{name:'職務排班提醒'});
+ await expect(banner.getByRole('heading')).toHaveText(name+'排班提醒');checks++;
+ if(role==='contractor')await expect(banner.getByText('以上受僱人員的排班規範均不影響依法享有的請假權益。')).toHaveCount(0);
+ else await expect(banner.getByText('以上受僱人員的排班規範均不影響依法享有的請假權益。')).toBeVisible();
+ checks++;
+}
+await page.getByLabel('開始',{exact:true}).fill('10:17');
+await page.getByLabel('結束',{exact:true}).fill('11:02');
+await expect(page.getByLabel('開始',{exact:true})).toHaveValue('10:17');checks++;
+await page.evaluate(()=>{window.uiFixture.reminders.find(row=>row.role_code===window.uiFixture.scheduleRole).reminder_text='';window.uiFixture.reloadPlan();});
+await expect(page.getByRole('complementary',{name:'職務排班提醒'})).toHaveCount(0);checks++;
+await expect(page.getByText('每日最多',{exact:false})).toHaveCount(0);checks++;
 return {checks,productionRequests:0};

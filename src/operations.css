@@ -329,3 +329,12 @@
 
 .ops .bed-suggestion { width: max-content; max-width: 100%; margin: 3px 6px 3px 0; }
 .ops .bed-pending { border-color: #b68c61; color: #764a2d; background: #ecd5ba; }
+
+.ops .staff-schedule-reminder { margin: 16px 0; padding: 16px 18px; border: 1px solid #d6b969; border-radius: 10px; background: #fff2c9; color: #57412a; }
+.ops .staff-schedule-reminder h3 { margin: 0 0 8px; font-size: 16px; color: #57412a; }
+.ops .staff-schedule-reminder p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.9; }
+.ops .staff-schedule-reminder .staff-schedule-rights { margin-top: 10px; font-size: 13px; }
+.ops .schedule-reminder-editor { margin-block: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.ops .schedule-reminder-editor textarea { min-height: 140px; }
+.ops .schedule-time-control { display: grid; gap: 8px; min-width: 0; }
+.ops .schedule-time-control input { min-width: 0; width: 100%; }

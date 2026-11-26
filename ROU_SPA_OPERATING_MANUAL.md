@@ -253,7 +253,7 @@
 
 系統不再為新預約保存或分配第 1–4 號位置，前後台也不提供位置編號的日常操作。舊記錄的關聯欄位及既有值保留，只供歷史完整性與舊資料追查；它們不參與新預約、改期、公開可約人數、同時接客高峰或技師衝突判斷。
 
-「系統設定 → 預約」的後台天數、確認方式、取消期限、休班上限及建議接客上限會一次保存；任一欄驗證失敗則整份不變，不會只保存部分設定。此處不改每週營業時間，營業設定仍由原營業表單維護。來源：[預約設定整筆保存](supabase/migrations/202610120003_atomic_booking_settings.sql)。
+「系統設定 → 預約」的後台天數、確認方式、取消期限及建議接客上限會一次保存；任一欄驗證失敗則整份不變，不會只保存部分設定。此處不改每週營業時間，營業設定仍由原營業表單維護。來源：[預約設定整筆保存](supabase/migrations/202610120003_atomic_booking_settings.sql)。
 
 自動分配先選**當天已安排服務分鐘較少**的合格技師，再依員工顯示順序。工作量來自預約保存的療程分鐘快照，排除取消與未到店；不是單純比較預約筆數，不代表輪班公平保證，也不是已結帳收入分配。
 
@@ -344,7 +344,11 @@
 
 提交必須包含下月每一天且不重複，不接受零散一天或不同月份。任何一天無效／衝突時整次不成功，需修正再交。
 
-**同日員工休班上限**初始 2 人，店主「系統設定 → 預約規則」可改 0–20。員工把目前有效上班日改成休班時，會計算其他在職啟用未封存員工的有效休班人數；達上限就不能再新增休班。既有休班可保留並重交，即使店主後來額外核准他人休班而超限，也不阻止原休班重交。上限不是每人每月休假天數，不是勞動法定假別，更不是把請假時段全部換算成一整天的限制。
+**所有職務採自由排班**。正職、兼職月薪、兼職時薪及承攬都能選擇上班／休班日期與分鐘級起迄時間；沒有每月最低／最高班數、20／22 天、週五六日必到、承攬每日最少 4 小時或每月事假次數的提交檢查。同日休班人數上限已停止限制，系統設定及員工頁已移除此選項。技師服務資格、門店營業及既有預約衝突仍依正式資料檢查。
+
+「人員與排班 → 職務與排班提醒」由店主集中編輯四種職務的「排班提醒文字」。每種職務共用一份內容，最多 4,000 字；清空後按「儲存提醒」即隱藏員工提示，也可再填入新內容。多人同時編輯時，版本已變動會拒絕覆蓋，請重新開啟核對。預設文字採店主提供的四段原文，文字中的天數、星期、時數及事假次數只作提醒，保存文字不會新增排班驗證。
+
+員工日曆上方用淺黃色底搭配深色文字顯示。目前生效的 01／02／03／04 技師薪資類別分別對應正職／兼職月薪／兼職時薪／承攬；尚未設定技師薪資類別者，依人事聘僱及職稱薪酬方式判斷。更換所屬類別或店主儲存提醒後，重新讀取班表便取得最新對應文字，毋須為每個人另設提醒。受僱職務提示下方顯示「以上受僱人員的排班規範均不影響依法享有的請假權益。」
 
 未提交並非自動清空：**既有指定日期覆蓋優先，沒有才沿用固定每週班表；兩者都沒有就是休班**。下月公開空檔不會等每個員工交完才統一開放，系統持續用目前有效正式班表。店主面板的「尚未提交・將沿用每週班表」是簡寫，已有日期覆蓋仍優先。
 
@@ -356,7 +360,7 @@
 
 伺服器申請範圍包含「今天至下月月底」，過去日期不能申請；每月 1–7 日的下月日期必須走整月自助提交，不能改送申請。**目前員工頁只顯示下月月曆**，沒有本月日期入口，因此員工目前不能在此畫面申請本月調班；本月臨時調整交門店處理。
 
-店主／有 `team.manage` 人員，在「人員與排班」的員工班表區查看待審內容及原因，可填選填審批備註（最多 1,000 字），按「核准並套用」或「不核准」。核准立即更新該日每日正式班表，拒絕保留原班表。已審過不能重審。核准時再次確認日期尚未過、員工仍在職及不損害既有預約；不合就失敗，不能靠核准繞過預約衝突。店主核准／直接排班**不受員工自助休班人數上限阻擋**，但仍受上述衝突保護。
+店主／有 `team.manage` 人員，在「人員與排班」的員工班表區查看待審內容及原因，可填選填審批備註（最多 1,000 字），按「核准並套用」或「不核准」。核准立即更新該日每日正式班表，拒絕保留原班表。已審過不能重審。核准時再次確認日期尚未過、員工仍在職及不損害既有預約；不合就失敗，不能靠核准繞過預約衝突。員工提交與店主核准／直接排班都採自由排班，既有預約衝突仍須處理後才能改班。
 
 ### 7.2 店主直接排班與休假
 
@@ -368,7 +372,7 @@
 
 「休假／封鎖」以完整開始、結束時間封鎖，可用於請假、休息、訓練等，不等同整日休班。新增／修改不能與上述未結束預約相交。店面每週或特殊日期營業修改同樣不能讓未結束預約落在店休或營業範圍外。系統不會自動調顧客時間來配合班表。
 
-來源：[員工操作畫面](src/StaffPortal.jsx) `EmployeeSchedulePlanner`；[自助期間、申請及讀取](supabase/migrations/202610070001_staff_schedule_booking_flow.sql) `spa_staff_schedule_plan`／`spa_staff_schedule_request`／`spa_schedule_admin`／`spa_schedule_policy_save`；[最新提交與核准及共同衝突保護](supabase/migrations/202610080002_booking_schedule_consistency.sql) `spa_staff_schedule_submit`／`spa_staff_schedule_request_review`／`roster_booking_guard`／`leave_booking_guard`／`store_booking_guard`；[店主批次與週模板](supabase/migrations/202610050001_member_rewards_smart_roster.sql) `spa_weekly_shift_save`／`spa_daily_shift_bulk_save`／`spa_daily_shift_bulk_delete`；[店主畫面](src/BusinessOS.jsx) `ScheduleReviewPanel`／`SmartRoster`；[店主日期選擇](src/RosterDatePicker.jsx)。
+來源：[職務提醒及自由排班](supabase/migrations/202611260002_free_scheduling_and_role_reminders.sql)、[提醒 UI](src/ScheduleReminders.jsx)、[員工操作畫面](src/StaffPortal.jsx) `EmployeeSchedulePlanner`；[自助期間、申請及讀取](supabase/migrations/202610070001_staff_schedule_booking_flow.sql) `spa_staff_schedule_plan`／`spa_staff_schedule_request`／`spa_schedule_admin`／`spa_schedule_policy_save`；[最新提交與核准及共同衝突保護](supabase/migrations/202610080002_booking_schedule_consistency.sql) `spa_staff_schedule_submit`／`spa_staff_schedule_request_review`／`roster_booking_guard`／`leave_booking_guard`／`store_booking_guard`；[店主批次與週模板](supabase/migrations/202610050001_member_rewards_smart_roster.sql) `spa_weekly_shift_save`／`spa_daily_shift_bulk_save`／`spa_daily_shift_bulk_delete`；[店主畫面](src/BusinessOS.jsx) `ScheduleReviewPanel`／`SmartRoster`；[店主日期選擇](src/RosterDatePicker.jsx)。
 
 <a id="calendar"></a>
 

@@ -1,6 +1,6 @@
 {
-  "reviewed_at": "2026-11-26T17:07:55.123Z",
-  "manual_sha256": "a99d011d06bad1b4630161a03aab971950fd5bd8924e9e9a57bf14f0fc64a3be",
+  "reviewed_at": "2026-11-26T19:03:26.216Z",
+  "manual_sha256": "43eeaf4cdb9c3887dab5015fcba05eef5bd496cacc4d812ed5f825d7456ff6bc",
   "sources": {
     ".github/workflows/validate.yml": "31de911ec4585c39629e1d36cac41000f4bef723bc4b1c549478f9371d8e1395",
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
@@ -27,7 +27,7 @@
     "src/Attendance.jsx": "6fce2ee992293c8f3cc1c6af119f4b2de1e4aeefc1da8262beddbfd8acdac1e9",
     "src/BookingLookup.jsx": "7c3ab2829ba6b2fe109271b22489d96d3dc99c48fd1754020a591d515b2a6068",
     "src/BookingPortal.jsx": "8665bef34b45ce2da16c7669f8a4a99c664fd6ae15da22610dbd1d877dc3e473",
-    "src/BusinessOS.jsx": "76573807ebc1e2e7bf1b427c234496a1a4d30bf9bfb45379c68a41c482c6d619",
+    "src/BusinessOS.jsx": "c0244d2e037a65b273e39c1b07af98ead41fb512b779cf246df4198952891398",
     "src/Contact.jsx": "772896bcaec3cb7e6e918c74eedfe986e552af8ff7c8ea41f5d9c5d93dd4730d",
     "src/HeadCareQuiz.jsx": "2bd21c89127e254696d3cb06c7d6bec70dc37e6320910c0871b75b84e58fa147",
     "src/Member.jsx": "644b4ee4441b17bd30cc1aa1be2b00b9cbfde7be0c56919f86e4d1e46c906523",
@@ -44,10 +44,11 @@
     "src/PublicDataStatus.jsx": "4b3f7fc3b8df223e1f1d2d34fbb2a36bb2dc038e2259e8acc11e17e2a82584a9",
     "src/PublicLineButton.jsx": "08bfa23ba43082fb0b2b4d3f3c88e53935df1cc1e2e0eff9d9066dbc2af71b55",
     "src/RosterDatePicker.jsx": "02104e748c1294d1de815ed40935078f636e49d0536fefb876e0d5b61649e377",
+    "src/ScheduleReminders.jsx": "65ed78f1757c7cd25512ef5a427f5a03d694ed3bbd10f07efdbe434c462987f6",
     "src/Services.jsx": "7c51900f4476c3260f708f2c7a65f1d45131db3f88fe5b26a263a653b73e24f3",
     "src/Shop.jsx": "8111d6a349af53cfe65c8118d23c96e00a0343096e9bb2bc46c33d0898117f24",
-    "src/StaffPortal.jsx": "a9a1357f40b00b763153c70a4dfbf1212baca4940c866db56a99ca2b87a919f0",
-    "src/StaffProfileEditor.jsx": "4dadbed0e212e1784cb62545061e9d32ba8236f1d5851143bc633fc2bbc1aa10",
+    "src/StaffPortal.jsx": "1b5372d878210b55d1b5baebc4d011a04113ed5fccd3eb9497a4811bfffc78cd",
+    "src/StaffProfileEditor.jsx": "345b3e96de74253b871092c8276de6ba3089108fb98b41974667b190e89e9d47",
     "src/ios-main.jsx": "528bb83bc0f04641efc901ace26435ac91741d00b607a5264db71f0e7ecf3fe7",
     "src/lib/attendance.js": "6228463b5888f1866095cefb3e3ee6fd7690e223d6a7b8939b300ec313763c87",
     "src/lib/booking-state.js": "9816632232ffee00a76ac2ad6568743ad4d8e423c203f7c4e64206a6c55d9ac8",
@@ -78,7 +79,7 @@
     "src/lib/seo-content.js": "82678d485913f36e75031de5107a4b6a4337debce4e8bbf67308d90a0e3524bd",
     "src/lib/seo.js": "d24357ed0e088ef0042942827ae2d546fc80f6cb5271f2f5bbe8b80da723ce98",
     "src/lib/service-content.js": "1ec1af86fbd04853cd02487ded2f71aa22b01bd99cf97b3109f7d1bad3e5236f",
-    "src/lib/spa.js": "82ded98f73a13d6f4d8a8f8dbd16a1cc2785a9cf09e5d631a928c2ca5930bde1",
+    "src/lib/spa.js": "04893f2b12d3457c4e97a9cb39c0e90a6459c3819f9c42523b79bc8e016ec83e",
     "src/lib/staff-account.js": "90f5a673a0b59b621fce5685d076c10956c4be8945479239c505880ac556e341",
     "src/lib/staff-tenure.js": "b873af953bc82e32ad82ebb047eb336ba59453ef27c15b18325a4897d583d304",
     "src/lib/staff-work-roles.js": "1758be22d9ecf72b812a06bf142aa6a4f00c6a7f727e48683a0dd5c7816e5cda",
@@ -140,6 +141,7 @@
     "supabase/migrations/202611220001_attendance_break_records.sql": "5eff7a5684b5315b6b3f92b13dbb6b9063266b39a46782b1273f4dec2d182c46",
     "supabase/migrations/202611220002_bed_suggestions_and_review_rewards.sql": "4a7879c1d2b423ac2643f814396ca9db9e3fc44437464df366a1b14f734787ee",
     "supabase/migrations/202611260001_review_visibility_and_attendance_batches.sql": "0e40a36434e77c0cf991f594150e214ae1fa49752b56851c77e7f2fea970aa36",
+    "supabase/migrations/202611260002_free_scheduling_and_role_reminders.sql": "d4407c7d31079646aa1511b7bce10e4af04ffeb7519ba3575a3bfcd9862b381a",
     "vite.config.ios.js": "f51d57cba58adebe5231f605ee9d5f2f70c400fa2eff3e943244b98cd511ab70"
   }
 }

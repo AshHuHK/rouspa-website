@@ -121,6 +121,7 @@ const errors = {
   CANCELLATION_CUTOFF: '已超過線上取消期限，請聯絡門店。', NOT_FOUND: '找不到這筆記錄。',
   RATE_LIMIT: '提交次數較多，請稍後再試或聯絡門店。', REVIEW_NOT_ELIGIBLE: '療程完成後才能評價。',
   EXISTING_BOOKINGS: '此時段已有預約，請先改期再設定休假。', REASON_REQUIRED: '請填寫原因。',
+  SCHEDULE_REMINDER_STALE: '排班提醒已由其他人更新。請關閉後重新開啟，核對最新文字再儲存。',
   SCHEDULE_LOCKED: '下月員工自助排班已於台灣時間 8 日鎖定，請改送更動申請。',
   SCHEDULE_EDIT_OPEN: '目前仍在 1–7 日開放編輯期，請直接修改下月班表並按完成。',
   INVALID_SCHEDULE: '班表資料不完整，請重新載入整個月份後再提交。',
@@ -164,6 +165,7 @@ const publicErrorsEn = {
   REASON_REQUIRED: 'Please enter a reason.',
   INVALID_TRANSITION: 'This booking cannot be changed in its current state. Please refresh.',
   REQUEST_CONFLICT: 'Please refresh before trying again.',
+  SCHEDULE_REMINDER_STALE: 'The scheduling reminder has changed. Reopen it and check the latest text before saving.',
   SCHEDULE_LOCKED: 'Next month’s roster is locked. Submit a change request instead.',
   SCHEDULE_EDIT_OPEN: 'Self-scheduling is still open. Edit next month and submit the complete roster.',
   OFF_LIMIT: 'The maximum number of staff off that day has been reached.'

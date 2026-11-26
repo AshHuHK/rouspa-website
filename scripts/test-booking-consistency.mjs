@@ -133,7 +133,7 @@ const plan=await rpc(employee,'spa_staff_schedule_plan');
 const draft=plan.days.map(row=>({date:row.business_date,is_working:row.is_working,start_minute:row.start_minute??600,end_minute:row.end_minute??1320}));
 check(!!await rpc(employee,'spa_staff_schedule_submit',[plan.target_month,draft]),'unchanged owner-approved rest remains resubmittable under a stricter cap');
 const newRest=draft.find(row=>row.is_working&&row.date!=='2026-11-12'&&row.date!==rosterDate);newRest.is_working=false;
-await reject(()=>rpc(employee,'spa_staff_schedule_submit',[plan.target_month,draft]),/OFF_LIMIT/);
+check(!!await rpc(employee,'spa_staff_schedule_submit',[plan.target_month,draft]),'free scheduling accepts new rest days regardless of the retired daily cap');
 await db.query("update consistency_test_clock set at_time='2026-10-08T00:00:00+08:00'");
 const request=await rpc(employee,'spa_staff_schedule_request',['2026-11-21',true,600,1320,'長'.repeat(600)]);
 await rpc(owner,'spa_staff_schedule_request_review',[request,true,'已核准']);

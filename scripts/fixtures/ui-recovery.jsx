@@ -22,6 +22,13 @@ const adminRules=[1,3,5,6,7,8].map(version=>({id:`rule-${version}`,version_no:ve
  name:version===8?'技師薪資制度告知書 03-1':`測試薪資版本 ${version}`,
  effective_from:'2026-01-01',status:version===8?'draft':version===7?'active':'archived',calculation_engine:version>=7?'notice_v1':'ordered_v2'}));
 const customers=[{id:'member-1',name:'測試會員 甲',phone:'0911222333',tier:'一般會員',customer_type:'member',balance_cents:10000,visits:1},{id:'guest-2',name:'測試顧客 乙',phone:'0922333444',customer_type:'guest',balance_cents:0,visits:0}];
+fixture.scheduleRole='full_time';
+fixture.reminders=[
+ {role_code:'full_time',name:'正職人員',reminder_text:'每月原則上安排22天班。',version:1},
+ {role_code:'contractor',name:'承攬人員',reminder_text:'每月原則上需開放至少20天預約。',version:1},
+ {role_code:'part_time_hourly',name:'兼職時薪人員',reminder_text:'平日可依個人時間彈性安排。',version:1},
+ {role_code:'part_time_monthly',name:'兼職月薪人員',reminder_text:'任選兩天平日上班。',version:1},
+];
 window.uiFixture=fixture;
 const NativeSocket=window.WebSocket;
 window.WebSocket=class extends EventTarget {
@@ -47,8 +54,12 @@ window.fetch=async(input,init={})=>{
   if(name==='spa_operations_convenience')return response({is_owner:role==='owner',todos:[]});
   if(name==='spa_admin_bookings')return response([]);
   if(name==='spa_customers_list')return response(customers);
-  if(name==='spa_team_os')return response({staff:[{...staff,phone:'0912000800',email:null,title:'試用技師',
+  if(name==='spa_team_os')return response({schedule_reminders:fixture.reminders,staff:[{...staff,phone:'0912000800',email:null,title:'試用技師',
    employment_type_name:'正職',hire_date:null,is_bookable:true,website_visible:true}],accounts:[],shifts:[],daily_shifts:[],time_off:[]});
+  if(name==='spa_schedule_reminder_save'){
+   const row=fixture.reminders.find(item=>item.role_code===args.p_role);
+   row.reminder_text=args.p_text.trim();row.version++;return response(null);
+  }
   if(name==='spa_schedule_admin')return response({target_month:'2026-12-01',edit_open:false,staff:[],requests:[]});
   if(name==='spa_public_reviews')return response([]);
   if(name==='spa_attendance_queue')return response({settings:{address:'測試門店'},rows:batchAttendance,events:[],breaks:[],requests:[],period:{from:'2026-11-01',to:'2026-11-15'},periods:[{from:'2026-11-01',to:'2026-11-15',pending_count:2,request_count:0}]});
@@ -95,7 +106,7 @@ window.fetch=async(input,init={})=>{
     fixture.planReads++;if(fixture.failPlan)return failure();
     const d=new Date(),month=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)).toISOString().slice(0,7);
     const [y,m]=month.split('-').map(Number);
-    return response({target_month:`${month}-01`,edit_open:true,max_off_per_day:2,days:Array.from({length:new Date(Date.UTC(y,m,0)).getUTCDate()},(_,i)=>({business_date:`${month}-${String(i+1).padStart(2,'0')}`,is_working:true,start_minute:600,end_minute:1560,appointment_count:0,off_count:0,can_turn_off:true})),requests:[]});
+    return response({target_month:`${month}-01`,edit_open:true,scheduling_mode:'free',schedule_reminder:(()=>{const row=fixture.reminders.find(item=>item.role_code===fixture.scheduleRole);return {...row,text:row.reminder_text};})(),days:Array.from({length:new Date(Date.UTC(y,m,0)).getUTCDate()},(_,i)=>({business_date:`${month}-${String(i+1).padStart(2,'0')}`,is_working:true,start_minute:600,end_minute:1560,appointment_count:0,off_count:0,can_turn_off:true})),requests:[]});
   }
   return failure();
 };
