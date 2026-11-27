@@ -32,6 +32,8 @@ export async function exportPayrollXlsx({rows,from,to,rule,rates=[],tiers=[],pro
  settings.addRow(['職稱','聘僱類型','計薪方式','本薪 NT$','商品比例 %','指定加成 %','出勤門檻 小時','服務門檻 小時','普通服務方式','自帶客 %','承攬累計範圍','啟用']);
  for(const profile of profiles.filter(item=>!rule||item.rule_version_id===rule.id))settings.addRow([profile.job_title_name||profile.job_title_id,profile.employment_type_name||profile.employment_type_code,profile.pay_basis,Number(profile.base_pay_cents)/100,Number(profile.product_commission_bps)/100,Number(profile.designated_client_bonus_bps)/100,Number(profile.minimum_attendance_minutes)/60,Number(profile.minimum_service_minutes)/60,profile.service_commission_mode,Number(profile.self_sourced_commission_bps)/100,profile.contractor_count_scope||'不適用',profile.active?'是':'否']);
  }
+ const segments=rows.flatMap(row=>(row.calculation?.base_segments||[]).map(segment=>({employee:row.employee,...segment})));
+ if(segments.length){const detail=workbook.addWorksheet('人事分段本薪');detail.addRow(['員工','起日','迄日','類別','職級','方式','月薪／時薪 NT$','計入天數','當月天數','核准分鐘','本薪 NT$']);for(const row of segments)detail.addRow([row.employee,row.from_date,row.to_date,row.category||'其他職務',row.rank_no||'',row.basis,row.rate/100,row.day_count,row.month_days,row.work_minutes,row.amount_cents/100]);detail.getRow(1).font={bold:true};detail.columns.forEach(column=>column.width=20);}
  settings.getRow(1).font={bold:true};settings.columns.forEach(column=>column.width=24);
  const buffer=await workbook.xlsx.writeBuffer();
  await saveDownload(`柔療髮浴_薪資_${from}_${to}.xlsx`,buffer,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

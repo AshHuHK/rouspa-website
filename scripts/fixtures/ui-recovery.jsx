@@ -135,7 +135,7 @@ function Fixture(){
     titles.push(...[['owner','店主','owner',['owner']],['reception','櫃檯','counter',['full_time','part_time']],['pt_technician','兼職技師','technician',['part_time']],['contract_technician','承攬技師','technician',['contractor']]].map(([code,name,work_category,allowed_employment_types])=>({id:code,code,name,work_category,allowed_employment_types,active:true,legacy:false})));
     return <div className="ops"><main><StaffProfileEditor data={{job_titles:titles}} catalog={catalog} saved={()=>{fixture.hrSaved=true;}}/></main></div>;
   }
-  if(mode==='monthly-pay')return <div className="ops"><main><PayrollNoticeEditor rule={adminRules.find(row=>row.version_no===8)} staff={[]} canManage onReload={()=>{}} onPreview={()=>{}} onDelete={()=>{}}/></main></div>;
+  if(mode==='monthly-pay')return <div className="ops"><main><PayrollNoticeEditor rule={{...adminRules.find(row=>row.version_no===8),status:'active'}} canManage onReload={()=>{}} onPreview={()=>{}} onDelete={()=>{}}/></main></div>;
   if(mode==='home')return <Home/>;
   if(mode==='shop')return <Shop onNavigateHome={()=>{}}/>;
   if(mode==='staff')return <div className="ops"><main><EmployeeSchedulePlanner refreshToken={version}/></main></div>;

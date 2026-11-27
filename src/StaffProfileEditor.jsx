@@ -12,12 +12,12 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
   const retiredTitle = assignedTitle && (!assignedTitle.active || assignedTitle.archived_at) ? assignedTitle : null;
   const firstTitle = titles.find(title => title.code === 'ft_probation') || titles.find(title => !title.legacy);
   const [form, setForm] = useState(row ? {
-    ...row, employment_status: row.employment_status || (row.active ? 'active' : 'inactive'),
+    ...row, payroll_effective_on:taipeiDate(), employment_status: row.employment_status || (row.active ? 'active' : 'inactive'),
     departed_on: row.departed_on || '', departure_reason: row.departure_reason || '', contract_started_on: row.contract_started_on || ''
   } : {
     name: '', name_en: '', title: firstTitle?.name || '', job_title_id: firstTitle?.id || '',
     employment_type_code: firstTitle?.allowed_employment_types?.[0] || 'full_time',
-    hire_date: taipeiDate(), employment_status: 'active', active: true,
+    hire_date: taipeiDate(), payroll_effective_on:taipeiDate(), employment_status: 'active', active: true,
     is_bookable: false, website_visible: false, departed_on: '', departure_reason: '', contract_started_on: ''
   });
   const [services, setServices] = useState(row ? catalog.skills.filter(skill => skill.staff_id === row.id && skill.enabled !== false).map(skill => skill.service_id) : []);
@@ -67,8 +67,8 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
         <option value="full_time">正職</option><option value="part_time">兼職</option>
       </select></Field>}
       {text('手機', 'phone', 'tel')}{text('電子郵件（選填）', 'email', 'email')}
-      {text('生日', 'birth_date', 'date')}{text('到職日', 'hire_date', 'date')}
-      {mapped?.employment_type_code === 'contractor' && <>{text('承攬合作開始日期', 'contract_started_on', 'date', { required: true, min: form.hire_date || '1900-01-01', max: form.departed_on || undefined })}<p className="muted">請填實際開始承攬的日期，用於核對承攬年資與薪資制度。</p></>}
+      {text('分類生效日期', 'payroll_effective_on', 'date', {required:true, min:form.hire_date||'1900-01-01'})}{text('生日', 'birth_date', 'date')}{text('到職日', 'hire_date', 'date')}
+      {mapped?.employment_type_code === 'contractor' && <>{text('承攬年資合併起日（選填）','contract_credited_from','date',{min:form.hire_date||'1900-01-01',max:form.contract_started_on||undefined})}{text('承攬合作開始日期', 'contract_started_on', 'date', { required: true, min: form.hire_date || '1900-01-01', max: form.departed_on || undefined })}<p className="muted">請填實際開始承攬的日期，用於核對承攬年資與薪資制度。</p></>}
       <Field label="工作年資"><input readOnly value={tenureLabel({hire_date:form.hire_date,departed_on:form.departed_on})} /></Field>
       <Field label="任職狀態"><select value={form.employment_status} onChange={event => {
         const value = event.target.value;
@@ -87,7 +87,7 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
       <Field wide label="人員介紹"><textarea maxLength={2000} value={form.bio || ''} onChange={event => set('bio', event.target.value)}/></Field>
       {technician && <Field wide label="可提供療程"><div className="os-check-grid">{catalog.services.filter(service => service.status !== 'archived').map(service => <label key={service.id}><input type="checkbox" checked={services.includes(service.id)} onChange={event => setServices(event.target.checked ? [...services, service.id] : services.filter(id => id !== service.id))}/>{service.name}</label>)}</div></Field>}
     </div>
-    <p className="muted">正職及兼職月薪技師採六階；兼職時薪及承攬不設職級。人事分類同步至薪資草稿；已生效的薪資分類如需變更，請先建立新制度草稿。登入權限由帳號角色決定。</p>
+    <p className="muted">正職及兼職月薪技師採六階；兼職時薪及承攬不設職級。店主可直接修改分類；從生效日起分段計薪，無須建立新制度。月薪按當月日數拆算，已結算金額保留。登入權限由帳號角色決定。</p>
     <p className="muted">年資按台灣日期由到職日計算，離職後截至離職日。薪資在「薪資與提成」設定。</p>
   </MutationForm>;
 }

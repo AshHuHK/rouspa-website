@@ -75,9 +75,9 @@ try{
  const rule=await rpc('spa_payroll_notice_setup',[month[0]]);
  const settings=await rpc('spa_payroll_notice_get',[rule]);
  assert.deepEqual(settings.ranks.map(row=>row.monthly_base_cents),Array(6).fill(2520000));
- assert.equal(settings.technician_ids.includes(hourly),true);
+ assert.deepEqual(settings.technician_ids,[]);
  await assert.rejects(()=>rpc('spa_payroll_rule_activate',[rule]),/PAYROLL_NOTICE_NOT_ACTIVE/);
- await assert.rejects(()=>rpc('spa_payroll_notice_activate',[rule]),/PAYROLL_CLASSIFICATION_REQUIRED/);
+ // Activation no longer requires a redundant per-person assignment.
  await assert.rejects(()=>rpc('spa_payroll_notice_assign',[rule,monthly,{category:'02',rank_no:6,start_bps:3000}]),/check constraint/);
  await rpc('spa_payroll_notice_save',[rule,settings,settings.ranks]);
  for(const [person,assignment] of sampleAssignments)await rpc('spa_payroll_notice_assign',[rule,person,assignment]);
@@ -179,11 +179,50 @@ try{
  await assert.rejects(()=>rpc('spa_payroll_sources',[trial,...month,null],employee),/FORBIDDEN/);
  await assert.rejects(()=>rpc('spa_payroll_run_save',['2026-11-02',month[1],rule,true]),/PAYROLL_FULL_MONTH_REQUIRED/);
  await assert.rejects(()=>rpc('spa_payroll_run_save',[...month,oldRule,true]),/PAYROLL_NOTICE_NOT_ACTIVE/);
+ // Mid-month identity changes require no new policy. Both commissions and
+ // calendar-day base pay follow the HR record in effect on the service date.
+ const segmented=await staff('測試分段','ft_junior','full_time');
+ await query('insert into spa_staff_services values($1,$2,true)',[segmented,regular]);
+ const policyCount=(await one('select count(*)::int n from spa_payroll_rule_versions')).n;
+ await rpc('spa_payroll_notice_assign',[rule,segmented,{category:'01',rank_no:2,effective_on:'2026-11-01'}]);
+ await rpc('spa_payroll_notice_assign',[rule,segmented,{category:'02',rank_no:4,effective_on:'2026-11-16'}]);
+ assert.equal((await one('select count(*)::int n from spa_payroll_rule_versions')).n,policyCount);
+ await sale(segmented,regular,75,'2026-11-10');
+ await sale(segmented,regular,66,'2026-11-16');
+ let split=await wage(segmented);
+ assert.equal(split.base_cents,2810000,'15/30 full-time plus 15/30 monthly part-time');
+ assert.equal(split.service_commission_cents,40000,'each category keeps its own monthly threshold');
+ assert.deepEqual(split.calculation.base_segments.map(row=>[row.from_date,row.to_date,row.day_count,row.amount_cents]),[
+  ['2026-11-01','2026-11-15',15,1550000],['2026-11-16','2026-11-30',15,1260000]]);
+ for(const day of ['2026-11-10','2026-11-16'])await rpc('spa_overtime_save',[segmented,day,'weekday',60,'分段驗證']);
+ split=await wage(segmented);
+ assert.equal(split.overtime_cents,Math.round(((3100000+40000)+(2520000+40000))/240*1.34),'overtime uses each dated monthly salary');
+ const splitSources=await rpc('spa_payroll_sources',[segmented,...month,rule]);
+ assert.ok(splitSources.reconciliation.source_matches&&splitSources.reconciliation.formula_matches);
+ assert.deepEqual([...new Set(splitSources.sources.commission_details.map(line=>line.category))],['01','02']);
+ await assert.rejects(()=>rpc('spa_staff_profile_save_v2',[{id:segmented}],employee),/FORBIDDEN/);
+ // Both odd-length months and leap-year days use the actual calendar divisor.
+ await rpc('spa_payroll_notice_assign',[rule,segmented,{category:'01',rank_no:2,effective_on:'2027-01-01'}]);
+ await rpc('spa_payroll_notice_assign',[rule,segmented,{category:'02',rank_no:4,effective_on:'2027-01-16'}]);
+ const jan=await wage(segmented,['2027-01-01','2027-01-31']);
+ assert.equal(jan.base_cents,Math.round(3100000*15/31)+Math.round(2520000*16/31));
+ // Return current HR state to an accurate present-day category before finalizing.
+ await rpc('spa_payroll_notice_assign',[rule,segmented,{category:'02',rank_no:4,effective_on:'2026-11-21'}]);
  const locked=await rpc('spa_payroll_run_save',[...month,rule,true]);
  assert.equal((await one('select status from spa_payroll_runs where id=$1',[locked])).status,'finalized');
  assert.equal((await rpc('spa_payroll_sources',[full,...month,null],employee)).evidence_mode,'snapshot');
  assert.equal((await rpc('spa_staff_self',[...month],employee)).payroll.notice_category,'01');
  await assert.rejects(()=>rpc('spa_payroll_notice_minutes_save',['pos_service',boundary.id,120]),/PAYROLL_LOCKED/);
+ // Owner edits are permitted even when this policy has saved payroll. The
+ // saved wage and source packet remain immutable until explicitly reopened.
+ const savedBefore=await rpc('spa_payroll_sources',[full,...month,null],employee);
+ await rpc('spa_payroll_notice_assign',[rule,full,{category:'01',rank_no:4,effective_on:'2026-11-16'}]);
+ const editable=await rpc('spa_payroll_notice_get',[rule]);
+ await rpc('spa_payroll_notice_save',[rule,{...editable,full_time_threshold_minutes:4320},editable.ranks]);
+ const savedAfter=await rpc('spa_payroll_sources',[full,...month,null],employee);
+ assert.deepEqual(savedAfter.wage,savedBefore.wage);
+ assert.deepEqual(savedAfter.sources,savedBefore.sources);
+ assert.equal((await rpc('spa_staff_self',[...month],employee)).payroll.total_cents,savedBefore.wage.total_cents);
  await query("update spa_staff set active=false,employment_status='departed',departed_on='2026-11-21',departure_reason='測試離職',is_bookable=false where id=$1",[trial]);
  const departedReturn=await wage(trial,nextMonth);
  assert.equal(departedReturn.package_bonus_cents,-10000);
@@ -193,8 +232,8 @@ try{
 
  const revision=await rpc('spa_payroll_notice_setup',[nextMonth[0]]);
  const carried=await rpc('spa_payroll_notice_get',[revision]);
- assert.equal(carried.assignments.find(row=>row.staff_id===monthly).start_bps,2500);
- assert.equal(carried.assignments.find(row=>row.staff_id===trial).rank_no,2);
+ assert.equal((await one('select start_bps from spa_private.payroll_classification_on($1,$2,$3)',[monthly,nextMonth[0],revision])).start_bps,2500);
+ assert.equal((await one('select rank_no from spa_private.payroll_classification_on($1,$2,$3)',[trial,nextMonth[0],revision])).rank_no,2);
  console.log('Payroll notice checks passed for the four categories, dated sources, refunds, access and settlement.');
 }finally{
  await db.close();

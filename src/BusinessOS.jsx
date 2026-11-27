@@ -306,7 +306,7 @@ export function PayrollOS({data,staff,from,to,canManage,onReload,navigationConte
     <Field label="制度版本"><select value={rule} onChange={event=>setRule(event.target.value)}>{selected&&!showSettlementVersion(selected)&&<option value={selected.id}>歷史結算使用制度（唯讀）</option>}{settlementRules.map(item=><option key={item.id} value={item.id}>v{item.version_no} · {item.name}{item.status==='draft'?'（草稿）':''}</option>)}</select></Field>
     {canManage&&!rules.some(item=>item.calculation_engine==='notice_v1'&&item.status==='draft')&&<button className="primary" onClick={()=>setModal({kind:'notice-setup'})}>建立 03-1 制度草稿</button>}
    </div>
-   {noticeRule?<PayrollNoticeEditor rule={selected} staff={staff} canManage={canManage} onReload={onReload} onPreview={previewNoticeMonth} inUse={data.runs?.some(run=>run.rule_version_id===rule)} onDelete={()=>setModal({kind:'delete-rule',rule:selected})}/>
+   {noticeRule?<PayrollNoticeEditor rule={selected} staff={staff} canManage={canManage} onReload={onReload} onPreview={previewNoticeMonth} onManageStaff={()=>onNavigate?.('team')} inUse={data.runs?.some(run=>run.rule_version_id===rule)} onDelete={()=>setModal({kind:'delete-rule',rule:selected})}/>
     :<PayrollPolicyPanel data={policyData} rule={selected} canManage={canManage} onSelect={setRule} open={(kind,extra={})=>{if(['profiles','tiers','rates'].includes(kind)&&!policyReady)return;setModal({kind,...extra});}}/>}
   </>}
   {tab==='history'&&<PayrollHistory runs={data.runs||[]} canManage={canManage} open={run=>setModal({kind:'reopen',run})} navigationContext={navigationContext} inspect={run=>{onNavigate?.('payroll',{from:run.period_start,to:run.period_end,section:'summary',rule_id:run.rule_version_id});}}/>}

@@ -26,7 +26,6 @@ const errors = {
   PAYROLL_MONTHLY_BASE_MISMATCH: '兼職月薪六階須共用同一本薪，請重新整理後在「兼職統一月薪」儲存。',
   PAYROLL_FLAT_BASE_REQUIRES_NEW_VERSION: '已有正式結算引用此制度，請建立新制度後調整統一月薪。',
   PAYROLL_POLICY_NOT_EFFECTIVE: '此正式制度尚未到生效日，目前可試算及保存草稿，生效後才能正式結算。',
-  PAYROLL_CLASSIFICATION_REQUIRES_DRAFT: '此分類已用於正式薪資制度。請先到「薪資與提成 → 制度設定」建立新草稿，再修改人員類別或職級。',
   PAYROLL_CLASSIFICATION_MISMATCH: '薪資類別或職級與人事檔案不同。請至「人員與排班」修改後再儲存。',
   PAYROLL_CLASSIFICATION_REQUIRED: '本期仍有未對應新職級的人員，請先在人員檔案完成實際職稱設定。',
   PAYROLL_FULL_MONTH_REQUIRED: '新制度正式結算需完整自然月；目前區間可試算或儲存草稿。',

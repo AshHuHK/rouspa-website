@@ -61,13 +61,13 @@ try{
  await rejects(()=>rpc('spa_staff_profile_save_v2',[{...monthly.body,payroll_category_code:'03'}]),/JOB_EMPLOYMENT_MISMATCH/);
  const rule=await rpc('spa_payroll_notice_setup',['2026-12-01']);
  let packet=await rpc('spa_payroll_notice_get',[rule]);
- check(packet.assignments.length===5,'new draft contains all five current test technicians');
+ check(packet.assignments.length===0,'global policy contains no employee assignments');
  check(!packet.technician_ids.includes(counter),'counter does not enter technician wages');
- check(packet.assignments.find(a=>a.staff_id===monthly.id).rank_no===2,'monthly part-time rank is synchronized');
+ check((await one("select rank_no from spa_private.payroll_classification_on($1,'2026-12-01',$2)",[monthly.id,rule])).rank_no===2,'monthly part-time rank is read from dated HR');
  await rpc('spa_staff_profile_save_v2',[{...hourly.body,id:hourly.id,...classificationPayload({role:'technician',category:'02',rankCode:'ft_mid'},titles)}]);
  packet=await rpc('spa_payroll_notice_get',[rule]);
- check(packet.assignments.find(a=>a.staff_id===hourly.id).category==='02'&&packet.assignments.find(a=>a.staff_id===hourly.id).rank_no===4,'HR edits update the same draft assignment atomically');
- await rejects(()=>rpc('spa_payroll_notice_assign',[rule,hourly.id,{category:'03'}]),/PAYROLL_CLASSIFICATION_MISMATCH/);
+ check((await one("select category,rank_no from spa_private.payroll_classification_on($1,'2026-12-01',$2)",[hourly.id,rule])).rank_no===4,'HR edits update independent classification atomically');
+ check((await one('select count(*)::int n from spa_private.payroll_notice_staff where rule_id=$1',[rule])).n===0,'HR edits never create policy/person links');
  const preview=await rpc('spa_payroll_preview',['2026-12-01','2026-12-31',rule]);
  check(preview.find(a=>a.staff_id===full.id).base_cents===3100000,'full-time document salary is unchanged');
  check(preview.find(a=>a.staff_id===monthly.id).base_cents===2520000,'monthly part-time salary uses the shared base');
@@ -97,8 +97,8 @@ try{
  check((await one("select spa_private.payroll_notice_rule_on('2026-11-30') id")).id!==rule,'published future version does not change November');
  check((await one("select spa_private.payroll_notice_rule_on('2026-12-01') id")).id===rule,'published future version becomes applicable on December 1');
  await rejects(()=>rpc('spa_payroll_run_save',['2026-12-01','2026-12-31',rule,true]),/PAYROLL_POLICY_NOT_EFFECTIVE/);
- await rejects(()=>rpc('spa_staff_profile_save_v2',[{...full.body,id:full.id,...classificationPayload({role:'technician',category:'01',rankCode:'ft_mid'},titles)}]),/PAYROLL_CLASSIFICATION_REQUIRES_DRAFT/);
- check((await one('select job_title_id from spa_staff where id=$1',[full.id])).job_title_id===full.body.job_title_id,'rejected changes preserve both HR and wage assignments');
+ await rpc('spa_staff_profile_save_v2',[{...full.body,id:full.id,...classificationPayload({role:'technician',category:'01',rankCode:'ft_mid'},titles)}]);
+ check((await one('select job_title_id from spa_staff where id=$1',[full.id])).job_title_id===titles.find(t=>t.code==='ft_mid').id,'active policy does not prevent an HR promotion');
  await q("insert into spa_roles(user_id,role,staff_id,active,login_name)values($1,'therapist',$2,true,'hierarchy_test')",[employee,full.id]);
  await rpc('spa_role_profile_save',['custom_tech','測試自訂技師',['dashboard.view','appointments.view'],true,90]);
  await q("insert into spa_roles(user_id,role,staff_id,active,login_name)values($1,'custom_tech',$2,true,'custom_hierarchy')",[custom,monthly.id]);

@@ -21,7 +21,7 @@ export function PayrollNoticeSetup({month,saved}){
  const [effective,setEffective]=useState(month),created=useRef('');
  return <MutationForm action={async()=>{created.current=await rpc('spa_payroll_notice_setup',{p_effective:effective+'-01'});}} onSaved={()=>saved(created.current)} submit="建立制度草稿">
   <Field label="首個生效月份"><input type="month" required value={effective} onChange={event=>setEffective(event.target.value)}/></Field>
-  <p className="muted">建立後可指定薪資類別和試算。由店主核對後另行啟用。</p>
+  <p className="muted">制度只管理計算規則；技師類型與職級在人員檔案維護。</p>
  </MutationForm>;
 }
 
@@ -45,7 +45,7 @@ function NoticeSettings({notice,editable,refresh}){
     <div className="form-grid">{thresholds.map(([id,label])=><Field key={id} label={label+'（小時）'}>
      <input type="number" required min={id==='step_minutes'?'0.1':'0'} max={id==='step_minutes'?100:500} step="0.1" value={settings[id]} onChange={event=>update(id,event.target.value)}/>
     </Field>)}</div>
-    {settings.monthly_base_cents!=null&&<Field label="02 兼職統一月薪（NT$／月）"><input type="number" required min="0" max="1000000" step="0.01" value={settings.monthly_base_cents} onChange={event=>update('monthly_base_cents',event.target.value)}/><small>六個職級共用同一本薪，職級僅決定起抽比例。</small></Field>}
+
     <div className="table-wrap"><table><caption>01／02 職級</caption><thead><tr><th>職級</th><th>01 起抽</th><th>02 起抽</th>{settings.monthly_base_cents==null&&<th>舊版 02 月薪（NT$）</th>}</tr></thead><tbody>
      {ranks.map(rank=><tr key={rank.rank_no}><th scope="row">{rankNames[rank.rank_no-1]}</th>
       <td><Rates value={rank.full_time_start_bps} onChange={value=>updateRank(rank.rank_no,'full_time_start_bps',value)}/></td>
@@ -59,57 +59,7 @@ function NoticeSettings({notice,editable,refresh}){
  </article>;
 }
 
-function StaffAssignment({people,notice,rule,editable,canAddMissing,refresh}){
- const [person,setPerson]=useState(people[0]?.id||'');
- const current=notice.assignments.find(row=>row.staff_id===person);
- const staff=people.find(row=>row.id===person);
- const rank=notice.ranks.find(row=>row.rank_no===current?.rank_no);
- const monthly=current?.category==='02';
- const probation=(monthly||current?.category==='01')&&(current.start_bps??(monthly?rank?.monthly_start_bps:rank?.full_time_start_bps))===0;
- return <article className="card"><h3>技師薪資類別</h3>
-  <Field label="選擇技師"><select value={person} onChange={event=>setPerson(event.target.value)}>
-   <option value="">選擇技師</option>{people.map(row=><option key={row.id} value={row.id}>{row.name}{row.employment_status==='departed'?'（已離職）':''}{notice.assignments.some(item=>item.staff_id===row.id)?'':'（待設定）'}</option>)}
-  </select></Field>
-  {staff&&<AssignmentForm key={person} staff={staff} current={current} rule={notice.rule_id} editable={editable||(canAddMissing&&!current)} saved={refresh}/>}
-  {canAddMissing&&probation&&staff?.active&&<ProbationPass key={person+':'+(current.passed_on||'')} rule={rule} staff={staff} current={current} ranks={notice.ranks} saved={refresh}/>}
- </article>;
-}
-
-function ProbationPass({rule,staff,current,ranks,saved}){
- const monthly=current.category==='02';
- const available=ranks.filter(row=>row.rank_no>1&&(monthly?row.monthly_start_bps:row.full_time_start_bps)>0);
- const [date,setDate]=useState(current.passed_on||taipeiDate()),[rank,setRank]=useState(current.passed_rank_no||available[0]?.rank_no||'');
- return <details><summary>{current.passed_on?'調整試用通過紀錄':'登錄試用考核通過'}</summary>
-  <MutationForm disabled={!available.length} action={()=>rpc('spa_payroll_notice_pass',{p_rule:rule.id,p_staff:staff.id,p_on:date,p_rank:Number(rank)})} onSaved={saved} submit="儲存通過紀錄">
-   <div className="form-grid">
-    <Field label="通過生效日"><input required type="date" min={rule.effective_from} max={taipeiDate()} value={date} onChange={event=>setDate(event.target.value)}/></Field>
-    <Field label="確認職級"><select value={rank} onChange={event=>setRank(event.target.value)}>{available.map(row=><option key={row.rank_no} value={row.rank_no}>{rankNames[row.rank_no-1]} · {(monthly?row.monthly_start_bps:row.full_time_start_bps)/100}%</option>)}</select></Field>
-   </div>
-   <p className="muted">店主於三個月試用期屆滿或提前通過考核時確認。普通抽成自生效日起重新累計。{monthly&&'月中通過時，新職級月薪從下一個完整月份起適用。'}</p>
-  </MutationForm>
- </details>;
-}
-
-function AssignmentForm({staff,current,rule,editable,saved}){
- const [form,setForm]=useState({...{category:'',rank_no:1,start_bps:'',contract_from:staff.contract_started_on||'',credited_from:''},...current, ...(staff.payroll_category_code&&(editable||!current)?{category:staff.payroll_category_code,rank_no:staff.hr_rank_no||null}:{})});
- const set=(id,value)=>setForm(data=>({...data,[id]:value}));
- const ranked=form.category==='01'||form.category==='02', contractor=form.category==='04';
- if(!staff.payroll_category_code)return <p className="muted">請先到「人員與排班」確認職務、聘僱類型及職級，再設定本制度。</p>;
- return <MutationForm disabled={!editable} action={()=>rpc('spa_payroll_notice_assign',{p_rule:rule,p_staff:staff.id,p_assignment:{
-  category:form.category,rank_no:ranked?Number(form.rank_no||1):null,start_bps:ranked&&form.start_bps!==''?form.start_bps:null,
-  contract_from:contractor?form.contract_from:null,credited_from:contractor?form.credited_from:null,
- }})} onSaved={saved} submit="儲存人員類別">
-  <fieldset disabled={!editable} className="payroll-notice-fields"><div className="form-grid">
-   <Field label={editable||!current?"人事薪資類別":"本版本薪資類別"}><input readOnly value={form.category+' '+categories[form.category]}/></Field>
-   {ranked&&<><Field label={editable||!current?"人事職級":"本版本職級"}><input readOnly value={rankNames[Number(form.rank_no)-1]||'待設定'}/></Field>
-    <Field label="個人起抽（選填）"><Rates max={form.category==='02'?25:30} value={form.start_bps} inherit onChange={value=>set('start_bps',value)}/></Field></>}
-   {contractor&&<><Field label="承攬契約開始"><input required type="date" value={form.contract_from||''} onChange={event=>set('contract_from',event.target.value)}/></Field>
-    <Field label="併入原在職期間（起日，選填）"><input type="date" min={staff.hire_date||undefined} max={form.contract_from||undefined} value={form.credited_from||''} onChange={event=>set('credited_from',event.target.value)}/></Field></>}
-  </div></fieldset>
- </MutationForm>;
-}
-
-export default function PayrollNoticeEditor({rule,staff,canManage,onReload,onPreview,onDelete,inUse}){
+export default function PayrollNoticeEditor({rule,canManage,onReload,onPreview,onDelete,inUse,onManageStaff}){
  const [packet,setPacket]=useState(null),[error,setError]=useState(''),[revision,setRevision]=useState(0),[confirm,setConfirm]=useState(false);
  useEffect(()=>{let live=true;
   rpc('spa_payroll_notice_get',{p_rule:rule.id}).then(value=>{if(live){setPacket(value);setError('');}}).catch(value=>{if(live)setError(errorText(value));});
@@ -118,9 +68,8 @@ export default function PayrollNoticeEditor({rule,staff,canManage,onReload,onPre
  const refresh=()=>{setRevision(value=>value+1);return onReload();};
  if(error)return <p className="alert" role="alert">{error}</p>;
  if(packet?.rule_id!==rule.id)return <p className="muted" role="status">正在載入制度…</p>;
- const people=staff.filter(row=>packet.technician_ids.includes(row.id));
- const pending=people.filter(row=>!row.archived_at&&row.active&&row.employment_status!=='departed'&&!packet.assignments.some(item=>item.staff_id===row.id));
- const editable=canManage&&rule.status==='draft';
+ const draft=rule.status==='draft';
+ const editable=canManage&&(draft||rule.status==='active');
  const editableNotice={...packet,monthly_base_cents:packet.monthly_base_cents==null?null:Number(packet.monthly_base_cents)/100,...Object.fromEntries(thresholds.map(([id])=>[id,Number(packet[id])/60])),
   ranks:packet.ranks.map(rank=>({...rank,monthly_base_cents:Number(rank.monthly_base_cents)/100}))};
  return <section className="payroll-panel payroll-notice-editor">
@@ -132,14 +81,14 @@ export default function PayrollNoticeEditor({rule,staff,canManage,onReload,onPre
   ].map(([id,pay,threshold])=><article className="card" key={id}><h3>{id} {categories[id]}</h3><strong>{pay}</strong>
    {threshold!==null&&<p className="muted">普通抽成從超過 {threshold/60} 個服務小時開始</p>}</article>)}</div>
   <NoticeSettings key={rule.id+':'+revision} notice={editableNotice} editable={editable} refresh={refresh}/>
-  <StaffAssignment key={rule.id} people={people} notice={packet} rule={rule} editable={editable} canAddMissing={canManage&&rule.status==='active'} refresh={refresh}/>
+  {canManage&&onManageStaff&&<div className="actions"><button type="button" onClick={onManageStaff}>管理技師類型與職級</button></div>}
   <article className="card"><div className="actions">
    <button onClick={onPreview}>試算生效月份</button>
-   {editable&&<button className="primary" type="button" disabled={pending.length>0} onClick={()=>setConfirm(value=>!value)}>準備啟用</button>}
-   {editable&&!inUse&&<button className="danger" type="button" onClick={onDelete}>刪除草稿</button>}
+   {canManage&&draft&&<button className="primary" type="button" onClick={()=>setConfirm(value=>!value)}>準備啟用</button>}
+   {canManage&&draft&&!inUse&&<button className="danger" type="button" onClick={onDelete}>刪除草稿</button>}
   </div>
-   {editable&&<p className="muted">{pending.length?pending.length+' 位在職技師待設定。':''} 請先儲存制度，試算並核對金額。</p>}
-   {editable&&confirm&&<MutationForm action={()=>rpc('spa_payroll_notice_activate',{p_rule:rule.id})} onSaved={()=>{setConfirm(false);return refresh();}} submit="確認啟用">
+   {editable&&<p className="muted">修改規則後請核對試算；已結算金額仍採保存紀錄。</p>}
+   {canManage&&draft&&confirm&&<MutationForm action={()=>rpc('spa_payroll_notice_activate',{p_rule:rule.id})} onSaved={()=>{setConfirm(false);return refresh();}} submit="確認啟用">
     <p>將從 {rule.effective_from} 起用此正式制度結算；生效日前沿用原制度。</p>
    </MutationForm>}
   </article>
