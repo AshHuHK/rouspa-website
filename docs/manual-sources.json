@@ -1,6 +1,6 @@
 {
-  "reviewed_at": "2026-11-27T16:49:23.183Z",
-  "manual_sha256": "695724c01f23201a7c05a96233caaead91b23d93ea5ebd7534c1020bba9ddb42",
+  "reviewed_at": "2026-11-27T16:55:50.140Z",
+  "manual_sha256": "89159018c9a892d9cfe40cf25a932c4f5b0e622b4e2a0e2358a8ec0a637e0dfd",
   "sources": {
     ".github/workflows/validate.yml": "31de911ec4585c39629e1d36cac41000f4bef723bc4b1c549478f9371d8e1395",
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
