@@ -101,6 +101,7 @@ begin
   (category='01' and employment='full_time' and rank is not null) or(category='02' and employment='part_time' and rank is not null)
   or(category='03' and employment='part_time' and j.code='pt_technician') or(category='04' and employment='contractor' and j.code='contract_technician'),false)
  then raise exception 'JOB_EMPLOYMENT_MISMATCH'; end if;
+ if category is distinct from '04' then credit:=null; p_payload:=p_payload||jsonb_build_object('contract_started_on',null,'contract_credited_from',null); end if;
  if credit is not null and (category is distinct from '04' or credit<nullif(p_payload->>'hire_date','')::date or credit>nullif(p_payload->>'contract_started_on','')::date)
  then raise exception 'INVALID_CONTRACT_COOPERATION_DATE'; end if;
  changed:=initial or old.job_title_id is distinct from j.id or old.employment_type_code is distinct from employment

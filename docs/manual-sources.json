@@ -1,6 +1,6 @@
 {
-  "reviewed_at": "2026-11-27T19:51:26.846Z",
-  "manual_sha256": "72cd1ab306a938134499604beb38f1d7f46adcd8f13dc358dc7e9aa9afb31921",
+  "reviewed_at": "2026-11-27T19:57:37.717Z",
+  "manual_sha256": "d58bea8092a2bbe8c4f368d1e9c289b9ef3c68feda856f927788da53a3233289",
   "sources": {
     ".github/workflows/validate.yml": "31de911ec4585c39629e1d36cac41000f4bef723bc4b1c549478f9371d8e1395",
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
@@ -48,7 +48,7 @@
     "src/Services.jsx": "7c51900f4476c3260f708f2c7a65f1d45131db3f88fe5b26a263a653b73e24f3",
     "src/Shop.jsx": "8111d6a349af53cfe65c8118d23c96e00a0343096e9bb2bc46c33d0898117f24",
     "src/StaffPortal.jsx": "1b5372d878210b55d1b5baebc4d011a04113ed5fccd3eb9497a4811bfffc78cd",
-    "src/StaffProfileEditor.jsx": "c9117e06b0f2ce361f8a618a96316fbbd28901e3fa055624f383c4be51d9e7e4",
+    "src/StaffProfileEditor.jsx": "fb65da324e4b5baf2b2c70e6218d8bd4f75ebd5cf08ea623c458d3e03e9afb5c",
     "src/ios-main.jsx": "528bb83bc0f04641efc901ace26435ac91741d00b607a5264db71f0e7ecf3fe7",
     "src/lib/attendance.js": "6228463b5888f1866095cefb3e3ee6fd7690e223d6a7b8939b300ec313763c87",
     "src/lib/booking-state.js": "9816632232ffee00a76ac2ad6568743ad4d8e423c203f7c4e64206a6c55d9ac8",
@@ -145,7 +145,7 @@
     "supabase/migrations/202611270001_staff_classification_and_booking_scope.sql": "91e04eaa9337c493f4e07d1a3253ac61bc271a6b9922dbaa6b5eac6119ee8625",
     "supabase/migrations/202611270002_payroll_notice_publication.sql": "ce317feb2bafd6aaecf288463726ff39e0854a686981b52acd090b6328caae23",
     "supabase/migrations/202611270003_flat_part_time_monthly_base.sql": "75e3d6612003901b507f8e4ad5b93cd9ac6fc7751ba90a4f9e2fbbed976efefd",
-    "supabase/migrations/202611270004_independent_staff_payroll_classification.sql": "7801d51bad32f9d2fd7fdc9288ee795a9648aad0925e188d711b9a8b3c913169",
+    "supabase/migrations/202611270004_independent_staff_payroll_classification.sql": "64d6066d4b7afc81b11d911b86562d7247ec95960dafe09e63d9665fd71c2c25",
     "vite.config.ios.js": "f51d57cba58adebe5231f605ee9d5f2f70c400fa2eff3e943244b98cd511ab70"
   }
 }

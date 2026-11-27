@@ -12,7 +12,7 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
   const retiredTitle = assignedTitle && (!assignedTitle.active || assignedTitle.archived_at) ? assignedTitle : null;
   const firstTitle = titles.find(title => title.code === 'ft_probation') || titles.find(title => !title.legacy);
   const [form, setForm] = useState(row ? {
-    ...row, payroll_effective_on:taipeiDate(), employment_status: row.employment_status || (row.active ? 'active' : 'inactive'),
+    ...row, payroll_effective_on:row.hire_date>taipeiDate()?row.hire_date:taipeiDate(), employment_status: row.employment_status || (row.active ? 'active' : 'inactive'),
     departed_on: row.departed_on || '', departure_reason: row.departure_reason || '', contract_started_on: row.contract_started_on || ''
   } : {
     name: '', name_en: '', title: firstTitle?.name || '', job_title_id: firstTitle?.id || '',
@@ -39,6 +39,8 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
   const action = () => {
     if (!mapped) throw new Error('JOB_CLASSIFICATION_REQUIRED');
     return rpc('spa_staff_profile_save_v2', { p_payload: { ...form, ...mapped, id: row?.id || '',
+      contract_started_on:mapped.employment_type_code==='contractor'?form.contract_started_on:'',
+      contract_credited_from:mapped.employment_type_code==='contractor'?form.contract_credited_from:'',
       is_bookable: technician && form.employment_status === 'active' && !!form.is_bookable,
       website_visible: technician && form.employment_status === 'active' && !!form.website_visible,
       services: technician ? services : [] } });

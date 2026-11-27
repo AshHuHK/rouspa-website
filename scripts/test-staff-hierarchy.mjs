@@ -135,6 +135,9 @@ try{
  await rpc('spa_appointment_reassign',[peerRow.id,full.id,'測試實際服務技師歸屬']);
  check((await rpc('spa_admin_bookings',['2026-11-01','2026-12-31'],employee)).length===2,'new actual technician sees reassigned appointment');
  check((await rpc('spa_admin_bookings',['2026-11-01','2026-12-31'],custom)).length===0,'previous technician no longer sees reassigned appointment');
+ await rpc('spa_staff_profile_save_v2',[{...contractor.body,id:contractor.id,contract_credited_from:'2026-08-01',...classificationPayload({role:'technician',category:'01',rankCode:'ft_junior'},titles)}]);
+ const formerContractor=await one('select payroll_category_code,contract_started_on,contract_credited_from from spa_staff where id=$1',[contractor.id]);
+ check(formerContractor.payroll_category_code==='01'&&formerContractor.contract_started_on===null&&formerContractor.contract_credited_from===null,'contractor to employee clears only current contract fields and preserves dated history');
  // The one-time production cleanup must reject business references and
  // remove only the exact disposable, already archived seed identities.
  await db.exec("update spa_staff set archived_at=public.hierarchy_test_clock() where name in ('陳柏翰','王詩涵','張家豪','李靜怡','吳俊霖')");
