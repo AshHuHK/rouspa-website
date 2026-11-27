@@ -258,6 +258,9 @@ for(const width of [320,375,390,430,1440]){
   return {fits:r.left>=card.left&&r.right<=card.right&&el.scrollWidth<=el.clientWidth,visible:r.width>40&&r.right<=innerWidth};
  }));
  expect(prices.every(row=>row.fits&&row.visible)).toBe(true);checks++;
+ const map=page.locator('iframe[title="柔療髮浴嘉義門店位置"]');
+ await map.evaluate(frame=>{frame.loading='eager';});
+ await expect(page.frameLocator('iframe[title="柔療髮浴嘉義門店位置"]').getByTestId('isolated-map')).toHaveText('Local map placeholder');checks++;
 }
 await page.goto(fixtureUrl+'?mode=staff',{waitUntil:'domcontentloaded'});
 await page.waitForFunction(()=>typeof window.uiFixture?.reloadPlan==='function');
