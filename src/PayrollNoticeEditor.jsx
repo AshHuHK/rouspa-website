@@ -90,18 +90,17 @@ function ProbationPass({rule,staff,current,ranks,saved}){
 }
 
 function AssignmentForm({staff,current,rule,editable,saved}){
- const [form,setForm]=useState(current??{category:'',rank_no:1,start_bps:'',contract_from:staff.contract_started_on||'',credited_from:''});
+ const [form,setForm]=useState({...{category:'',rank_no:1,start_bps:'',contract_from:staff.contract_started_on||'',credited_from:''},...current, ...(staff.payroll_category_code&&(editable||!current)?{category:staff.payroll_category_code,rank_no:staff.hr_rank_no||null}:{})});
  const set=(id,value)=>setForm(data=>({...data,[id]:value}));
  const ranked=form.category==='01'||form.category==='02', contractor=form.category==='04';
+ if(!staff.payroll_category_code)return <p className="muted">請先到「人員與排班」確認職務、聘僱類型及職級，再設定本制度。</p>;
  return <MutationForm disabled={!editable} action={()=>rpc('spa_payroll_notice_assign',{p_rule:rule,p_staff:staff.id,p_assignment:{
   category:form.category,rank_no:ranked?Number(form.rank_no||1):null,start_bps:ranked&&form.start_bps!==''?form.start_bps:null,
   contract_from:contractor?form.contract_from:null,credited_from:contractor?form.credited_from:null,
  }})} onSaved={saved} submit="儲存人員類別">
   <fieldset disabled={!editable} className="payroll-notice-fields"><div className="form-grid">
-   <Field label="薪資類別"><select value={form.category} onChange={event=>set('category',event.target.value)}>
-    <option value="">待設定</option>{Object.entries(categories).map(([id,label])=><option value={id} key={id}>{id} {label}</option>)}
-   </select></Field>
-   {ranked&&<><Field label="職級"><select value={form.rank_no||1} onChange={event=>set('rank_no',Number(event.target.value))}>{rankNames.map((rank,index)=><option key={rank} value={index+1}>{rank}</option>)}</select></Field>
+   <Field label={editable||!current?"人事薪資類別":"本版本薪資類別"}><input readOnly value={form.category+' '+categories[form.category]}/></Field>
+   {ranked&&<><Field label={editable||!current?"人事職級":"本版本職級"}><input readOnly value={rankNames[Number(form.rank_no)-1]||'待設定'}/></Field>
     <Field label="個人起抽（選填）"><Rates max={form.category==='02'?25:30} value={form.start_bps} inherit onChange={value=>set('start_bps',value)}/></Field></>}
    {contractor&&<><Field label="承攬契約開始"><input required type="date" value={form.contract_from||''} onChange={event=>set('contract_from',event.target.value)}/></Field>
     <Field label="併入原在職期間（起日，選填）"><input type="date" min={staff.hire_date||undefined} max={form.contract_from||undefined} value={form.credited_from||''} onChange={event=>set('credited_from',event.target.value)}/></Field></>}
@@ -140,7 +139,7 @@ export default function PayrollNoticeEditor({rule,staff,canManage,onReload,onPre
   </div>
    {editable&&<p className="muted">{pending.length?pending.length+' 位在職技師待設定。':''} 請先儲存制度，試算並核對金額。</p>}
    {editable&&confirm&&<MutationForm action={()=>rpc('spa_payroll_notice_activate',{p_rule:rule.id})} onSaved={()=>{setConfirm(false);return refresh();}} submit="確認啟用">
-    <p>將從 {rule.effective_from} 起用此制度結算。</p>
+    <p>將從 {rule.effective_from} 起用此正式制度結算；生效日前沿用原制度。</p>
    </MutationForm>}
   </article>
  </section>;

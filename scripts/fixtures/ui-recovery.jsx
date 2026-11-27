@@ -14,6 +14,7 @@ const catalog={services:[service,{...service,id:'fixture-90',name:'90分方子',
 const params=new URLSearchParams(location.search);
 const fixture={calendarReads:0,slotReads:0,shopReads:0,planReads:0,createRequests:[],bookings:0,adminReads:{},failShop:params.has('fail'),failPlan:params.has('fail'),failSession:params.has('fail'),signedOut:0,noSlots:false};
 const role=params.get('role');
+if(role==='therapist')catalog.staff.push({id:'peer-staff',name:'其他技師',active:true});
 const openAttendance=params.has('working')?{id:'fixture-attendance',clock_in:'2026-10-06T20:00:00+08:00',break_minutes:0}:null;
 const breaks=[];
 const batchAttendance=['batch-1','batch-2'].map((id,index)=>({id,version:1,staff_id:staff.id,employee:staff.name,work_date:'2026-11-10',status:'pending',effective_start:'2026-11-10T10:00:00+08:00',effective_end:'2026-11-10T18:00:00+08:00',break_minutes:60,flags:[]}));
@@ -43,7 +44,7 @@ window.fetch=async(input,init={})=>{
   const failure=()=>new Response(JSON.stringify({message:'PUBLIC_NETWORK_ERROR'}),{status:503,headers:{'content-type':'application/json'}});
   if(role)fixture.adminReads[name]=(fixture.adminReads[name]||0)+1;
   if(name==='spa_server_time')return response(new Date().toISOString());
-  if(name==='spa_session')return fixture.failSession?new Response(JSON.stringify({message:'No suitable key or wrong key type',code:'PGRST301'}),{status:401}):response(role?{role:role==='restricted'?'therapist':role,staff_id:role==='owner'?null:staff.id,permissions:role==='restricted'?[]:['dashboard.view','appointments.view','reviews.view'] }:{role:null});
+  if(name==='spa_session')return fixture.failSession?new Response(JSON.stringify({message:'No suitable key or wrong key type',code:'PGRST301'}),{status:401}):response(role?{role:role==='restricted'?'therapist':role,staff_id:role==='owner'?null:staff.id,own_bookings_only:role==='therapist',permissions:role==='restricted'?[]:['dashboard.view','appointments.view','reviews.view'] }:{role:null});
   if(name==='spa_catalog')return response(catalog);
   if(name==='spa_dashboard')return response({date:new Date().toISOString().slice(0,10),appointments:4,pending:0,completed:2,staff_working:1,simultaneous_capacity:4,
    ...role==='owner'?{revenue_cents:100000,unsettled_completed:0,low_stock:0}:null,next_appointments:[],today_hours:{is_open:true,opening_minute:600,closing_minute:1560,source:'weekly'}});
@@ -54,6 +55,7 @@ window.fetch=async(input,init={})=>{
   if(name==='spa_operations_convenience')return response({is_owner:role==='owner',todos:[]});
   if(name==='spa_admin_bookings')return response([]);
   if(name==='spa_customers_list')return response(customers);
+  if(name==='spa_staff_profile_save_v2'){fixture.hrPayload=args.p_payload;return response('saved-staff');}
   if(name==='spa_team_os')return response({schedule_reminders:fixture.reminders,staff:[{...staff,phone:'0912000800',email:null,title:'試用技師',
    employment_type_name:'正職',hire_date:null,is_bookable:true,website_visible:true}],accounts:[],shifts:[],daily_shifts:[],time_off:[]});
   if(name==='spa_schedule_reminder_save'){
@@ -110,6 +112,7 @@ window.fetch=async(input,init={})=>{
   }
   return failure();
 };
+const [{default:StaffProfileEditor}]=await Promise.all([import('../../src/StaffProfileEditor.jsx')]);
 const [{default:Booking},{default:Home},{default:Shop},{EmployeeSchedulePlanner},{default:Admin},{ApplicationBoundary},{supabase}]=await Promise.all([import('../../src/PublicBookingExperience.jsx'),import('../../src/App.jsx'),import('../../src/Shop.jsx'),import('../../src/StaffPortal.jsx'),import('../../src/Admin.jsx'),import('../../src/ApplicationBoundary.jsx'),import('../../src/lib/spa.js')]);
 let authListener;
 supabase.auth.getSession=async()=>{if(params.get('outcome')==='session-read'&&fixture.failSession)throw new TypeError('Failed to fetch');return {data:{session:{user:{id:'fixture-user',email:'fixture@example.invalid'}}},error:null};};
@@ -122,6 +125,13 @@ function Fixture(){
   fixture.refreshBooking=()=>setData(current=>({...current}));
   fixture.reloadPlan=()=>setVersion(value=>value+1);
   const mode=new URLSearchParams(location.search).get('mode');
+  if(mode==='hr'){
+    const codes=['ft_probation','ft_junior','ft_senior_junior','ft_mid','ft_senior_mid','ft_advanced'];
+    const names=['試用技師','初級技師','資深初級技師','中階技師','資深中階技師','高階技師'];
+    const titles=codes.map((code,i)=>({id:code,code,name:names[i],work_category:'technician',active:true,legacy:false,allowed_employment_types:['full_time','part_time']}));
+    titles.push(...[['owner','店主','owner',['owner']],['reception','櫃檯','counter',['full_time','part_time']],['pt_technician','兼職技師','technician',['part_time']],['contract_technician','承攬技師','technician',['contractor']]].map(([code,name,work_category,allowed_employment_types])=>({id:code,code,name,work_category,allowed_employment_types,active:true,legacy:false})));
+    return <div className="ops"><main><StaffProfileEditor data={{job_titles:titles}} catalog={catalog} saved={()=>{fixture.hrSaved=true;}}/></main></div>;
+  }
   if(mode==='home')return <Home/>;
   if(mode==='shop')return <Shop onNavigateHome={()=>{}}/>;
   if(mode==='staff')return <div className="ops"><main><EmployeeSchedulePlanner refreshToken={version}/></main></div>;

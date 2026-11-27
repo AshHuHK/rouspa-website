@@ -120,7 +120,7 @@ const ownerHistory=await snapshot(owner);
 const savedCooperation=ownerHistory.payroll.rows.find(row=>row.staff_id===staff[1].id);
 check(savedCooperation.contract_started_on==='2026-09-01'&&savedCooperation.contract_start_pending===false,'safe historical projection preserves the saved cooperation start despite a different current staff date');
 check(result.payroll.rows.length===1&&!JSON.stringify(result.payroll).includes('2026-09-01'),'employee cannot read another staff member cooperation date through payroll snapshots');
-const promotedTitle=(await db.query("select id,name from spa_job_titles where code='ft_senior_advanced'")).rows[0];
+const promotedTitle=(await db.query("select id,name from spa_job_titles where code='ft_advanced'")).rows[0];
 await db.query("update spa_staff set job_title_id=$2,employment_type_code='full_time' where id=$1",[staff[0].id,promotedTitle.id]);
 result=await snapshot(employee);
 check(result.staff[0].title===promotedTitle.name&&result.payroll.rows[0].role==='初級技師'&&result.payroll.rows[0].employment_type_code==='part_time','later current-personnel promotion cannot rewrite historical finalized wage classification');

@@ -8,3 +8,10 @@ export function payrollRuleDisplayName(rule){
 export function showSettlementVersion(rule){
  return !hiddenSettlementVersions.has(Number(rule?.version_no));
 }
+
+
+export function payrollRuleStatus(rule, today) {
+ if (rule?.status === 'draft') return '制度草稿';
+ if (rule?.status === 'active') return rule.effective_from > today ? '正式・待生效' : '正式・生效中';
+ return '歷史版本';
+}

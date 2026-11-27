@@ -40,7 +40,7 @@ try {
  equal(rules[0].calculation_engine,'ordered_v2','new policy uses ordered engine');
  equal(rules.filter(row=>row.status==='active').length,1,'exactly one active version is retained');
  check(rules.slice(1).every(row=>row.calculation_engine==='legacy_period_average'),'old versions retain old calculation engine');
- equal(titles.filter(row=>!row.legacy&&row.code.startsWith('ft_')).length,7,'only the seven confirmed ranks are initialized');
+ equal(titles.filter(row=>!row.legacy&&row.code.startsWith('ft_')&&row.active).length,6,'six current ranks remain selectable; old rank profiles are retained for historical calculations');
  equal(title('owner').allowed_employment_types.join(','),'owner','owner has no employee employment-type split');
  equal(title('reception').allowed_employment_types.join(','),'full_time,part_time','counter cannot be a contractor');
  const profile = async (code, employment = title(code).allowed_employment_types[0], id = rule) => (await db.query('select * from spa_payroll_version_profiles where rule_version_id=$1 and job_title_id=$2 and employment_type_code=$3',[id,title(code).id,employment])).rows[0];
@@ -72,7 +72,7 @@ try {
  await reject(()=>admin('spa_compensation_profile_save_v3',[rule,{...partProfile,job_title_id:title('reception').id,employment_type_code:'contractor'}]),/JOB_EMPLOYMENT_MISMATCH/);
  await reject(()=>admin('spa_compensation_profile_save_v3',[rule,{...contractProfile,base_pay_cents:1}]),/CONTRACTOR_BASE_NOT_ALLOWED/);
  await reject(async()=>admin('spa_compensation_profile_save_v3',[rule,{...await profile('reception','full_time'),service_commission_bps:1000,service_commission_mode:'flat'}]),/SERVICE_COMMISSION_TECHNICIAN_ONLY/);
- await reject(()=>db.query("insert into spa_staff(name,job_title_id,employment_type_code)values('錯誤組合',$1,'part_time')",[title('ft_junior').id]),/JOB_EMPLOYMENT_MISMATCH/);
+ await reject(()=>db.query("insert into spa_staff(name,job_title_id,employment_type_code)values('錯誤組合',$1,'contractor')",[title('ft_junior').id]),/JOB_EMPLOYMENT_MISMATCH/);
  await reject(()=>db.query("insert into spa_staff(name,job_title_id,employment_type_code)values('未指定新職級',$1,'full_time')",[title('therapist').id]),/JOB_CLASSIFICATION_REQUIRED/);
  await db.exec("update spa_staff set active=false,employment_status='inactive';");
  async function addStaff(code,name, employment=title(code).allowed_employment_types[0]) {

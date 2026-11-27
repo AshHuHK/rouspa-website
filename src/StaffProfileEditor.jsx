@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Field, MutationForm } from './OperationsShared.jsx';
 import { rpc, taipeiDate } from './lib/spa.js';
 import { tenureLabel } from './lib/staff-tenure.js';
-import { allowedEmploymentTypes, isTechnician, workCategoryNames } from './lib/staff-work-roles.js';
+import { classificationPayload, staffClassification, technicianRanks } from './lib/staff-work-roles.js';
 
 const statusNames = { active: '在職', departed: '已離職', inactive: '停用／未任職' };
 
@@ -21,47 +21,54 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
     is_bookable: false, website_visible: false, departed_on: '', departure_reason: '', contract_started_on: ''
   });
   const [services, setServices] = useState(row ? catalog.skills.filter(skill => skill.staff_id === row.id && skill.enabled !== false).map(skill => skill.service_id) : []);
-  const title = titles.find(value => value.id === form.job_title_id);
-  const employmentOptions = allowedEmploymentTypes(title, row);
-  const technician = isTechnician({ ...title, job_title_code: title?.code });
-  const set = (key, value) => setForm(previous => ({ ...previous, [key]: value }));
-  const selectTitle = id => {
-    const next = titles.find(value => value.id === id);
-    const types = allowedEmploymentTypes(next, row);
-    const canServe = isTechnician({ ...next, job_title_code: next?.code });
-    setForm(previous => ({ ...previous, job_title_id: id, title: next?.name || '',
-      employment_type_code: types.includes(previous.employment_type_code) ? previous.employment_type_code : types[0] || '',
-      is_bookable: canServe && previous.is_bookable, website_visible: canServe && previous.website_visible }));
-    if (!canServe) setServices([]);
+  const [classification, setClassification] = useState(() => ({
+    ...staffClassification(row || {employment_type_code:'full_time'}, assignedTitle || firstTitle),
+    counterEmployment: row?.employment_type_code === 'part_time' ? 'part_time' : 'full_time'
+  }));
+  const mapped = classificationPayload(classification, titles);
+  const technician = classification.role === 'technician';
+  const updateClassification = patch => {
+    setClassification(current => ({...current, ...patch}));
+    if (patch.role && patch.role !== 'technician') {
+      setServices([]);
+      setForm(current => ({...current, is_bookable:false, website_visible:false}));
+    }
   };
+  const set = (key, value) => setForm(previous => ({ ...previous, [key]: value }));
   const text = (label, key, type = 'text', options = {}) => <Field label={label}><input type={type} value={form[key] || ''} onChange={event => set(key, event.target.value)} {...options}/></Field>;
   const action = () => {
-    if (!title || !employmentOptions.includes(form.employment_type_code)) throw new Error('INVALID_TITLE_EMPLOYMENT');
-    return rpc('spa_staff_profile_save_v2', { p_payload: { ...form, id: row?.id || '',
+    if (!mapped) throw new Error('JOB_CLASSIFICATION_REQUIRED');
+    return rpc('spa_staff_profile_save_v2', { p_payload: { ...form, ...mapped, id: row?.id || '',
       is_bookable: technician && form.employment_status === 'active' && !!form.is_bookable,
       website_visible: technician && form.employment_status === 'active' && !!form.website_visible,
       services: technician ? services : [] } });
   };
   return <MutationForm action={action} onSaved={saved}>
-    {retiredTitle&&<p className="alert" role="alert">原「首席調理師」職務已移除。人員、帳號、歷史預約、評價與薪資快照仍保留；請由店主明確選擇七階、兼職或承攬技師職稱後，才可重新接服務。</p>}
-    {title?.legacy && <p className="alert">這位人員仍使用舊職稱。請由店主選定新職級；系統不會依年資擅自升等。對應前的新制度薪資只能試算，不能完成結算。</p>}
+    {retiredTitle&&<p className="alert" role="alert">原職稱已停止使用。請保留歷史資料，請由店主明確選擇六階、兼職或承攬技師職稱後，才可重新接服務。</p>}
+    {(assignedTitle?.legacy || assignedTitle?.code === 'ft_senior_advanced') && <p className="alert">這位人員仍使用舊職稱。請由店主選定新職級；系統不會依年資擅自升等。對應前的新制度薪資只能試算，不能完成結算。</p>}
     <p className="muted">排班模式為自由排班，職務提醒由「職務與排班提醒」集中維護。</p>
     <div className="form-grid">
       {text('姓名', 'name', 'text', { required: true, maxLength: 80 })}
       {text('英文姓名', 'name_en', 'text', { maxLength: 80 })}
-      <Field label="職務／技師職級"><select required value={form.job_title_id || ''} onChange={event => selectTitle(event.target.value)}>
-        <option value="" disabled>請選職稱</option>
-        {retiredTitle&&form.job_title_id===retiredTitle.id&&<option value={retiredTitle.id} disabled>舊職稱已移除，請重新選擇</option>}
-        {Object.entries(workCategoryNames).map(([category, label]) => <optgroup key={category} label={label}>
-          {titles.filter(item => item.work_category === category).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-        </optgroup>)}
+      <Field label="職務"><select required value={classification.role} onChange={event => updateClassification({role:event.target.value})}>
+        {!['owner','counter','technician'].includes(classification.role)&&<option value={classification.role} disabled>請重新選擇職務</option>}
+        <option value="owner">店主</option><option value="counter">櫃檯</option><option value="technician">技師</option>
       </select></Field>
-      <Field label="聘僱類型"><select required disabled={employmentOptions.length === 1} value={form.employment_type_code || ''} onChange={event => set('employment_type_code', event.target.value)}>
-        {data.employment_types.filter(item => employmentOptions.includes(item.code)).map(item => <option key={item.code} value={item.code}>{item.name}</option>)}
-      </select></Field>
+      {technician && <Field label="技師類型"><select value={classification.category === '01' ? 'full_time' : classification.category === '04' ? 'contractor' : 'part_time'} onChange={event => updateClassification({category:event.target.value === 'full_time' ? '01' : event.target.value === 'contractor' ? '04' : '03'})}>
+        <option value="full_time">正職技師</option><option value="part_time">兼職技師</option><option value="contractor">承攬技師</option>
+      </select></Field>}
+      {technician && ['02','03'].includes(classification.category) && <Field label="兼職聘僱類型"><select value={classification.category} onChange={event => updateClassification({category:event.target.value})}>
+        <option value="03">兼職時薪制</option><option value="02">兼職月薪制</option>
+      </select></Field>}
+      {technician && ['01','02'].includes(classification.category) && <Field label="技師職級"><select required value={classification.rankCode} onChange={event => updateClassification({rankCode:event.target.value})}>
+        <option value="" disabled>請選擇職級</option>{technicianRanks.map(([code,name]) => <option key={code} value={code}>{name}</option>)}
+      </select></Field>}
+      {classification.role === 'counter' && <Field label="聘僱類型"><select value={classification.counterEmployment} onChange={event => updateClassification({counterEmployment:event.target.value})}>
+        <option value="full_time">正職</option><option value="part_time">兼職</option>
+      </select></Field>}
       {text('手機', 'phone', 'tel')}{text('電子郵件（選填）', 'email', 'email')}
       {text('生日', 'birth_date', 'date')}{text('到職日', 'hire_date', 'date')}
-      {form.employment_type_code === 'contractor' && <>{text('承攬合作開始日期', 'contract_started_on', 'date', { required: true, min: form.hire_date || '1900-01-01', max: form.departed_on || undefined })}<p className="muted">請填實際開始承攬的日期。合作前的正職服務不計入承攬 100 堂；缺日期時只能試算，不能結算，不會用到職日代填。</p></>}
+      {mapped?.employment_type_code === 'contractor' && <>{text('承攬合作開始日期', 'contract_started_on', 'date', { required: true, min: form.hire_date || '1900-01-01', max: form.departed_on || undefined })}<p className="muted">請填實際開始承攬的日期，用於核對承攬年資與薪資制度。</p></>}
       <Field label="工作年資"><input readOnly value={tenureLabel({hire_date:form.hire_date,departed_on:form.departed_on})} /></Field>
       <Field label="任職狀態"><select value={form.employment_status} onChange={event => {
         const value = event.target.value;
@@ -80,7 +87,7 @@ export default function StaffProfileEditor({ row, data, catalog, saved }) {
       <Field wide label="人員介紹"><textarea maxLength={2000} value={form.bio || ''} onChange={event => set('bio', event.target.value)}/></Field>
       {technician && <Field wide label="可提供療程"><div className="os-check-grid">{catalog.services.filter(service => service.status !== 'archived').map(service => <label key={service.id}><input type="checkbox" checked={services.includes(service.id)} onChange={event => setServices(event.target.checked ? [...services, service.id] : services.filter(id => id !== service.id))}/>{service.name}</label>)}</div></Field>}
     </div>
-    <p className="muted">店主為單一職位；櫃台只可正職／兼職；正職技師採七階，兼職及承攬技師各一職位。登入權限另由帳號角色決定。</p>
+    <p className="muted">正職及兼職月薪技師採六階；兼職時薪及承攬不設職級。人事分類同步至薪資草稿；已生效的薪資分類如需變更，請先建立新制度草稿。登入權限由帳號角色決定。</p>
     <p className="muted">年資按台灣日期由到職日計算，離職後截至離職日。薪資在「薪資與提成」設定。</p>
   </MutationForm>;
 }

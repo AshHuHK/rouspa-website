@@ -192,6 +192,13 @@ for(const role of ['therapist','manager','restricted']){
  }else{
   expect(sections.indexOf('staff-bookings')).toBeLessThan(sections.indexOf('staff-self'));checks++;
   await expect(workspace.locator('#staff-bookings')).toBeVisible();checks++;
+  if(role==='therapist'){
+   const bookings=workspace.locator('#staff-bookings');
+   await expect(bookings.getByLabel('技師篩選')).toHaveCount(0);checks++;
+   await bookings.getByRole('button',{name:'查看排程',exact:true}).click();
+   await expect(bookings.locator('tbody tr')).toHaveCount(1);checks++;
+   await expect(bookings.locator('tbody')).not.toContainText('其他技師');checks++;
+  }
  }
 }
 await page.goto(fixtureUrl+'?mode=admin&role=therapist&working=1',{waitUntil:'domcontentloaded'});
@@ -268,4 +275,27 @@ await expect(page.getByLabel('開始',{exact:true})).toHaveValue('10:17');checks
 await page.evaluate(()=>{window.uiFixture.reminders.find(row=>row.role_code===window.uiFixture.scheduleRole).reminder_text='';window.uiFixture.reloadPlan();});
 await expect(page.getByRole('complementary',{name:'職務排班提醒'})).toHaveCount(0);checks++;
 await expect(page.getByText('每日最多',{exact:false})).toHaveCount(0);checks++;
+for(const width of [320,1440]){
+ await page.setViewportSize({width,height:1000});
+ await page.goto(fixtureUrl+'?mode=hr',{waitUntil:'domcontentloaded'});
+ await expect(page.getByLabel('職務',{exact:true}).locator('option')).toHaveText(['店主','櫃檯','技師']);checks++;
+ await expect(page.getByLabel('技師職級',{exact:true}).locator('option')).toHaveText(['請選擇職級','試用技師','初級技師','資深初級技師','中階技師','資深中階技師','高階技師']);checks++;
+ await page.getByLabel('技師類型',{exact:true}).selectOption('part_time');
+ await expect(page.getByLabel('兼職聘僱類型')).toHaveValue('03');checks++;
+ await expect(page.getByLabel('技師職級',{exact:true})).toHaveCount(0);checks++;
+ await page.getByLabel('兼職聘僱類型').selectOption('02');
+ await page.getByLabel('技師職級',{exact:true}).selectOption('ft_mid');
+ await page.getByLabel('姓名',{exact:true}).fill('測試月薪');
+ await page.getByRole('button',{name:'儲存',exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>window.uiFixture.hrPayload?.payroll_category_code)).toBe('02');checks++;
+ expect((await page.evaluate(()=>window.uiFixture.hrPayload)).employment_type_code).toBe('part_time');checks++;
+ expect((await page.evaluate(()=>window.uiFixture.hrPayload)).job_title_id).toBe('ft_mid');checks++;
+ await page.getByLabel('技師類型',{exact:true}).selectOption('contractor');
+ await expect(page.getByLabel('技師職級',{exact:true})).toHaveCount(0);checks++;
+ await expect(page.getByLabel('承攬合作開始日期')).toBeVisible();checks++;
+ await page.getByLabel('職務',{exact:true}).selectOption('counter');
+ await expect(page.getByLabel('技師類型',{exact:true})).toHaveCount(0);checks++;
+ await expect(page.getByLabel('聘僱類型',{exact:true}).locator('option')).toHaveText(['正職','兼職']);checks++;
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);checks++;
+}
 return {checks,productionRequests:0};

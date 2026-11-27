@@ -26,3 +26,29 @@ export function posEligibleStaff(item, catalog) {
     ))
   ));
 }
+
+
+export const technicianRanks = [
+  ['ft_probation', '試用技師'], ['ft_junior', '初級技師'],
+  ['ft_senior_junior', '資深初級技師'], ['ft_mid', '中階技師'],
+  ['ft_senior_mid', '資深中階技師'], ['ft_advanced', '高階技師'],
+];
+
+export function staffClassification(person, title) {
+  const role = title?.work_category || person?.work_category || 'technician';
+  const category = person?.payroll_category_code || (person?.employment_type_code === 'contractor' ? '04'
+    : person?.employment_type_code === 'part_time' ? (person?.pay_basis === 'monthly' ? '02' : '03') : '01');
+  return {role, category, rankCode: technicianRanks.some(([code]) => code === title?.code) ? title.code : ''};
+}
+
+export function classificationPayload({role, category, rankCode, counterEmployment}, titles) {
+  const code = role === 'owner' ? 'owner' : role === 'counter' ? 'reception'
+    : ['01', '02'].includes(category) ? rankCode : category === '03' ? 'pt_technician' : 'contract_technician';
+  const title = titles.find(row => row.code === code && row.active && !row.archived_at && !row.legacy);
+  if (!title || (role === 'technician' && !['01','02','03','04'].includes(category))) return null;
+  const employment = role === 'owner' ? 'owner' : role === 'counter' ? counterEmployment
+    : category === '01' ? 'full_time' : category === '04' ? 'contractor' : 'part_time';
+  if (!(title.allowed_employment_types || []).includes(employment)) return null;
+  return {job_title_id:title.id, title:title.name, employment_type_code:employment,
+    payroll_category_code:role === 'technician' ? category : null};
+}
