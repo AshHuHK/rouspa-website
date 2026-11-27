@@ -30,6 +30,7 @@ fixture.reminders=[
  {role_code:'part_time_hourly',name:'兼職時薪人員',reminder_text:'平日可依個人時間彈性安排。',version:1},
  {role_code:'part_time_monthly',name:'兼職月薪人員',reminder_text:'任選兩天平日上班。',version:1},
 ];
+fixture.notice={rule_id:'rule-8',monthly_base_cents:2520000,full_time_threshold_minutes:4200,monthly_threshold_minutes:3900,hourly_threshold_minutes:2400,step_minutes:600,technician_ids:[],assignments:[],ranks:Array.from({length:6},(_,i)=>({rank_no:i+1,full_time_start_bps:i*500,monthly_start_bps:i*500,monthly_base_cents:2520000}))};
 window.uiFixture=fixture;
 const NativeSocket=window.WebSocket;
 window.WebSocket=class extends EventTarget {
@@ -72,6 +73,8 @@ window.fetch=async(input,init={})=>{
   }
   if(name==='spa_attendance_admin')return response({settings:{address:'測試門店'},rows:[],events:[],requests:[],staff:[]});
   if(name==='spa_reviews_admin')return response({reviews:[],feedback:[]});
+  if(name==='spa_payroll_notice_get')return response(fixture.notice);
+  if(name==='spa_payroll_notice_save'){fixture.noticeSave=args;fixture.notice={...fixture.notice,...args.p_settings,ranks:args.p_ranks};return response(null);}
   if(name==='spa_payroll_admin')return response({rules:adminRules,staff:[],runs:[{id:'saved-run',rule_version_id:'rule-5',period_start:'2026-01-01',period_end:'2026-01-31',status:'finalized'}],preview:[],rates:[],tiers:[]});
   if(name==='spa_payroll_preview')return response([]);
   if(name==='spa_attendance_self')return response({settings:{address:'測試門店',radius_m:100,max_accuracy_m:100},open:openAttendance,rows:[],events:[],breaks,requests:[]});
@@ -112,7 +115,7 @@ window.fetch=async(input,init={})=>{
   }
   return failure();
 };
-const [{default:StaffProfileEditor}]=await Promise.all([import('../../src/StaffProfileEditor.jsx')]);
+const [{default:StaffProfileEditor},{default:PayrollNoticeEditor}]=await Promise.all([import('../../src/StaffProfileEditor.jsx'),import('../../src/PayrollNoticeEditor.jsx')]);
 const [{default:Booking},{default:Home},{default:Shop},{EmployeeSchedulePlanner},{default:Admin},{ApplicationBoundary},{supabase}]=await Promise.all([import('../../src/PublicBookingExperience.jsx'),import('../../src/App.jsx'),import('../../src/Shop.jsx'),import('../../src/StaffPortal.jsx'),import('../../src/Admin.jsx'),import('../../src/ApplicationBoundary.jsx'),import('../../src/lib/spa.js')]);
 let authListener;
 supabase.auth.getSession=async()=>{if(params.get('outcome')==='session-read'&&fixture.failSession)throw new TypeError('Failed to fetch');return {data:{session:{user:{id:'fixture-user',email:'fixture@example.invalid'}}},error:null};};
@@ -132,6 +135,7 @@ function Fixture(){
     titles.push(...[['owner','店主','owner',['owner']],['reception','櫃檯','counter',['full_time','part_time']],['pt_technician','兼職技師','technician',['part_time']],['contract_technician','承攬技師','technician',['contractor']]].map(([code,name,work_category,allowed_employment_types])=>({id:code,code,name,work_category,allowed_employment_types,active:true,legacy:false})));
     return <div className="ops"><main><StaffProfileEditor data={{job_titles:titles}} catalog={catalog} saved={()=>{fixture.hrSaved=true;}}/></main></div>;
   }
+  if(mode==='monthly-pay')return <div className="ops"><main><PayrollNoticeEditor rule={adminRules.find(row=>row.version_no===8)} staff={[]} canManage onReload={()=>{}} onPreview={()=>{}} onDelete={()=>{}}/></main></div>;
   if(mode==='home')return <Home/>;
   if(mode==='shop')return <Shop onNavigateHome={()=>{}}/>;
   if(mode==='staff')return <div className="ops"><main><EmployeeSchedulePlanner refreshToken={version}/></main></div>;

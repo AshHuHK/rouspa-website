@@ -1,6 +1,6 @@
 {
-  "reviewed_at": "2026-11-27T16:55:50.140Z",
-  "manual_sha256": "89159018c9a892d9cfe40cf25a932c4f5b0e622b4e2a0e2358a8ec0a637e0dfd",
+  "reviewed_at": "2026-11-27T17:13:01.652Z",
+  "manual_sha256": "96d89e68fb2f82f86c5dbab637d507283965de1f56beb502d9bb3b1c83331ad8",
   "sources": {
     ".github/workflows/validate.yml": "31de911ec4585c39629e1d36cac41000f4bef723bc4b1c549478f9371d8e1395",
     "api/ask-steward.js": "8bb0f767494db39843955d7eee5ead4e1c3e374bec853f48dba2c098a9ddbeaa",
@@ -34,7 +34,7 @@
     "src/OperationsConvenience.jsx": "332840d50ad55af3569944fcbc33f5a0309001f8e4c147c55c7d16a11a42ab96",
     "src/OperationsNotifications.jsx": "db929170047b7012997e763f3562cfdac90359bd30ea8a1a965b854dbd3b7671",
     "src/OperationsShared.jsx": "ad88ea517c13724ee6587fe04f7df45f93c912933ac5016daaf92ec7643cb07c",
-    "src/PayrollNoticeEditor.jsx": "c80381312e1ea60f524967758882462837e87b249fac35c2d08b90ecffeb431c",
+    "src/PayrollNoticeEditor.jsx": "40a1391260324cd4b9a0c9796385c1de35377ab8c5da4240d825adb627295023",
     "src/PayrollPolicyEditor.jsx": "f0ad96793a14a90e143d8b755eb663c26de9c6894e059f215b9fb640a6a63dfc",
     "src/PayrollSources.jsx": "d93215312b6073f0870ad1701c43c34fae3c61affd489f893e73732066e963e9",
     "src/PosWorkspace.jsx": "4b0267c27350d7bc98d2b288030282f52bc0a478ef1ee836a7fd09b335d07cf3",
@@ -79,7 +79,7 @@
     "src/lib/seo-content.js": "82678d485913f36e75031de5107a4b6a4337debce4e8bbf67308d90a0e3524bd",
     "src/lib/seo.js": "d24357ed0e088ef0042942827ae2d546fc80f6cb5271f2f5bbe8b80da723ce98",
     "src/lib/service-content.js": "1ec1af86fbd04853cd02487ded2f71aa22b01bd99cf97b3109f7d1bad3e5236f",
-    "src/lib/spa.js": "5d66c166f6b725866c231b998230192bff750c2ccdba94c3f8e79eea8e561127",
+    "src/lib/spa.js": "949b9af898301bc68fc46d9b58bfb138f3c2780ac703f03144a64ef965674da5",
     "src/lib/staff-account.js": "90f5a673a0b59b621fce5685d076c10956c4be8945479239c505880ac556e341",
     "src/lib/staff-tenure.js": "b873af953bc82e32ad82ebb047eb336ba59453ef27c15b18325a4897d583d304",
     "src/lib/staff-work-roles.js": "4744250ef1cd21c5dab0596f7e1dffa34a0e662f3ff22a5c4e4a3aed111b5418",
@@ -144,6 +144,7 @@
     "supabase/migrations/202611260002_free_scheduling_and_role_reminders.sql": "d4407c7d31079646aa1511b7bce10e4af04ffeb7519ba3575a3bfcd9862b381a",
     "supabase/migrations/202611270001_staff_classification_and_booking_scope.sql": "91e04eaa9337c493f4e07d1a3253ac61bc271a6b9922dbaa6b5eac6119ee8625",
     "supabase/migrations/202611270002_payroll_notice_publication.sql": "ce317feb2bafd6aaecf288463726ff39e0854a686981b52acd090b6328caae23",
+    "supabase/migrations/202611270003_flat_part_time_monthly_base.sql": "75e3d6612003901b507f8e4ad5b93cd9ac6fc7751ba90a4f9e2fbbed976efefd",
     "vite.config.ios.js": "f51d57cba58adebe5231f605ee9d5f2f70c400fa2eff3e943244b98cd511ab70"
   }
 }

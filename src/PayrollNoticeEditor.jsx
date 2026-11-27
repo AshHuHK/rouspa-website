@@ -39,17 +39,18 @@ function NoticeSettings({notice,editable,refresh}){
  const updateRank=(number,id,value)=>setRanks(current=>current.map(rank=>rank.rank_no===number?{...rank,[id]:value}:rank));
  return <article className="card"><h3>服務時數與起抽</h3>
   <MutationForm disabled={!editable} action={()=>rpc('spa_payroll_notice_save',{p_rule:notice.rule_id,p_settings:{
-   ...settings,...Object.fromEntries(thresholds.map(([id])=>[id,Math.round(Number(settings[id])*60)])),
-  },p_ranks:ranks.map(rank=>({...rank,monthly_base_cents:cents(rank.monthly_base_cents)}))})} onSaved={refresh} submit="儲存制度">
+   ...settings,monthly_base_cents:settings.monthly_base_cents==null?null:cents(settings.monthly_base_cents),...Object.fromEntries(thresholds.map(([id])=>[id,Math.round(Number(settings[id])*60)])),
+  },p_ranks:ranks.map(rank=>({...rank,monthly_base_cents:cents(settings.monthly_base_cents??rank.monthly_base_cents)}))})} onSaved={refresh} submit="儲存制度">
    <fieldset disabled={!editable} className="payroll-notice-fields">
     <div className="form-grid">{thresholds.map(([id,label])=><Field key={id} label={label+'（小時）'}>
      <input type="number" required min={id==='step_minutes'?'0.1':'0'} max={id==='step_minutes'?100:500} step="0.1" value={settings[id]} onChange={event=>update(id,event.target.value)}/>
     </Field>)}</div>
-    <div className="table-wrap"><table><caption>01／02 職級</caption><thead><tr><th>職級</th><th>01 起抽</th><th>02 起抽</th><th>02 月薪（NT$）</th></tr></thead><tbody>
+    {settings.monthly_base_cents!=null&&<Field label="02 兼職統一月薪（NT$／月）"><input type="number" required min="0" max="1000000" step="0.01" value={settings.monthly_base_cents} onChange={event=>update('monthly_base_cents',event.target.value)}/><small>六個職級共用同一本薪，職級僅決定起抽比例。</small></Field>}
+    <div className="table-wrap"><table><caption>01／02 職級</caption><thead><tr><th>職級</th><th>01 起抽</th><th>02 起抽</th>{settings.monthly_base_cents==null&&<th>舊版 02 月薪（NT$）</th>}</tr></thead><tbody>
      {ranks.map(rank=><tr key={rank.rank_no}><th scope="row">{rankNames[rank.rank_no-1]}</th>
       <td><Rates value={rank.full_time_start_bps} onChange={value=>updateRank(rank.rank_no,'full_time_start_bps',value)}/></td>
       <td><Rates max={25} value={rank.monthly_start_bps} onChange={value=>updateRank(rank.rank_no,'monthly_start_bps',value)}/></td>
-      <td><input type="number" required min="0" step="0.01" aria-label={rankNames[rank.rank_no-1]+'月薪'} value={rank.monthly_base_cents} onChange={event=>updateRank(rank.rank_no,'monthly_base_cents',event.target.value)}/></td>
+      {settings.monthly_base_cents==null&&<td>{money(cents(rank.monthly_base_cents))}</td>}
      </tr>)}
     </tbody></table></div>
     <p className="muted">02 普通抽成最高 25%，指定客另加 5%，合計最高 30%。01／02 起抽 0% 為試用，試用服務時數不累計。四類技師的商品和課程券銷售均按實收 5%。</p>
@@ -120,12 +121,12 @@ export default function PayrollNoticeEditor({rule,staff,canManage,onReload,onPre
  const people=staff.filter(row=>packet.technician_ids.includes(row.id));
  const pending=people.filter(row=>!row.archived_at&&row.active&&row.employment_status!=='departed'&&!packet.assignments.some(item=>item.staff_id===row.id));
  const editable=canManage&&rule.status==='draft';
- const editableNotice={...packet,...Object.fromEntries(thresholds.map(([id])=>[id,Number(packet[id])/60])),
+ const editableNotice={...packet,monthly_base_cents:packet.monthly_base_cents==null?null:Number(packet.monthly_base_cents)/100,...Object.fromEntries(thresholds.map(([id])=>[id,Number(packet[id])/60])),
   ranks:packet.ranks.map(rank=>({...rank,monthly_base_cents:Number(rank.monthly_base_cents)/100}))};
  return <section className="payroll-panel payroll-notice-editor">
   <div className="payroll-policy-grid">{[
    ['01',money(3100000)+'／月',packet.full_time_threshold_minutes],
-   ['02','依職級月薪',packet.monthly_threshold_minutes],
+   ['02',packet.monthly_base_cents==null?'舊版職級月薪':money(packet.monthly_base_cents)+'／月',packet.monthly_threshold_minutes],
    ['03',money(20500)+'／小時',packet.hourly_threshold_minutes],
    ['04','滿六個月 30% → 40%',null],
   ].map(([id,pay,threshold])=><article className="card" key={id}><h3>{id} {categories[id]}</h3><strong>{pay}</strong>

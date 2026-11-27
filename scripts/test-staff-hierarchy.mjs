@@ -1,3 +1,4 @@
+process.on('uncaughtException',error=>{console.error(error.stack?.split('\n').filter(line=>!line.includes('/node_modules/')).join('\n')||error.message);if(error.where)console.error(error.where);process.exit(1);});
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
@@ -69,12 +70,29 @@ try{
  await rejects(()=>rpc('spa_payroll_notice_assign',[rule,hourly.id,{category:'03'}]),/PAYROLL_CLASSIFICATION_MISMATCH/);
  const preview=await rpc('spa_payroll_preview',['2026-12-01','2026-12-31',rule]);
  check(preview.find(a=>a.staff_id===full.id).base_cents===3100000,'full-time document salary is unchanged');
- check(preview.find(a=>a.staff_id===monthly.id).base_cents===2560000,'monthly part-time salary follows the selected rank');
- check(preview.find(a=>a.staff_id===hourly.id).base_cents===2600000,'changed monthly classification uses the correct wage');
+ check(preview.find(a=>a.staff_id===monthly.id).base_cents===2520000,'monthly part-time salary uses the shared base');
+ check(preview.find(a=>a.staff_id===hourly.id).base_cents===2520000,'changed monthly classification keeps the same shared base');
  for(const staff of [full,monthly,hourly,contractor,trial]){
   const source=await rpc('spa_payroll_sources',[staff.id,'2026-12-01','2026-12-31',rule]);
   check(source.reconciliation.source_matches&&source.reconciliation.formula_matches,'wage component totals reconcile with their source references');
  }
+ // Every HR rank must retain the same monthly base and the original
+ // grade-specific commission rate. A stale per-rank amount is rejected.
+ check(packet.monthly_base_cents===2520000,'the policy exposes one shared monthly amount');
+ for(const [index,[rankCode]] of technicianRanks.entries()){
+  await rpc('spa_staff_profile_save_v2',[{...monthly.body,id:monthly.id,...classificationPayload({role:'technician',category:'02',rankCode},titles)}]);
+  const wages=await rpc('spa_payroll_preview',['2026-12-01','2026-12-31',rule]);
+  const salary=wages.find(row=>row.staff_id===monthly.id);
+  check(salary.base_cents===2520000&&salary.notice_rank===index+1,'all six ranks retain NT$25,200 after HR edits');
+  check(salary.service_commission_bps===index*500,'promotion retains its original service commission rate');
+ }
+ packet=await rpc('spa_payroll_notice_get',[rule]);
+ await rejects(()=>rpc('spa_payroll_notice_save',[rule,packet,packet.ranks.map(row=>({...row,monthly_base_cents:row.rank_no===2?2560000:2520000}))]),/PAYROLL_MONTHLY_BASE_MISMATCH/);
+ check((await rpc('spa_payroll_notice_get',[rule])).ranks.every(row=>row.monthly_base_cents===2520000),'a mismatched save leaves all six amounts unchanged');
+ // One owner-editable field updates all compatibility rows together.
+ await rpc('spa_payroll_notice_save',[rule,{...packet,monthly_base_cents:2540000},packet.ranks.map(row=>({...row,monthly_base_cents:2540000}))]);
+ check((await rpc('spa_payroll_notice_get',[rule])).ranks.every(row=>row.monthly_base_cents===2540000),'editing the shared setting updates every grade together');
+ await rpc('spa_payroll_notice_save',[rule,{...packet,monthly_base_cents:2520000},packet.ranks.map(row=>({...row,monthly_base_cents:2520000}))]);
  await rpc('spa_payroll_notice_activate',[rule]);
  check((await one("select spa_private.payroll_notice_rule_on('2026-11-30') id")).id!==rule,'published future version does not change November');
  check((await one("select spa_private.payroll_notice_rule_on('2026-12-01') id")).id===rule,'published future version becomes applicable on December 1');
@@ -84,6 +102,18 @@ try{
  await q("insert into spa_roles(user_id,role,staff_id,active,login_name)values($1,'therapist',$2,true,'hierarchy_test')",[employee,full.id]);
  await rpc('spa_role_profile_save',['custom_tech','測試自訂技師',['dashboard.view','appointments.view'],true,90]);
  await q("insert into spa_roles(user_id,role,staff_id,active,login_name)values($1,'custom_tech',$2,true,'custom_hierarchy')",[custom,monthly.id]);
+ const monthlyPlan=await rpc('spa_staff_schedule_plan',[],custom);
+ check(monthlyPlan.schedule_reminder.role_code==='part_time_monthly','employee schedule reads the same monthly HR category before the future policy starts');
+ check(monthlyPlan.scheduling_mode==='free','flat monthly pay introduces no required day count');
+ await rpc('spa_daily_shift_save',[monthly.id,'2026-12-02',true,600,780,'測試兼職月薪班表']);
+ check((await rpc('spa_staff_schedule_plan',[],custom)).days.find(day=>day.business_date==='2026-12-02').is_working,'monthly employee sees the saved schedule');
+ check((await rpc('spa_availability',[service,'2026-12-02',monthly.id],null)).some(slot=>slot.available),'monthly shift opens the same employee for public booking');
+ await rpc('spa_daily_shift_save',[monthly.id,'2026-12-02',false,600,780,'測試休班']);
+ check(!(await rpc('spa_availability',[service,'2026-12-02',monthly.id],null)).some(slot=>slot.available),'rest day removes public availability');
+ const ownPay=await rpc('spa_staff_self',['2026-12-01','2026-12-31'],custom);
+ check(ownPay.profile.base_pay_cents===2520000&&ownPay.payroll.base_cents===2520000,'employee profile and wage detail share the monthly base despite a changed day count');
+ const monthlySources=await rpc('spa_payroll_sources',[monthly.id,'2026-12-01','2026-12-31',rule]);
+ check(monthlySources.reconciliation.source_matches&&monthlySources.reconciliation.formula_matches,'roster changes preserve wage source and component reconciliation');
  for(const staff of [full,monthly])await rpc('spa_daily_shift_save',[staff.id,'2026-11-28',true,600,1320,'測試班表']);
  const slots=await rpc('spa_availability',[service,'2026-11-28',full.id],null);
  const start=slots.find(a=>a.available).starts_at;

@@ -301,4 +301,22 @@ for(const width of [320,1440]){
  await expect(page.getByLabel('聘僱類型',{exact:true}).locator('option')).toHaveText(['正職','兼職']);checks++;
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);checks++;
 }
+for(const width of [320,1440]){
+ await page.setViewportSize({width,height:1000});
+ await page.goto(fixtureUrl+'?mode=monthly-pay',{waitUntil:'domcontentloaded'});
+ const amount=page.getByRole('spinbutton',{name:/02 兼職統一月薪/});
+ await expect(amount).toHaveValue('25200');checks++;
+ await expect(page.getByRole('spinbutton',{name:/^(試用|初級|資深初級|中階|資深中階|高階)技師月薪/})).toHaveCount(0);checks++;
+ await expect(page.getByRole('columnheader')).toHaveText(['職級','01 起抽','02 起抽']);checks++;
+ await amount.fill('25400');
+ await page.getByRole('button',{name:'儲存制度',exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>window.uiFixture.noticeSave?.p_settings.monthly_base_cents)).toBe(2540000);checks++;
+ expect((await page.evaluate(()=>window.uiFixture.noticeSave.p_ranks)).every(rank=>rank.monthly_base_cents===2540000)).toBe(true);checks++;
+ await expect(amount).toHaveValue('25400');
+ await amount.fill('25200');
+ await page.getByRole('button',{name:'儲存制度',exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>window.uiFixture.noticeSave?.p_settings.monthly_base_cents)).toBe(2520000);checks++;
+ expect((await page.evaluate(()=>window.uiFixture.noticeSave.p_ranks)).every(rank=>rank.monthly_base_cents===2520000)).toBe(true);checks++;
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);checks++;
+}
 return {checks,productionRequests:0};

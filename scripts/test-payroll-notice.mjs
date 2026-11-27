@@ -74,7 +74,7 @@ try{
  }finally{await db.exec('rollback');}
  const rule=await rpc('spa_payroll_notice_setup',[month[0]]);
  const settings=await rpc('spa_payroll_notice_get',[rule]);
- assert.deepEqual(settings.ranks.map(row=>row.monthly_base_cents),[2520000,2560000,2560000,2600000,2600000,2660000]);
+ assert.deepEqual(settings.ranks.map(row=>row.monthly_base_cents),Array(6).fill(2520000));
  assert.equal(settings.technician_ids.includes(hourly),true);
  await assert.rejects(()=>rpc('spa_payroll_rule_activate',[rule]),/PAYROLL_NOTICE_NOT_ACTIVE/);
  await assert.rejects(()=>rpc('spa_payroll_notice_activate',[rule]),/PAYROLL_CLASSIFICATION_REQUIRED/);
@@ -126,7 +126,7 @@ try{
  assert.equal((await wage(trial)).ordinary_qualified_minutes,60);
  assert.equal((await wage(trial)).service_commission_cents,0,'trial minutes cannot qualify post-probation services');
  await sale(monthly,regular,66,'2026-11-03');
- assert.equal((await wage(monthly)).base_cents,2660000);
+ assert.equal((await wage(monthly)).base_cents,2520000);
  assert.equal((await wage(monthly)).service_commission_cents,25000);
  await sale(hourly,regular,41,'2026-11-04');
  await rpc('spa_time_entry_save',[null,hourly,'2026-11-04','2026-11-04T10:00:00+08:00','2026-11-04T18:00:00+08:00',60,'測試出勤']);
